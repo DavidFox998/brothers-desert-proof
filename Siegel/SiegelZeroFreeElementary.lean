@@ -264,7 +264,88 @@ private lemma compl_one_preconnected : IsPreconnected {s : ℂ | s ≠ 1} := by
   have h : Module.rank ℝ ℂ = 2 := Complex.rank_real_complex
   simp [h]
 
-/-! ## § 4 (continued). The eta identity — 2 SORRYS (Step A + Step D) -/
+/-! ### § 4b. Step D infrastructure — Dirichlet test for the alternating series
+
+  The two helper lemmas below feed the Dirichlet-test argument:
+    · partial_sum_altChar_bounded : ‖∑_{n<N} (−1)^n‖ ≤ 1   (the A_N bound)
+    · cpow_neg_re_tendsto_zero    : (n+1)^{−σ} → 0          (the b_n → 0 condition)
+  The main theorem hasSum_alternating_Dirichlet then states the resulting HasSum,
+  but its proof requires Dirichlet-series local uniform convergence not yet in Mathlib. -/
+
+/-- Partial sums of (−1)^n ∈ ℂ oscillate between 0 and 1 and are bounded by 1.
+    Proof: geom_sum_eq gives ((−1)^N − 1)/(−2); the numerator has norm ≤ 2,
+    the denominator has norm 2, so the quotient has norm ≤ 1. -/
+private lemma partial_sum_altChar_bounded (N : ℕ) :
+    ‖∑ n in Finset.range N, ((-1 : ℂ) ^ n)‖ ≤ 1 := by
+  have h_ne : (-1 : ℂ) ≠ 1 := by norm_num
+  rw [Finset.geom_sum_eq h_ne, norm_div,
+      show (-1 : ℂ) - 1 = -2 from by norm_num, norm_neg]
+  have h2 : ‖(2 : ℂ)‖ = 2 := by
+    rw [show (2 : ℂ) = ((2 : ℝ) : ℂ) from by norm_cast,
+        Complex.norm_real, Real.norm_of_pos (by norm_num : (0 : ℝ) < 2)]
+  rw [h2, div_le_one (by norm_num : (0 : ℝ) < 2)]
+  calc ‖(-1 : ℂ) ^ N - 1‖
+      ≤ ‖(-1 : ℂ) ^ N‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
+    _ = 2 := by
+        rw [norm_pow, norm_neg, norm_one, one_pow]; norm_num
+
+/-- (n+1)^{−σ} → 0 as n → ∞ for Re(σ) > 0 — the complex-cpow version of eta_tends_zero.
+    Proof: ‖(n+1:ℂ)^{−σ}‖ = (n+1)^{−σ.re} via cpow_def + log_ofReal + norm_exp;
+    then the real sequence tends to zero by the already-proved eta_tends_zero. -/
+private lemma cpow_neg_re_tendsto_zero (σ : ℂ) (hσ : 0 < σ.re) :
+    Tendsto (fun n : ℕ => (↑(n + 1) : ℂ) ^ (-σ)) atTop (𝓝 0) := by
+  apply tendsto_zero_iff_norm_tendsto_zero.mpr
+  -- Show ‖(n+1:ℂ)^{-σ}‖ = (n+1:ℝ)^{-σ.re} for each n, then apply eta_tends_zero.
+  have h_norm : ∀ n : ℕ, ‖(↑(n + 1) : ℂ) ^ (-σ)‖ = (n + 1 : ℝ) ^ (-σ.re) := by
+    intro n
+    rw [show (↑(n + 1) : ℂ) = ((n + 1 : ℝ) : ℂ) from by norm_cast]
+    have hpos : (0 : ℝ) < n + 1 := by positivity
+    have hne : ((n + 1 : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hpos.ne'
+    -- Expand via cpow_def: (↑r)^s = exp(s * log(↑r)).
+    rw [Complex.cpow_def_of_ne_zero hne, Complex.norm_exp, mul_re,
+        Complex.neg_re, Complex.neg_im]
+    -- log(↑(n+1)).re = Real.log(n+1) by log_ofReal_re; im = 0 by ofReal_log.
+    rw [Complex.log_ofReal_re]
+    have h_im : (Complex.log ((n + 1 : ℝ) : ℂ)).im = 0 := by
+      rw [← Complex.ofReal_log (by linarith : (0 : ℝ) ≤ n + 1)]
+      simp [Complex.ofReal_im]
+    rw [h_im]
+    -- Goal: exp(-σ.re * Real.log(n+1) - (-σ.im)*0) = (n+1)^(-σ.re).
+    simp only [mul_zero, sub_zero]
+    -- exp(-σ.re * log(n+1)) = exp(log(n+1) * (-σ.re)) = (n+1)^(-σ.re).
+    rw [mul_comm, ← Real.rpow_def_of_pos hpos]
+  simp_rw [h_norm]
+  -- Reduce to eta_tends_zero, which proves (n+1)^{-r} → 0 for r > 0.
+  have h := eta_tends_zero σ.re hσ
+  simp only [eta_term] at h
+  exact_mod_cast h
+
+/-- **hasSum_alternating_Dirichlet** — the conditionally convergent alternating Dirichlet
+    series ∑ (−1)^n·(n+1)^{−s} HasSum to ZMod.LFunction altChar s for Re(s) > 0.
+
+    PROOF STRATEGY (all steps identified; Lean gap = Dirichlet-test infrastructure):
+    1. Abel summation / Dirichlet test:
+         partial_sum_altChar_bounded  →  ‖A_N‖ ≤ 1 for all N
+         cpow_neg_re_tendsto_zero     →  b_n = (n+1)^{−s} → 0
+         These give locally uniform convergence of ∑ (−1)^n·(n+1)^{−s} on
+         {Re(s) ≥ r > 0} for every r > 0.  The key missing Mathlib piece:
+         `tendstoLocallyUniformlyOn_of_dirichlet` (Weierstrass-M variant
+         for Dirichlet series with bounded partial sums).
+    2. The locally uniform limit is analytic on {Re(s) > 0}.
+    3. For Re(s) > 1 the limit equals ZMod.LFunction altChar s (Step A identity).
+    4. Identity theorem: both analytic functions agree on {Re(s) > 1} ⊂ {Re(s) > 0},
+       preconnected, so they agree on all of {Re(s) > 0} by
+       lf_analytic_ne_one.eqOn_of_preconnected_of_eventuallyEq.
+    Mathlib gap: steps 1–2 require Dirichlet-series partial summation,
+    not available in v4.15.0. -/
+private theorem hasSum_alternating_Dirichlet (σ : ℂ) (hσ : 0 < σ.re) :
+    HasSum (fun n : ℕ => (-1 : ℂ) ^ n * (↑(n + 1) : ℂ) ^ (-σ))
+      (ZMod.LFunction altChar σ) := by
+  -- Available: partial_sum_altChar_bounded, cpow_neg_re_tendsto_zero (proved above).
+  -- Remaining gap: Dirichlet-test local uniform convergence + analytic identification.
+  sorry -- Dirichlet test for Dirichlet series (not in Mathlib v4.15.0)
+
+/-! ## § 4 (continued). The eta identity — 2 SORRYS (Step A + hasSum_alternating_Dirichlet) -/
 
 lemma eta_identity (σ : ℝ) (hσ0 : 0 < σ) (hσ1 : σ < 1) :
     (1 - (2 : ℝ) ^ (1 - σ)) * (riemannZeta (σ : ℂ)).re =
@@ -323,16 +404,56 @@ lemma eta_identity (σ : ℝ) (hσ0 : 0 < σ) (hσ1 : σ < 1) :
     simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im,
                Complex.one_re, Complex.one_im]
     ring
-  -- ── Step D (SORRY): Abelian theorem — THE DEEPER SORRY ────────────────────
-  --    Re(ZMod.LFunction altChar (σ:ℂ)) = l,
-  --    where hl : HasSum (fun n => (−1)^n * (n+1)^{−σ}) l.
-  --    Mathematical content: Abel's theorem for Dirichlet L-series.
-  --    The analytic continuation value at σ ∈ (0,1) equals the conditionally
-  --    convergent Leibniz sum.  Proof requires local uniform convergence of the
-  --    alternating Dirichlet series on {Re(s)>0} (Abel summation + Weierstrass
-  --    M-test).  Not available in Mathlib v4.15.0.
+  -- ── Step D: Abelian theorem — proved given hasSum_alternating_Dirichlet ────
+  --    We need: (ZMod.LFunction altChar (σ:ℂ)).re = l,
+  --    where hl : HasSum (fun n => (−1)^n * eta_term σ n) l.
+  --
+  --    PROOF ROUTE:
+  --    1. hasSum_alternating_Dirichlet gives HasSum (complex series) (L-function value).
+  --    2. Map through Complex.reCLM (continuous ℝ-linear map Re : ℂ →L[ℝ] ℝ)
+  --       to get HasSum (fun n => (term_n).re) (ZMod.LFunction altChar σ).re.
+  --    3. Each (term_n).re = (−1)^n * (n+1)^{−σ} = eta_term σ n (real computation).
+  --    4. HasSum.unique against hl gives (ZMod.LFunction altChar σ).re = l.
   have hD : (ZMod.LFunction altChar (σ : ℂ)).re = l := by
-    sorry -- Step D: Abelian theorem (not in Mathlib v4.15.0)
+    -- Step D1: get complex HasSum from hasSum_alternating_Dirichlet (sorry'd)
+    have hAD : HasSum (fun n : ℕ => (-1 : ℂ) ^ n * (↑(n + 1) : ℂ) ^ (-(σ : ℂ)))
+        (ZMod.LFunction altChar (σ : ℂ)) :=
+      hasSum_alternating_Dirichlet (σ : ℂ) (by exact_mod_cast hσ0)
+    -- Step D2: apply Re (continuous ℝ-linear) to get HasSum of real parts.
+    -- Complex.reCLM : ℂ →L[ℝ] ℝ satisfies reCLM z = z.re (reCLM_apply).
+    have hAD_re : HasSum (fun n : ℕ =>
+        ((-1 : ℂ) ^ n * (↑(n + 1) : ℂ) ^ (-(σ : ℂ))).re)
+        (ZMod.LFunction altChar (σ : ℂ)).re := by
+      have h := hAD.mapL Complex.reCLM
+      simp only [Complex.reCLM_apply] at h
+      exact h
+    -- Step D3: each complex term's real part equals the real eta term
+    --   (−1:ℂ)^n = ↑(−1:ℝ)^n   (norm_cast)
+    --   (n+1:ℂ)^{−(σ:ℂ)} = ↑((n+1:ℝ)^{−σ})  (Complex.ofReal_cpow)
+    --   so (term_n).re = (↑((−1:ℝ)^n * (n+1:ℝ)^{−σ})).re = (−1)^n * (n+1)^{−σ}
+    have h_term_re : ∀ n : ℕ,
+        ((-1 : ℂ) ^ n * (↑(n + 1) : ℂ) ^ (-(σ : ℂ))).re =
+        (-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ) := fun n => by
+      rw [mul_re]
+      have h_neg1 : ((-1 : ℂ) ^ n).re = (-1 : ℝ) ^ n := by
+        rw [show (-1 : ℂ) = ((-1 : ℝ) : ℂ) from by norm_cast]
+        simp [← Complex.ofReal_pow, Complex.ofReal_re]
+      have h_neg1_im : ((-1 : ℂ) ^ n).im = 0 := by
+        rw [show (-1 : ℂ) = ((-1 : ℝ) : ℂ) from by norm_cast]
+        simp [← Complex.ofReal_pow, Complex.ofReal_im]
+      -- (n+1:ℂ)^{−(σ:ℂ)} = ↑((n+1:ℝ)^{−σ}) since σ:ℝ and n+1:ℝ, n+1 ≥ 0
+      have h_cpow : (↑(n + 1) : ℂ) ^ (-(σ : ℂ)) =
+          ((n + 1 : ℝ) ^ (-σ) : ℝ) := by
+        rw [show (↑(n + 1) : ℂ) = ((n + 1 : ℝ) : ℂ) from by norm_cast]
+        rw [show -(σ : ℂ) = ((-σ : ℝ) : ℂ) from by push_cast; ring]
+        exact (Complex.ofReal_cpow (by positivity : (0 : ℝ) ≤ n + 1) (-σ)).symm
+      rw [h_cpow, Complex.ofReal_re, Complex.ofReal_im, h_neg1, h_neg1_im]
+      ring
+    -- Step D4: rewrite HasSum to use the real terms, then apply HasSum.unique
+    simp_rw [h_term_re] at hAD_re
+    have hl' : HasSum (fun n : ℕ => (-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ)) l := by
+      simpa [eta_term] using hl
+    exact hAD_re.unique hl'
   -- ── Combine A+B+C+D ────────────────────────────────────────────────────────
   --    hval + hC : (ZMod.LFunction altChar (σ:ℂ)).re = (1−2^{1−σ})·ζ(σ).re
   --    hD        : (ZMod.LFunction altChar (σ:ℂ)).re = l
