@@ -61,7 +61,7 @@
     -- alpha * beta = (p : ℂ)
     · apply Complex.ext
       · simp [Complex.mul_re]; push_cast; nlinarith [hsqd_sq]
-      · simp [Complex.mul_im]; ring
+      · simp [Complex.mul_im]
 
     /-! ## Consequence for Deligne's bound -/
 
