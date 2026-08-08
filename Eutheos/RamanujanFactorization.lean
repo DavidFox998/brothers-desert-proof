@@ -41,7 +41,7 @@
     have hsqd_sq : sqd ^ 2 = d := Real.sq_sqrt hd
     -- witnesses
     refine ⟨⟨a / 2, sqd / 2⟩, ⟨a / 2, -(sqd / 2)⟩, ?_, ?_, ?_, ?_⟩
-    -- |alpha| = √p
+    -- |alpha| = √p : via Complex.abs_apply + normSq_mk
     · rw [Complex.abs_apply]
       have h1 : Complex.normSq (⟨a / 2, sqd / 2⟩ : ℂ) = (p : ℝ) := by
         simp only [Complex.normSq_mk]
@@ -51,22 +51,17 @@
     · rw [Complex.abs_apply]
       have h1 : Complex.normSq (⟨a / 2, -(sqd / 2)⟩ : ℂ) = (p : ℝ) := by
         simp only [Complex.normSq_mk]
-        have : -(sqd / 2) * -(sqd / 2) = sqd / 2 * (sqd / 2) := by ring
-        rw [this]; nlinarith [hsqd_sq]
+        have heq : -(sqd / 2) * -(sqd / 2) = sqd / 2 * (sqd / 2) := by ring
+        rw [heq]; nlinarith [hsqd_sq]
       rw [h1]
-    -- alpha + beta = (a : ℂ)
+    -- alpha + beta = (a : ℂ) : full simp reduces struct fields, ring closes
     · apply Complex.ext
-      · simp only [Complex.add_re, Complex.ofReal_re]
-        ring
-      · simp only [Complex.add_im, Complex.ofReal_im]
-        ring
+      · simp [Complex.add_re]; ring
+      · simp [Complex.add_im]; ring
     -- alpha * beta = (p : ℂ)
     · apply Complex.ext
-      · simp only [Complex.mul_re, Complex.ofReal_re]
-        push_cast
-        nlinarith [hsqd_sq]
-      · simp only [Complex.mul_im, Complex.ofReal_im]
-        ring
+      · simp [Complex.mul_re]; push_cast; nlinarith [hsqd_sq]
+      · simp [Complex.mul_im]; ring
 
     /-! ## Consequence for Deligne's bound -/
 
