@@ -36,8 +36,8 @@ theorem ramanujan_factorization (p : ℕ) (hp : 0 < p) (a : ℝ)
     alpha * beta = (p : ℂ) := by
 -- discriminant
   have hd : (0 : ℝ) ≤ 4 * (p : ℝ) - a ^ 2 := by linarith
-set d := 4 * (p : ℝ) - a ^ 2 with hd_def
-set sqd := Real.sqrt d with hsqd_def
+  set d := 4 * (p : ℝ) - a ^ 2 with hd_def
+  set sqd := Real.sqrt d with hsqd_def
   have hsqd_sq : sqd ^ 2 = d := Real.sq_sqrt hd
 -- witnesses
   refine ⟨⟨a / 2, sqd / 2⟩, ⟨a / 2, -(sqd / 2)⟩, ?_, ?_, ?_, ?_⟩
@@ -76,9 +76,9 @@ theorem RamanujanFactorizationBound (p : ℕ) (hp : Nat.Prime p) (a : ℝ)
   apply ramanujan_factorization p hp.pos
   have hp_nn : (0 : ℝ) ≤ p := Nat.cast_nonneg p
   have := Real.sqrt_nonneg (p : ℝ)
-nlinarith [Real.sq_sqrt hp_nn,
-           mul_nonneg (by linarith : (0:ℝ) ≤ 2 * Real.sqrt p - a)
-                      (by linarith : (0:ℝ) ≤ 2 * Real.sqrt p + a),
-           abs_le.mp (abs_le_abs (le_abs_self a) (neg_abs_le a))]
+  nlinarith [Real.sq_sqrt hp_nn,
+             mul_nonneg (by linarith : (0:ℝ) ≤ 2 * Real.sqrt p - a)
+                        (by linarith : (0:ℝ) ≤ 2 * Real.sqrt p + a),
+             abs_le.mp (abs_le_abs (le_abs_self a) (neg_abs_le a))]
 
 end Eutheos.RamanujanFactorization
