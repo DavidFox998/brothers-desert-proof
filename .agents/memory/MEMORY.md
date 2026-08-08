@@ -1,2 +1,3 @@
 - [Lean tsum even-odd rewriting direction](lean-tsum-even-odd.md) — tsum_even_add_odd rewrites even+odd→full; use ← only when full tsum is in goal
-- [brothers-desert-proof Step A](brothers-desert-proof-step-a.md) — lfunction_eq_eta_factor is proved; only 1 sorry remains (hasSum_alternating_Dirichlet, Step D)
+- [brothers-desert-proof Step A](brothers-desert-proof-step-a.md) — lfunction_eq_eta_factor is proved; hasSum_alternating_Dirichlet is now also closed (SiegelZeroFreeElementary has zero sorrys)
+- [Lean 4.15 HasSum API quirks](lean-hassum-api-quirks.md) — HasSum.congr_fun direction, zero_add needs explicit f, tendsto_rpow_neg_atTop, simp on partial defs

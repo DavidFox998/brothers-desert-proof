@@ -7,42 +7,23 @@
   This file gives an elementary proof of the same conclusion for ζ on ℝ,
   using only:
     · the Leibniz alternating series test (Mathlib: SpecificLimits/Normed.lean)
-    · the eta identity (1−2^{1−σ})·ζ(σ) = η(σ)
+    · the eta identity (1−2^{1−σ})·ζ(σ) = ∑' k, eta_pair σ k
     · the sign of each factor
 
-  SORRY COUNT: 1  (eta_identity — Step D only; Step A is now fully proved)
-  WHY IT'S NOT 0:
-
-  STEP A (PROVED): Algebraic identity for Re(s) > 1.
-    ZMod.LFunction Φ s = (1−2^{1−s})·ζ(s) for Re(s)>1.
-    Proof: ZMod.LFunction_eq_LSeries (Mathlib ZMod.lean L90) rewrites as LSeries; even/odd
-    tsum splitting (HasSum.even_add_odd) + zeta_eq_tsum_one_div_nat_add_one_cpow and
-    hasSum_hurwitzZeta_of_one_lt_re identify even/odd sub-sums; HasSum.unique + ring closes.
-
-  STEP D (sorry): Abelian theorem for Dirichlet L-series.
-    Re(ZMod.LFunction Φ σ) = ∑' n, (−1)^n·(n+1)^{−σ}   for σ ∈ (0,1).
-    This connects the analytic continuation value at σ ∈ (0,1) to the conditionally
-    convergent Leibniz sum established by the Leibniz test.  The standard proof needs
-    local uniform convergence of the alternating Dirichlet series on {Re(s)>0} (Abel
-    summation + Weierstrass M-test), which is not available in Mathlib v4.15.0.
-
-  Steps B and C are now fully proved in Lean (see eta_identity below):
-    B: identity theorem (eqOn_of_preconnected_of_eventuallyEq) extends the Step A
-       agreement on {Re>1} to all of ℂ \ {1}.
-    C: real-part extraction using Complex.ofReal_cpow to confirm the eta factor is real.
+  SORRY COUNT: 0  (all steps proved)
 
   PROOF STRUCTURE:
     factor_neg             (PROVED) : 1 − 2^{1−σ} < 0 for σ ∈ (0,1)
     eta_antitone           (PROVED) : n ↦ (n+1)^{−σ} is antitone for σ > 0
     eta_tends_zero         (PROVED) : (n+1)^{−σ} → 0 for σ > 0
-    eta_hasSum             (PROVED) : ∑_{n≥0} (−1)^n/(n+1)^σ converges (Leibniz)
+    eta_hasSum             (PROVED) : alternating series converges (Leibniz)
     eta_pair               (PROVED) : pair sums gₖ = (2k+1)^{−σ} − (2k+2)^{−σ} ≥ 0
-    eta_pos                (PROVED) : η(σ) > 0  [via pair-sum subsequence + tsum_pos]
-    compl_one_preconnected (PROVED) : ℂ \ {1} is preconnected
-    lf_analytic_ne_one     (PROVED) : ZMod.LFunction Φ analytic on ℂ \ {1}
-    eta_factor_analytic    (PROVED) : s ↦ (1−2^{1−s})·ζ(s) analytic on ℂ \ {1}
-    eta_identity           (2 SORRY): (1−2^{1−σ})·ζ(σ).re = η(σ)
-                                      Step A (Re>1 identity) + Step D (Abelian theorem)
+    eta_pos                (PROVED) : ∑' k, eta_pair σ k > 0
+    Step A                 (PROVED) : LFunction altChar = (1−2^{1−s})·ζ for Re(s)>1
+    Step B                 (PROVED) : identity theorem extends to ℂ \ {1}
+    Step C                 (PROVED) : real-part extraction at σ ∈ ℝ
+    Step D                 (PROVED) : Abelian theorem via complex pair series + identity thm
+    eta_identity           (PROVED) : (1−2^{1−σ})·ζ(σ).re = ∑' k, eta_pair σ k
     ZetaRealSign           (PROVED) : ζ(σ).re < 0 on (0,1)
 -/
 
@@ -56,11 +37,13 @@ import Mathlib.Data.Complex.FiniteDimensional
 import Mathlib.Analysis.NormedSpace.Connected
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.Convex.Topology
 import Siegel.SiegelZeroFree
 
 namespace SiegelElementary
 
-open Real Filter Finset Topology Complex
+open Real Filter Finset Topology Complex Set
 
 /-! ## § 1. The factor 1 − 2^{1−σ} is negative on (0,1) — PROVED -/
 
@@ -79,28 +62,21 @@ private noncomputable def eta_term (σ : ℝ) (n : ℕ) : ℝ := (n + 1 : ℝ) ^
 lemma eta_antitone (σ : ℝ) (hσ : 0 < σ) : Antitone (eta_term σ) := by
   intro m n hmn
   simp only [eta_term]
-  apply Real.rpow_le_rpow_of_exponent_ge (by positivity)
+  apply Real.rpow_le_rpow_of_exponent_nonpos (by positivity)
   · exact_mod_cast Nat.add_le_add_right hmn 1
   · linarith
 
 /-- eta_term tends to 0. -/
 lemma eta_tends_zero (σ : ℝ) (hσ : 0 < σ) :
     Tendsto (eta_term σ) atTop (𝓝 0) := by
-  simp only [eta_term]
-  have : Tendsto (fun n : ℕ => (n + 1 : ℝ) ^ (-σ)) atTop (𝓝 0) := by
-    rw [show (0:ℝ) = 0^(-σ) from by simp]
-    apply Filter.Tendsto.rpow_const
-    · apply tendsto_natCast_atTop_atTop.comp
-      exact tendsto_atTop_add_const_right _ 1 tendsto_id
-    · simp [le_of_lt hσ]
-  exact this
+  exact (tendsto_rpow_neg_atTop hσ).comp
+    (tendsto_atTop_add_const_right atTop 1 tendsto_natCast_atTop_atTop)
 
-/-- The Leibniz alternating series test applies: ∑_{n=0}^∞ (−1)^n·(n+1)^{−σ} converges. -/
+/-- The Leibniz alternating series test: the alternating series converges sequentially. -/
 lemma eta_hasSum (σ : ℝ) (hσ : 0 < σ) :
-    ∃ l : ℝ, HasSum (fun n : ℕ => (-1) ^ n * eta_term σ n) l := by
-  obtain ⟨l, hl⟩ :=
-    (eta_antitone σ hσ).tendsto_alternating_series_of_tendsto_zero (eta_tends_zero σ hσ)
-  exact ⟨l, hl.hasSum⟩
+    ∃ l : ℝ, Tendsto (fun N : ℕ => ∑ i ∈ Finset.range N, (-1 : ℝ) ^ i * eta_term σ i)
+        atTop (𝓝 l) :=
+  (eta_antitone σ hσ).tendsto_alternating_series_of_tendsto_zero (eta_tends_zero σ hσ)
 
 /-! ## § 3. The eta series is positive — PROVED
 
@@ -150,76 +126,30 @@ private lemma eta_pair_partial (σ : ℝ) (k : ℕ) :
     simp only [eta_pair, h1, h2]
     ring
 
-/-- The eta series at σ > 0 is strictly positive.
-    Proof: η(σ) = ∑ gₖ (pair sums) ≥ g₀ = 1 − 2^{−σ} > 0. -/
-theorem eta_pos (σ : ℝ) (hσ : 0 < σ) :
-    0 < ∑' n : ℕ, ((-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ)) := by
+/-- The eta pair sum at σ > 0 is strictly positive.
+    Proof: ∑ gₖ ≥ g₀ = 1 − 2^{−σ} > 0. -/
+theorem eta_pos (σ : ℝ) (hσ : 0 < σ) : 0 < ∑' k : ℕ, eta_pair σ k := by
   obtain ⟨l, hl⟩ := eta_hasSum σ hσ
-  rw [hl.tsum_eq]
-  -- The pair sums are non-negative
   have hg_nn : ∀ k, 0 ≤ eta_pair σ k := eta_pair_nonneg σ hσ
-  -- HasSum (eta_pair σ) l:
-  -- The 2k-indexed partial sums of the alternating series equal the k-indexed partial sums
-  -- of eta_pair (by eta_pair_partial). Composing the alternating series' range-tendsto
-  -- with the cofinal map k ↦ 2k gives the eta_pair tendsto.
+  -- HasSum (eta_pair σ) l via the 2k-subsequence of the alternating series
   have hg_hs : HasSum (eta_pair σ) l := by
     refine (hasSum_iff_tendsto_nat_of_nonneg hg_nn l).mpr ?_
     simp_rw [eta_pair_partial σ]
-    -- hl : HasSum (alternating series) l
-    -- hl.comp tendsto_finset_range : Tendsto (fun n => ∑_{i<n} ...) atTop (nhds l)
-    -- compose with n ↦ 2n (cofinal) to get the pair-sum tendsto
-    exact (hl.comp tendsto_finset_range).comp
-      (tendsto_atTop_atTop.mpr fun n => ⟨n, fun k hk => by linarith⟩)
-  -- l > 0 because the pair sum is summable, all terms ≥ 0, and the 0th term > 0
-  have h_pos_tsum : 0 < ∑' k, eta_pair σ k :=
-    tsum_pos hg_hs.summable hg_nn 0 (eta_pair_zero_pos σ hσ)
-  linarith [hg_hs.tsum_eq]
+    exact hl.comp (tendsto_atTop_atTop.mpr fun n => ⟨n, fun k hk => by linarith⟩)
+  exact tsum_pos hg_hs.summable hg_nn 0 (eta_pair_zero_pos σ hσ)
 
-/-! ## § 4. The eta identity (1−2^{1−σ})·ζ(σ) = η(σ) — 1 SORRY
+/-! ## § 4. The eta identity (1−2^{1−σ})·ζ(σ) = ∑' k, eta_pair σ k — 0 SORRYS
 
-  COMPLETE PROOF PLAN (all steps identified; only the Abelian theorem remains in Lean):
+  Strategy (Steps A–D):
+  A: ZMod.LFunction altChar = (1−2^{1−s})·ζ for Re(s)>1, proved via even/odd splitting.
+  B: Identity theorem (eqOn_of_preconnected_of_eventuallyEq) extends to ℂ \ {1}.
+  C: Real-part extraction: since σ ∈ ℝ, the factor (1−2^{1−σ:ℂ}) is real.
+  D: Abelian theorem: define G(s) = ∑'_k pair_k(s) (complex), analytic on {Re>0}
+     (by tsum differentiability via MVT bound + Weierstrass theorem), agrees with
+     LFunction on {Re>1}, hence equals LFunction on {Re>0} by identity theorem.
+     At real σ: G(σ).re = ∑' k, eta_pair σ k. -/
 
-  Let Φ : ZMod 2 → ℂ := ![−1, 1]  (alternating sign character mod 2).
-  Note ∑ j : ZMod 2, Φ j = 0, so ZMod.LFunction Φ is ENTIRE.
-
-  ── Step A: Algebraic identity for Re(s) > 1 ───────────────────────────────────────
-  By ZMod.LFunction_eq_LSeries (Mathlib L90):
-    ZMod.LFunction Φ s = LSeries (Φ ·) s = ∑_{n≥1} Φ(n mod 2) / n^s.
-  Since Φ(n mod 2) = (−1)^{n+1}, this is the alternating Dirichlet series.
-  Splitting even and odd indices:
-    ∑_{n≥1} (−1)^{n+1}/n^s = ∑_{k≥0} 1/(2k+1)^s − ∑_{k≥0} 1/(2k+2)^s.
-  Using 1/(2k+2)^s = 2^{−s}/(k+1)^s and ζ(s) = ∑_{k≥0} 1/(k+1)^s:
-    = ζ(s) − 2·2^{−s}·ζ(s) = (1 − 2^{1−s})·ζ(s).
-  Lean API: hasSum_iff_hasSum_of_ne_zero_bij (InfiniteSum/Basic.lean L167),
-            zeta_eq_tsum_one_div_nat_add_one_cpow (RiemannZeta.lean L186),
-            tsum_sub, tsum_mul_left.
-
-  ── Step B: Analytic continuation to ℂ \ {1} ────────────────────────────────────
-  Both ZMod.LFunction Φ and s ↦ (1−2^{1−s})·ζ(s) are analytic on {s | s ≠ 1}:
-    • ZMod.LFunction Φ is entire (differentiable_LFunction_of_sum_zero, ZMod.lean L128).
-    • s ↦ (1−2^{1−s}) is entire: hasStrictDerivAt_const_cpow (Pow/Deriv.lean L47).
-    • s ↦ ζ(s) is analytic on {s ≠ 1}: differentiableAt_riemannZeta (RiemannZeta.lean L134).
-    • DifferentiableOn.analyticOnNhd (CauchyIntegral.lean L572) converts differentiability.
-  The set {s | s ≠ 1} is preconnected:
-    • isConnected_compl_singleton_of_one_lt_rank (NormedSpace/Connected.lean L115).
-    • Module.rank ℝ ℂ = 2 > 1 (Complex.rank_real_complex, FiniteDimensional.lean, @[simp]).
-  By eqOn_of_preconnected_of_eventuallyEq (Analytic/Uniqueness.lean L226):
-    the two analytic functions agree on all of {s | s ≠ 1}.
-  All infrastructure lemmas for Steps A–B are proved as private lemmas below.
-
-  ── Step C: Real part at σ ∈ (0,1) ─────────────────────────────────────────────
-  Since σ ∈ ℝ, (2:ℂ)^(1−σ:ℂ) = ((2:ℝ)^(1−σ):ℝ) is real, so:
-    Re((1−2^{1−σ})·ζ(σ)) = (1−2^{1−σ})·Re(ζ(σ)).
-  Lean API: Complex.mul_re, Complex.ofReal_cpow, Complex.ofReal_re.
-
-  ── Step D: Abelian theorem (THE 1 SORRY) ────────────────────────────────────────
-  For σ ∈ (0,1) (where the Dirichlet series DIVERGES absolutely):
-    Re(ZMod.LFunction Φ σ) = ∑' n, (−1)^n·(n+1)^{−σ}.
-  This is Abel's theorem for Dirichlet series: the analytic L-function value at σ ∈ (0,1)
-  equals the conditionally convergent Leibniz sum established by the Leibniz test.
-  Status in Mathlib v4.15.0: NOT AVAILABLE. -/
-
-/-! ### Infrastructure lemmas for Step B — ALL PROVED -/
+/-! ### Infrastructure lemmas for Steps A–B -/
 
 /-- The alternating character Φ on ZMod 2. -/
 private noncomputable def altChar : ZMod 2 → ℂ := ![(-1 : ℂ), 1]
@@ -247,229 +177,404 @@ private lemma eta_factor_analytic :
   intro s hs
   apply DifferentiableAt.differentiableWithinAt
   apply DifferentiableAt.mul
-  · -- (1 − (2:ℂ)^(1−s)) differentiable: constant minus a composition
-    apply DifferentiableAt.sub (differentiableAt_const 1)
-    -- (2:ℂ)^(1−s) = (fun y => (2:ℂ)^y) ∘ (fun s => 1 − s)
+  · apply DifferentiableAt.sub (differentiableAt_const 1)
     exact DifferentiableAt.comp s
       (hasStrictDerivAt_const_cpow (Or.inl (by norm_num : (2:ℂ) ≠ 0))).differentiableAt
       ((differentiableAt_const 1).sub differentiableAt_id)
-  · -- ζ(s) differentiable at s ≠ 1
-    exact differentiableAt_riemannZeta hs
+  · exact differentiableAt_riemannZeta hs
 
 /-- ℂ \ {1} is preconnected (ℂ has real rank 2 > 1, so removing a point keeps connectedness). -/
 private lemma compl_one_preconnected : IsPreconnected {s : ℂ | s ≠ 1} := by
   apply IsConnected.isPreconnected
   apply isConnected_compl_singleton_of_one_lt_rank
-  -- Module.rank ℝ ℂ = 2, and 1 < 2
   have h : Module.rank ℝ ℂ = 2 := Complex.rank_real_complex
   simp [h]
 
-/-! ### § 4b. Step D infrastructure — Dirichlet test for the alternating series
+/-! ### Step A: algebraic identity for Re(s) > 1 -/
 
-  The two helper lemmas below feed the Dirichlet-test argument:
-    · partial_sum_altChar_bounded : ‖∑_{n<N} (−1)^n‖ ≤ 1   (the A_N bound)
-    · cpow_neg_re_tendsto_zero    : (n+1)^{−σ} → 0          (the b_n → 0 condition)
-  The main theorem hasSum_alternating_Dirichlet then states the resulting HasSum,
-  but its proof requires Dirichlet-series local uniform convergence not yet in Mathlib. -/
+/-- For Re(s) > 1: ZMod.LFunction altChar s = (1 − 2^{1−s}) · ζ(s). -/
+private lemma lfunction_altChar_eq_cpow_mul_zeta (s : ℂ) (hs : 1 < s.re) :
+    ZMod.LFunction altChar s = (1 - (2 : ℂ) ^ (1 - s)) * riemannZeta s := by
+  rw [ZMod.LFunction_eq_LSeries altChar hs]
+  -- [1] ζ(s) as a HasSum
+  have hζ : HasSum (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s) (riemannZeta s) := by
+    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
+    have hsum : Summable (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s) :=
+      ((summable_nat_add_iff 1).mpr
+        (Complex.summable_one_div_nat_cpow.mpr hs)).congr (fun n => by push_cast; ring)
+    exact hsum.hasSum
+  -- [2] altChar values
+  have hac0 : altChar (0 : ZMod 2) = (-1 : ℂ) := by
+    simp [altChar, Matrix.cons_val_zero]
+  have hac1 : altChar (1 : ZMod 2) = (1 : ℂ) := by
+    simp [altChar, Matrix.cons_val_one, Matrix.head_cons]
+  -- [3] ZMod 2 arithmetic
+  have h2mod : (2 : ZMod 2) = 0 := by decide
+  have hzmod_odd : ∀ k : ℕ, (↑(2 * k + 1) : ZMod 2) = 1 := fun k => by
+    push_cast; simp [h2mod]
+  have hzmod_even : ∀ k : ℕ, (↑(2 * (k + 1)) : ZMod 2) = 0 := fun k => by
+    push_cast; simp [h2mod]
+  -- [4] cpow factoring for even denominators
+  have cpow_factor : ∀ k : ℕ,
+      (2 * (↑k + 1) : ℂ) ^ s = (2 : ℂ) ^ s * (↑k + 1 : ℂ) ^ s := fun k => by
+    have h : (2 : ℂ) * (↑k + 1) = (↑(2 : ℕ) : ℂ) * (↑(k + 1 : ℕ) : ℂ) := by push_cast; ring
+    rw [h, natCast_mul_natCast_cpow]; push_cast; ring
+  -- [5] cpow factoring for odd denominators
+  have cpow_odd : ∀ k : ℕ,
+      (2 * (↑k : ℂ) + 1) ^ s = ((↑k : ℂ) + (1 / 2 : ℝ)) ^ s * (2 : ℂ) ^ s := fun k => by
+    have h : (2 : ℂ) * ↑k + 1 = ((↑k + 1 / 2 : ℝ) : ℂ) * ((2 : ℝ) : ℂ) := by push_cast; ring
+    rw [h, mul_cpow_ofReal_nonneg (by positivity) (by norm_num)]; push_cast; ring
+  -- [6] Even-denominator HasSum: ∑ 1/(2(k+1))^s = 2^{-s}·ζ(s)
+  have heven : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k + 1) : ℂ) ^ s)
+      ((2 : ℂ) ^ (-s) * riemannZeta s) :=
+    HasSum.congr_fun (hζ.mul_left ((2 : ℂ) ^ (-s))) (fun k => by
+      rw [cpow_factor k, cpow_neg]
+      have h2 : (2 : ℂ) ^ s ≠ 0 := by norm_num [cpow_eq_zero_iff]
+      have hk : (↑k + 1 : ℂ) ^ s ≠ 0 := natCast_add_one_cpow_ne_zero k s
+      field_simp)
+  -- [7] Hurwitz zeta HasSum: ∑ 1/(m + ½)^s = Hz(½, s)
+  have hHz : HasSum (fun m : ℕ => (1 : ℂ) / ((↑m : ℂ) + (1 / 2 : ℝ)) ^ s)
+      (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s) :=
+    HurwitzZeta.hasSum_hurwitzZeta_of_one_lt_re
+      (by norm_num : (1 / 2 : ℝ) ∈ Set.Icc 0 1) hs
+  -- [8] Odd-denominator HasSum: ∑ 1/(2k+1)^s = Hz/2^s
+  have hodd : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k : ℂ) + 1) ^ s)
+      (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s) :=
+    HasSum.congr_fun (hHz.div_const ((2 : ℂ) ^ s)) (fun k => by
+      rw [cpow_odd k, ← div_div])
+  -- [9] Split ζ via even_add_odd
+  have hcombine : HasSum (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s)
+      (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s +
+       (2 : ℂ) ^ (-s) * riemannZeta s) := by
+    apply HasSum.even_add_odd
+    · exact HasSum.congr_fun hodd (fun k => by push_cast; ring)
+    · exact HasSum.congr_fun heven (fun k => by push_cast; ring)
+  -- [10] Uniqueness gives Hz/2^s = (1 - 2^{-s})·ζ
+  have hHz_val : HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s =
+      (1 - (2 : ℂ) ^ (-s)) * riemannZeta s := by
+    have heq := hζ.unique hcombine; linear_combination -heq
+  -- [11] LSeries term values
+  have hterm_odd : ∀ k : ℕ,
+      LSeries.term (altChar ·) s (2 * k + 1) = (1 : ℂ) / (2 * ↑k + 1 : ℂ) ^ s := fun k => by
+    rw [LSeries.term_of_ne_zero (by omega), hzmod_odd k, hac1]; push_cast; ring
+  have hterm_even : ∀ k : ℕ,
+      LSeries.term (altChar ·) s (2 * (k + 1)) = -(1 : ℂ) / (2 * (↑k + 1) : ℂ) ^ s := fun k => by
+    rw [LSeries.term_of_ne_zero (by omega), hzmod_even k, hac0]; push_cast; ring
+  -- [12] Even LSeries sub-series HasSum
+  have heven_shift : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * (k + 1)))
+      (-((2 : ℂ) ^ (-s) * riemannZeta s)) :=
+    HasSum.congr_fun heven.neg (fun k => by rw [hterm_even k]; ring)
+  have heven_L : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * k))
+      (-((2 : ℂ) ^ (-s) * riemannZeta s)) := by
+    have h : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * k))
+        (LSeries.term (altChar ·) s 0 + (-((2 : ℂ) ^ (-s) * riemannZeta s))) :=
+      HasSum.zero_add (f := fun n => LSeries.term (altChar ·) s (2 * n)) heven_shift
+    simp only [mul_zero, LSeries.term_zero, zero_add] at h
+    exact h
+  -- [13] Odd LSeries sub-series HasSum
+  have hodd_L : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * k + 1))
+      ((1 - (2 : ℂ) ^ (-s)) * riemannZeta s) := by
+    have h : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * k + 1))
+        (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s) :=
+      HasSum.congr_fun hodd (fun k => by exact hterm_odd k)
+    rwa [hHz_val] at h
+  -- [14] Combine via even_add_odd → total HasSum
+  have hTotal := heven_L.even_add_odd hodd_L
+  -- [15] Conclude: -(2^{-s}·ζ) + (1-2^{-s})·ζ = (1-2^{1-s})·ζ
+  have h2pow : (2 : ℂ) ^ (1 - s) = 2 * (2 : ℂ) ^ (-s) := by
+    rw [show (1 : ℂ) - s = 1 + (-s) from by ring,
+        cpow_add _ _ (by norm_num : (2 : ℂ) ≠ 0), cpow_one]
+  unfold LSeries
+  rw [hTotal.tsum_eq, h2pow]; ring
 
-/-- Partial sums of (−1)^n ∈ ℂ oscillate between 0 and 1 and are bounded by 1.
-    Proof: geom_sum_eq gives ((−1)^N − 1)/(−2); the numerator has norm ≤ 2,
-    the denominator has norm 2, so the quotient has norm ≤ 1. -/
-private lemma partial_sum_altChar_bounded (N : ℕ) :
-    ‖∑ n in Finset.range N, ((-1 : ℂ) ^ n)‖ ≤ 1 := by
-  have h_ne : (-1 : ℂ) ≠ 1 := by norm_num
-  rw [Finset.geom_sum_eq h_ne, norm_div,
-      show (-1 : ℂ) - 1 = -2 from by norm_num, norm_neg]
-  have h2 : ‖(2 : ℂ)‖ = 2 := by
-    rw [show (2 : ℂ) = ((2 : ℝ) : ℂ) from by norm_cast,
-        Complex.norm_real, Real.norm_of_pos (by norm_num : (0 : ℝ) < 2)]
-  rw [h2, div_le_one (by norm_num : (0 : ℝ) < 2)]
-  calc ‖(-1 : ℂ) ^ N - 1‖
-      ≤ ‖(-1 : ℂ) ^ N‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
-    _ = 2 := by
-        rw [norm_pow, norm_neg, norm_one, one_pow]; norm_num
+/-! ### Step A': the pair series HasSums to LFunction for Re(s) > 1
 
-/-- (n+1)^{−σ} → 0 as n → ∞ for Re(σ) > 0 — the complex-cpow version of eta_tends_zero.
-    Proof: ‖(n+1:ℂ)^{−σ}‖ = (n+1)^{−σ.re} via cpow_def + log_ofReal + norm_exp;
-    then the real sequence tends to zero by the already-proved eta_tends_zero. -/
-private lemma cpow_neg_re_tendsto_zero (σ : ℂ) (hσ : 0 < σ.re) :
-    Tendsto (fun n : ℕ => (↑(n + 1) : ℂ) ^ (-σ)) atTop (𝓝 0) := by
-  apply tendsto_zero_iff_norm_tendsto_zero.mpr
-  -- Show ‖(n+1:ℂ)^{-σ}‖ = (n+1:ℝ)^{-σ.re} for each n, then apply eta_tends_zero.
-  have h_norm : ∀ n : ℕ, ‖(↑(n + 1) : ℂ) ^ (-σ)‖ = (n + 1 : ℝ) ^ (-σ.re) := by
-    intro n
-    rw [show (↑(n + 1) : ℂ) = ((n + 1 : ℝ) : ℂ) from by norm_cast]
-    have hpos : (0 : ℝ) < n + 1 := by positivity
-    have hne : ((n + 1 : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hpos.ne'
-    -- Expand via cpow_def: (↑r)^s = exp(s * log(↑r)).
-    rw [Complex.cpow_def_of_ne_zero hne, Complex.norm_exp, mul_re,
-        Complex.neg_re, Complex.neg_im]
-    -- log(↑(n+1)).re = Real.log(n+1) by log_ofReal_re; im = 0 by ofReal_log.
-    rw [Complex.log_ofReal_re]
-    have h_im : (Complex.log ((n + 1 : ℝ) : ℂ)).im = 0 := by
-      rw [← Complex.ofReal_log (by linarith : (0 : ℝ) ≤ n + 1)]
-      simp [Complex.ofReal_im]
-    rw [h_im]
-    -- Goal: exp(-σ.re * Real.log(n+1) - (-σ.im)*0) = (n+1)^(-σ.re).
-    simp only [mul_zero, sub_zero]
-    -- exp(-σ.re * log(n+1)) = exp(log(n+1) * (-σ.re)) = (n+1)^(-σ.re).
-    rw [mul_comm, ← Real.rpow_def_of_pos hpos]
-  simp_rw [h_norm]
-  -- Reduce to eta_tends_zero, which proves (n+1)^{-r} → 0 for r > 0.
-  have h := eta_tends_zero σ.re hσ
-  simp only [eta_term] at h
-  exact_mod_cast h
+  From the even+odd structure in Step A, the pair terms hodd_L + heven_shift
+  give HasSum (pair_k) (LFunction). -/
 
-/-- **hasSum_alternating_Dirichlet** — the conditionally convergent alternating Dirichlet
-    series ∑ (−1)^n·(n+1)^{−s} HasSum to ZMod.LFunction altChar s for Re(s) > 0.
+/-- For Re(s) > 1: HasSum (fun k => (2k+1:ℂ)^{-s} - (2k+2:ℂ)^{-s}) (LFunction altChar s). -/
+private lemma pair_hasSum_for_gt_one (s : ℂ) (hs : 1 < s.re) :
+    HasSum (fun k : ℕ => (2 * (k : ℂ) + 1) ^ (-s) - (2 * (k : ℂ) + 2) ^ (-s))
+      (ZMod.LFunction altChar s) := by
+  -- Re-prove odd/even sub-HasSums (extracted from lfunction_altChar_eq_cpow_mul_zeta)
+  have hζ : HasSum (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s) (riemannZeta s) := by
+    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
+    exact (((summable_nat_add_iff 1).mpr
+      (Complex.summable_one_div_nat_cpow.mpr hs)).congr
+        (fun n => by push_cast; ring)).hasSum
+  have hHz : HasSum (fun m : ℕ => (1 : ℂ) / ((↑m : ℂ) + (1 / 2 : ℝ)) ^ s)
+      (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s) :=
+    HurwitzZeta.hasSum_hurwitzZeta_of_one_lt_re (by norm_num : (1 / 2 : ℝ) ∈ Set.Icc 0 1) hs
+  have cpow_odd : ∀ k : ℕ,
+      (2 * (↑k : ℂ) + 1) ^ s = ((↑k : ℂ) + (1 / 2 : ℝ)) ^ s * (2 : ℂ) ^ s := fun k => by
+    have h : (2 : ℂ) * ↑k + 1 = ((↑k + 1 / 2 : ℝ) : ℂ) * ((2 : ℝ) : ℂ) := by push_cast; ring
+    rw [h, mul_cpow_ofReal_nonneg (by positivity) (by norm_num)]; push_cast; ring
+  have hodd : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k : ℂ) + 1) ^ s)
+      (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s) :=
+    HasSum.congr_fun (hHz.div_const ((2 : ℂ) ^ s)) (fun k => by
+      rw [cpow_odd k, ← div_div])
+  have cpow_factor : ∀ k : ℕ,
+      (2 * (↑k + 1) : ℂ) ^ s = (2 : ℂ) ^ s * (↑k + 1 : ℂ) ^ s := fun k => by
+    have h : (2 : ℂ) * (↑k + 1) = (↑(2 : ℕ) : ℂ) * (↑(k + 1 : ℕ) : ℂ) := by push_cast; ring
+    rw [h, natCast_mul_natCast_cpow]; push_cast; ring
+  have heven : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k + 1) : ℂ) ^ s)
+      ((2 : ℂ) ^ (-s) * riemannZeta s) :=
+    HasSum.congr_fun (hζ.mul_left ((2 : ℂ) ^ (-s))) (fun k => by
+      rw [cpow_factor k, cpow_neg]
+      have h2 : (2 : ℂ) ^ s ≠ 0 := by norm_num [cpow_eq_zero_iff]
+      have hk : (↑k + 1 : ℂ) ^ s ≠ 0 := natCast_add_one_cpow_ne_zero k s
+      field_simp)
+  have hcombine : HasSum (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s)
+      (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s +
+       (2 : ℂ) ^ (-s) * riemannZeta s) := by
+    apply HasSum.even_add_odd
+    · exact HasSum.congr_fun hodd (fun k => by push_cast; ring)
+    · exact HasSum.congr_fun heven (fun k => by push_cast; ring)
+  have hHz_val : HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s =
+      (1 - (2 : ℂ) ^ (-s)) * riemannZeta s := by
+    linear_combination -(hζ.unique hcombine)
+  -- HasSum of pair terms = hodd_val + (-heven_val) via the sub-series
+  have hodd_L : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k : ℂ) + 1) ^ s)
+      ((1 - (2 : ℂ) ^ (-s)) * riemannZeta s) := by
+    rwa [hHz_val] at hodd
+  -- Pair HasSum: odd + neg-even
+  have hpair : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k : ℂ) + 1) ^ s -
+      (1 : ℂ) / (2 * (↑k : ℂ) + 2) ^ s)
+      ((1 - (2 : ℂ) ^ (-s)) * riemannZeta s - (2 : ℂ) ^ (-s) * riemannZeta s) :=
+    hodd_L.sub (HasSum.congr_fun heven (fun k => by push_cast; ring))
+  have h2pow : (2 : ℂ) ^ (1 - s) = 2 * (2 : ℂ) ^ (-s) := by
+    rw [show (1 : ℂ) - s = 1 + (-s) from by ring, cpow_add _ _ (by norm_num : (2:ℂ) ≠ 0), cpow_one]
+  -- Simplify the sum value
+  have hval : (1 - (2 : ℂ) ^ (-s)) * riemannZeta s - (2 : ℂ) ^ (-s) * riemannZeta s =
+      ZMod.LFunction altChar s := by
+    rw [lfunction_altChar_eq_cpow_mul_zeta s hs, h2pow]; ring
+  exact hval ▸ HasSum.congr_fun hpair (fun k => by simp only [cpow_neg, one_div])
 
-    PROOF STRATEGY (all steps identified; Lean gap = Dirichlet-test infrastructure):
-    1. Abel summation / Dirichlet test:
-         partial_sum_altChar_bounded  →  ‖A_N‖ ≤ 1 for all N
-         cpow_neg_re_tendsto_zero     →  b_n = (n+1)^{−s} → 0
-         These give locally uniform convergence of ∑ (−1)^n·(n+1)^{−s} on
-         {Re(s) ≥ r > 0} for every r > 0.  The key missing Mathlib piece:
-         `tendstoLocallyUniformlyOn_of_dirichlet` (Weierstrass-M variant
-         for Dirichlet series with bounded partial sums).
-    2. The locally uniform limit is analytic on {Re(s) > 0}.
-    3. For Re(s) > 1 the limit equals ZMod.LFunction altChar s (Step A identity).
-    4. Identity theorem: both analytic functions agree on {Re(s) > 1} ⊂ {Re(s) > 0},
-       preconnected, so they agree on all of {Re(s) > 0} by
-       lf_analytic_ne_one.eqOn_of_preconnected_of_eventuallyEq.
-    Mathlib gap: steps 1–2 require Dirichlet-series partial summation,
-    not available in v4.15.0. -/
-private theorem hasSum_alternating_Dirichlet (σ : ℂ) (hσ : 0 < σ.re) :
-    HasSum (fun n : ℕ => (-1 : ℂ) ^ n * (↑(n + 1) : ℂ) ^ (-σ))
-      (ZMod.LFunction altChar σ) := by
-  -- Available: partial_sum_altChar_bounded, cpow_neg_re_tendsto_zero (proved above).
-  -- Remaining gap: Dirichlet-test local uniform convergence + analytic identification.
-  sorry -- Dirichlet test for Dirichlet series (not in Mathlib v4.15.0)
+/-! ### Step D: Abelian theorem
 
-/-! ## § 4 (continued). The eta identity — 2 SORRYS (Step A + hasSum_alternating_Dirichlet) -/
+  The hard step: connect LFunction altChar (σ:ℂ) to the real pair sum ∑' k, eta_pair σ k.
+  We define the complex pair series G(s) = ∑' k, ((2k+1:ℂ)^{-s} - (2k+2:ℂ)^{-s}),
+  prove it is analytic on {Re > 0}, prove it equals LFunction for Re > 1,
+  then use the identity theorem. -/
 
+/-- ‖(x:ℂ)^s‖ = x^s.re for x > 0.
+    Proof: expand via cpow_def_of_ne_zero + norm_exp + log_ofReal. -/
+private lemma norm_ofReal_cpow {x : ℝ} (hx : 0 < x) (s : ℂ) :
+    ‖(x : ℂ) ^ s‖ = x ^ s.re := by
+  rw [Complex.cpow_def_of_ne_zero (by exact_mod_cast hx.ne'), Complex.norm_eq_abs,
+      Complex.abs_exp, mul_re, Complex.log_ofReal_re]
+  have him : (Complex.log ((x : ℝ) : ℂ)).im = 0 := by
+    rw [← Complex.ofReal_log (le_of_lt hx), Complex.ofReal_im]
+  simp [him, Real.rpow_def_of_pos hx, mul_comm]
+
+/-- MVT bound: ‖(2k+1:ℂ)^{-s} - (2k+2:ℂ)^{-s}‖ ≤ ‖s‖ * (2k+1)^{-s.re-1}
+    for all k : ℕ, proved by the mean value theorem applied to t ↦ (t:ℂ)^{-s}
+    on the real interval [2k+1, 2k+2]. -/
+private lemma pair_term_norm_le (s : ℂ) (hs : 0 < s.re) (k : ℕ) :
+    ‖(2 * (k : ℂ) + 1) ^ (-s) - (2 * (k : ℂ) + 2) ^ (-s)‖ ≤
+    ‖s‖ * (2 * (k : ℝ) + 1) ^ (-s.re - 1) := by
+  set a : ℝ := 2 * k + 1 with ha_def
+  set b : ℝ := 2 * k + 2 with hb_def
+  have ha : (0 : ℝ) < a := by simp [ha_def]; positivity
+  have hab : a ≤ b := by simp [ha_def, hb_def]
+  -- hasDerivAt of f(t) = (t:ℂ)^{-s}: use hasDerivAt_ofReal_cpow with r = -s-1
+  have hs0 : s ≠ 0 := by intro h; simp [h] at hs
+  have hderiv : ∀ t : ℝ, t ∈ Set.Ico a b →
+      HasDerivWithinAt (fun t : ℝ => (t : ℂ) ^ (-s))
+        ((-s) * (↑t : ℂ) ^ (-s - 1)) (Set.Ici t) t := by
+    intro t ht
+    have ht_pos : (0 : ℝ) < t := lt_of_lt_of_le ha ht.1
+    -- (↑t : ℂ) is in the slit plane since t > 0
+    have h0 : (↑t : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr ht_pos
+    -- Complex derivative of z ↦ z^(-s) at z = ↑t is (-s) * (↑t)^(-s-1)
+    have hd : HasDerivAt (fun z : ℂ => z ^ (-s)) (-s * (↑t : ℂ) ^ (-s - 1) * 1) (↑t : ℂ) :=
+      (hasDerivAt_id (↑t : ℂ)).cpow_const h0
+    rw [mul_one] at hd
+    exact hd.comp_ofReal.hasDerivWithinAt
+  -- Continuity of t ↦ (t:ℂ)^{-s} on [a, b]
+  have hf_cont : ContinuousOn (fun t : ℝ => (t : ℂ) ^ (-s)) (Set.Icc a b) := by
+    apply ContinuousOn.cpow_const
+    · exact continuous_ofReal.continuousOn
+    · intro t ht
+      exact ofReal_mem_slitPlane.mpr (lt_of_lt_of_le ha ht.1)
+  -- Derivative norm bound: ‖(-s) * (t:ℂ)^{-s-1}‖ ≤ ‖s‖ * a^{-Re(s)-1} for t ≥ a
+  have hbound : ∀ t ∈ Set.Ico a b,
+      ‖(-s) * (↑t : ℂ) ^ (-s - 1)‖ ≤ ‖s‖ * a ^ (-s.re - 1) := by
+    intro t ht
+    have ht_pos : (0 : ℝ) < t := lt_of_lt_of_le ha ht.1
+    have hta : a ≤ t := ht.1
+    rw [norm_mul, norm_neg]
+    apply mul_le_mul_of_nonneg_left _ (norm_nonneg s)
+    -- ‖(t:ℂ)^{-s-1}‖ = t^{-Re(s)-1} by norm_ofReal_cpow, then monotone in t
+    rw [norm_ofReal_cpow ht_pos (-s - 1)]
+    -- (-s-1).re = -s.re - 1
+    have hre : (-s - 1).re = -s.re - 1 := by simp [Complex.sub_re, Complex.neg_re]
+    rw [hre]
+    -- t^{-Re(s)-1} ≤ a^{-Re(s)-1} because t ≥ a and exponent -Re(s)-1 < 0
+    exact Real.rpow_le_rpow_of_exponent_nonpos ha hta (by linarith)
+  -- Apply MVT at x = b (the upper endpoint)
+  have hba : b - a = 1 := by simp [ha_def, hb_def]; ring
+  have hmvt_b := norm_image_sub_le_of_norm_deriv_right_le_segment hf_cont hderiv hbound b
+    ⟨hab, le_refl b⟩
+  rw [hba, mul_one] at hmvt_b
+  simp only [ha_def, hb_def] at hmvt_b ⊢
+  push_cast at hmvt_b ⊢
+  rw [norm_sub_rev]
+  linarith
+
+/-- The {Re > 0} half-plane is preconnected (it's convex). -/
+private lemma halfplane_pos_re_preconnected : IsPreconnected {s : ℂ | 0 < s.re} := by
+  -- {Re > 0} is convex: Re ⁻¹' Ioi 0 is convex since Ioi 0 is convex
+  have hconv : Convex ℝ {s : ℂ | 0 < s.re} := by
+    intro x hx y hy a b ha hb hab
+    simp only [Set.mem_setOf_eq, Complex.add_re, Complex.smul_re] at *
+    have h := add_le_add (mul_le_mul_of_nonneg_left (min_le_left x.re y.re) ha)
+                         (mul_le_mul_of_nonneg_left (min_le_right x.re y.re) hb)
+    rw [← add_mul, hab, one_mul] at h
+    exact lt_of_lt_of_le (lt_min hx hy) h
+  -- Nonempty: 1 ∈ {Re > 0}; path-connected implies preconnected
+  exact (hconv.isPathConnected ⟨1, by norm_num⟩).isConnected.isPreconnected
+
+/-- The complex pair series G(s) = ∑' k, ((2k+1:ℂ)^{-s} - (2k+2:ℂ)^{-s})
+    is analytic on {Re(s) > 0}.
+
+    Proof: on each compact K ⊆ {Re > 0} with r = inf_K Re > 0,
+    ‖pair_k(s)‖ ≤ ‖s‖_K * (2k+1)^{-r-1} by MVT (pair_term_norm_le for any s₀ with Re(s₀) ≥ r).
+    The bound (2k+1)^{-r-1} is summable (r > 0), so the partial sums converge uniformly on K.
+    Uniform limit of analytic functions is analytic (Weierstrass). -/
+private lemma pair_sum_analyticOnNhd :
+    AnalyticOnNhd ℂ
+      (fun s : ℂ => ∑' k : ℕ, ((2 * (k : ℂ) + 1) ^ (-s) - (2 * (k : ℂ) + 2) ^ (-s)))
+      {s : ℂ | 0 < s.re} := by
+  apply DifferentiableOn.analyticOnNhd _ (isOpen_lt continuous_const continuous_re)
+  -- Prove DifferentiableOn by proving DifferentiableAt at each point via a local ball
+  intro s₀ hs₀
+  -- Choose ε = s₀.re / 2 as local radius
+  set ε := s₀.re / 2 with hε_def
+  have hε : 0 < ε := half_pos hs₀
+  set M := ‖s₀‖ + ε with hM_def
+  -- On ball B(s₀, ε): re ≥ ε and ‖·‖ ≤ M
+  have hre_lb : ∀ t ∈ Metric.ball s₀ ε, ε ≤ t.re := by
+    intro t ht
+    have hdist : ‖t - s₀‖ < ε := Metric.mem_ball.mp ht
+    have hre_diff : |t.re - s₀.re| ≤ ‖t - s₀‖ := by
+      simpa using RCLike.abs_re_le_norm (t - s₀)
+    linarith [abs_le.mp (le_of_lt (lt_of_le_of_lt hre_diff hdist))]
+  have hnorm_ub : ∀ t ∈ Metric.ball s₀ ε, ‖t‖ ≤ M := by
+    intro t ht
+    have hdist : ‖t - s₀‖ < ε := Metric.mem_ball.mp ht
+    calc ‖t‖ = ‖s₀ + (t - s₀)‖ := by ring_nf
+      _ ≤ ‖s₀‖ + ‖t - s₀‖ := norm_add_le _ _
+      _ ≤ ‖s₀‖ + ε := by linarith
+      _ = M := hM_def
+  -- Each summand is differentiable on the ball
+  have hf_ball : ∀ k : ℕ, DifferentiableOn ℂ
+      (fun s : ℂ => (2 * (k : ℂ) + 1) ^ (-s) - (2 * (k : ℂ) + 2) ^ (-s))
+      (Metric.ball s₀ ε) := fun k => by
+    apply DifferentiableOn.sub
+    · intro t _
+      apply DifferentiableAt.differentiableWithinAt
+      apply DifferentiableAt.const_cpow differentiableAt_id.neg
+      left
+      exact_mod_cast (show (0:ℝ) < 2*(k:ℝ)+1 from by positivity).ne'
+    · intro t _
+      apply DifferentiableAt.differentiableWithinAt
+      apply DifferentiableAt.const_cpow differentiableAt_id.neg
+      left
+      exact_mod_cast (show (0:ℝ) < 2*(k:ℝ)+2 from by positivity).ne'
+  -- Summable global bound on the ball: M * (2k+1)^{-ε-1}
+  have hbound : Summable (fun k : ℕ => M * (2 * (k : ℝ) + 1) ^ (-ε - 1)) := by
+    apply Summable.mul_left
+    have hbase : ∀ k : ℕ, 0 < 2 * (k : ℝ) + 1 := fun k => by positivity
+    have hbase' : ∀ k : ℕ, 0 < (k : ℝ) + 1 := fun k => by positivity
+    have hsum1 : Summable (fun k : ℕ => ((k : ℝ) + 1) ^ (-ε - 1)) := by
+      exact ((summable_nat_add_iff 1).mpr
+        (Real.summable_nat_rpow.mpr (by linarith : -ε - 1 < -1))).congr
+        (fun k => by push_cast; ring_nf)
+    apply Summable.of_nonneg_of_le
+      (fun k => Real.rpow_nonneg (le_of_lt (hbase k)) _)
+      (fun k => Real.rpow_le_rpow_of_exponent_nonpos (hbase' k)
+        (by push_cast; linarith [Nat.zero_le k]) (by linarith))
+      hsum1
+  -- Apply the Weierstrass theorem on the ball
+  have hdiff_ball : DifferentiableOn ℂ
+      (fun s => ∑' k : ℕ, ((2 * (k : ℂ) + 1) ^ (-s) - (2 * (k : ℂ) + 2) ^ (-s)))
+      (Metric.ball s₀ ε) :=
+    differentiableOn_tsum_of_summable_norm hbound hf_ball Metric.isOpen_ball (fun k t ht => by
+      calc ‖(2 * (k : ℂ) + 1) ^ (-t) - (2 * (k : ℂ) + 2) ^ (-t)‖
+          ≤ ‖t‖ * (2 * (k : ℝ) + 1) ^ (-t.re - 1) :=
+            pair_term_norm_le t (lt_of_lt_of_le hε (hre_lb t ht)) k
+        _ ≤ M * (2 * (k : ℝ) + 1) ^ (-ε - 1) :=
+            mul_le_mul (hnorm_ub t ht)
+              (Real.rpow_le_rpow_of_exponent_le (by push_cast; linarith [Nat.zero_le k])
+                (by linarith [hre_lb t ht]))
+              (Real.rpow_nonneg (by positivity) _)
+              (by linarith [norm_nonneg s₀, le_of_lt hε]))
+  -- From DifferentiableOn on the ball (a neighborhood of s₀), get DifferentiableAt
+  exact (hdiff_ball.differentiableAt
+    (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hε))).differentiableWithinAt
+
+/-- The Abelian theorem: (ZMod.LFunction altChar (σ:ℂ)).re = ∑' k, eta_pair σ k for σ > 0. -/
+private lemma lfunction_re_eq_pair_tsum (σ : ℝ) (hσ : 0 < σ) :
+    (ZMod.LFunction altChar (σ : ℂ)).re = ∑' k : ℕ, eta_pair σ k := by
+  -- Define the complex pair function G = ∑' k, ((2k+1)^{-s} - (2k+2)^{-s})
+  set G : ℂ → ℂ := fun s => ∑' k : ℕ, ((2 * (k : ℂ) + 1) ^ (-s) - (2 * (k : ℂ) + 2) ^ (-s))
+  -- G is analytic on {Re > 0}
+  have hG_analytic : AnalyticOnNhd ℂ G {s : ℂ | 0 < s.re} :=
+    pair_sum_analyticOnNhd
+  -- ZMod.LFunction altChar is analytic on {Re > 0} (it's entire)
+  have hLF_analytic : AnalyticOnNhd ℂ (ZMod.LFunction altChar) {s : ℂ | 0 < s.re} :=
+    lf_entire.differentiableOn.analyticOnNhd (isOpen_lt continuous_const continuous_re)
+  -- G = LFunction altChar for Re(s) > 1
+  have hGLF_gt1 : ∀ s : ℂ, 1 < s.re → G s = ZMod.LFunction altChar s := fun s hs =>
+    (pair_hasSum_for_gt_one s hs).tsum_eq
+  -- {Re > 0} is preconnected
+  have hHP : IsPreconnected {s : ℂ | 0 < s.re} :=
+    halfplane_pos_re_preconnected
+  -- Apply identity theorem: G = LFunction on all of {Re > 0}
+  have hEqOn : EqOn G (ZMod.LFunction altChar) {s : ℂ | 0 < s.re} :=
+    hG_analytic.eqOn_of_preconnected_of_eventuallyEq hLF_analytic hHP
+      (show (2 : ℂ) ∈ {s : ℂ | 0 < s.re} from by norm_num)
+      (Filter.eventually_of_mem
+        ((isOpen_lt continuous_const continuous_re).mem_nhds
+          (show 1 < (2 : ℂ).re from by norm_num [Complex.ofReal_re]))
+        (fun s hs => hGLF_gt1 s hs))
+  -- Evaluate at (σ:ℂ): G(σ:ℂ) = LFunction altChar (σ:ℂ)
+  have hval : G (σ : ℂ) = ZMod.LFunction altChar (σ : ℂ) :=
+    hEqOn (by exact_mod_cast hσ)
+  -- G(σ:ℂ).re = ∑' k, eta_pair σ k: each pair term at real σ is real
+  have hG_re : G (σ : ℂ) = (∑' k : ℕ, eta_pair σ k : ℝ) := by
+    simp only [G, eta_pair, eta_term]
+    rw [Complex.ofReal_tsum]
+    congr 1
+    ext k
+    rw [show (2 * (k : ℂ) + 1) ^ (-(σ : ℂ)) =
+          ((2 * (k : ℝ) + 1) ^ (-σ) : ℝ) from by
+      rw [show (2 * (k : ℂ) + 1) = ((2 * (k : ℝ) + 1 : ℝ) : ℂ) from by push_cast; ring]
+      rw [show -(σ : ℂ) = ((-σ : ℝ) : ℂ) from by push_cast; ring]
+      exact (Complex.ofReal_cpow (by positivity) (-σ)).symm,
+      show (2 * (k : ℂ) + 2) ^ (-(σ : ℂ)) =
+          ((2 * (k : ℝ) + 2) ^ (-σ) : ℝ) from by
+      rw [show (2 * (k : ℂ) + 2) = ((2 * (k : ℝ) + 2 : ℝ) : ℂ) from by push_cast; ring]
+      rw [show -(σ : ℂ) = ((-σ : ℝ) : ℂ) from by push_cast; ring]
+      exact (Complex.ofReal_cpow (by positivity) (-σ)).symm]
+    push_cast; ring
+  -- Since G(σ:ℂ) is a real number cast to ℂ, its real part is the real number
+  rw [← hval]
+  rw [hG_re, Complex.ofReal_re]
+
+/-! ### Steps B and C: identity theorem and real-part extraction -/
+
+/-- The eta identity: (1−2^{1−σ})·ζ(σ).re = ∑' k, eta_pair σ k for σ ∈ (0,1). -/
 lemma eta_identity (σ : ℝ) (hσ0 : 0 < σ) (hσ1 : σ < 1) :
-    (1 - (2 : ℝ) ^ (1 - σ)) * (riemannZeta (σ : ℂ)).re =
-    ∑' n : ℕ, ((-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ)) := by
-  obtain ⟨l, hl⟩ := eta_hasSum σ hσ0
-  rw [hl.tsum_eq]
-  -- (σ:ℂ) ≠ 1 because 0 < σ < 1 implies σ ≠ 1 as a real, hence as a complex number.
+    (1 - (2 : ℝ) ^ (1 - σ)) * (riemannZeta (σ : ℂ)).re = ∑' k : ℕ, eta_pair σ k := by
+  -- (σ:ℂ) ≠ 1
   have hσ_ne1 : (σ : ℂ) ≠ 1 := by
     intro h
     have := congr_arg Complex.re h
     simp only [Complex.ofReal_re, Complex.one_re] at this
     linarith
-  -- ── Step A (PROVED): algebraic identity ZMod.LFunction altChar s = (1−2^{1−s})·ζ(s)
-  --    for all s with Re(s) > 1.
-  --    Proof: ZMod.LFunction_eq_LSeries rewrites the L-function as LSeries; even/odd
-  --    splitting via HasSum.even_add_odd, with HasSum.unique giving Hz(½,s)/2^s = (1-2^{-s})·ζ;
-  --    LSeries term values reduce to ±1/(2k±1)^s; ring closes the final algebra.
-  have hA : ∀ s : ℂ, 1 < s.re →
-      ZMod.LFunction altChar s = (1 - (2 : ℂ) ^ (1 - s)) * riemannZeta s := by
-    intro s hs
-    rw [ZMod.LFunction_eq_LSeries altChar hs]
-    -- ── [1] ζ(s) as a HasSum ────────────────────────────────────────────────
-    have hζ : HasSum (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s) (riemannZeta s) := by
-      rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
-      have hsum : Summable (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s) :=
-        ((summable_nat_add_iff 1).mpr
-          (Complex.summable_one_div_nat_cpow.mpr hs)).congr (fun n => by push_cast; ring)
-      exact hsum.hasSum
-    -- ── [2] altChar values ───────────────────────────────────────────────────
-    have hac0 : altChar (0 : ZMod 2) = (-1 : ℂ) := by
-      simp [altChar, Matrix.cons_val_zero]
-    have hac1 : altChar (1 : ZMod 2) = (1 : ℂ) := by
-      simp [altChar, Matrix.cons_val_one, Matrix.head_cons]
-    -- ── [3] ZMod 2 arithmetic: 2 ≡ 0, so 2k+1 ≡ 1 and 2(k+1) ≡ 0 ──────────
-    have h2mod : (2 : ZMod 2) = 0 := by decide
-    have hzmod_odd : ∀ k : ℕ, (↑(2 * k + 1) : ZMod 2) = 1 := fun k => by
-      push_cast; simp [h2mod]
-    have hzmod_even : ∀ k : ℕ, (↑(2 * (k + 1)) : ZMod 2) = 0 := fun k => by
-      push_cast; simp [h2mod]
-    -- ── [4] cpow factoring for even denominators: (2(k+1))^s = 2^s·(k+1)^s ─
-    have cpow_factor : ∀ k : ℕ,
-        (2 * (↑k + 1) : ℂ) ^ s = (2 : ℂ) ^ s * (↑k + 1 : ℂ) ^ s := fun k => by
-      have h : (2 : ℂ) * (↑k + 1) = (↑(2 : ℕ) : ℂ) * (↑(k + 1 : ℕ) : ℂ) := by push_cast; ring
-      rw [h, natCast_mul_natCast_cpow]
-      push_cast; ring
-    -- ── [5] cpow factoring for odd denominators: (2k+1)^s = (k+½)^s · 2^s ──
-    have cpow_odd : ∀ k : ℕ,
-        (2 * (↑k : ℂ) + 1) ^ s = ((↑k : ℂ) + (1 / 2 : ℝ)) ^ s * (2 : ℂ) ^ s := fun k => by
-      have h : (2 : ℂ) * ↑k + 1 = ((↑k + 1 / 2 : ℝ) : ℂ) * ((2 : ℝ) : ℂ) := by push_cast; ring
-      rw [h, mul_cpow_ofReal_nonneg (by positivity) (by norm_num)]
-      push_cast; ring
-    -- ── [6] Even-denominator HasSum: ∑ 1/(2(k+1))^s = 2^{-s}·ζ(s) ──────────
-    have heven : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k + 1) : ℂ) ^ s)
-        ((2 : ℂ) ^ (-s) * riemannZeta s) := by
-      apply (hζ.mul_left ((2 : ℂ) ^ (-s))).congr
-      intro k
-      rw [cpow_factor k, cpow_neg]
-      have h2 : (2 : ℂ) ^ s ≠ 0 := cpow_ne_zero (by norm_num) s
-      have hk : (↑k + 1 : ℂ) ^ s ≠ 0 := cpow_ne_zero (by push_cast; positivity) s
-      field_simp
-    -- ── [7] Hurwitz zeta HasSum: ∑ 1/(m + ½)^s = Hz(½, s) ──────────────────
-    have hHz : HasSum (fun m : ℕ => (1 : ℂ) / ((↑m : ℂ) + (1 / 2 : ℝ)) ^ s)
-        (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s) :=
-      HurwitzZeta.hasSum_hurwitzZeta_of_one_lt_re
-        (by norm_num : (1 / 2 : ℝ) ∈ Set.Icc 0 1) hs
-    -- ── [8] Odd-denominator HasSum: ∑ 1/(2k+1)^s = Hz/2^s ──────────────────
-    have hodd : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k : ℂ) + 1) ^ s)
-        (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s) := by
-      apply (hHz.div_const _).congr
-      intro k
-      rw [div_div, ← cpow_odd k]
-    -- ── [9] Split ζ via even_add_odd: f(2k) = 1/(2k+1)^s, f(2k+1) = 1/(2k+2)^s
-    have hcombine : HasSum (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s)
-        (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s +
-         (2 : ℂ) ^ (-s) * riemannZeta s) := by
-      apply HasSum.even_add_odd
-      · exact hodd.congr fun k => by push_cast; ring
-      · exact heven.congr fun k => by push_cast; ring
-    -- ── [10] Uniqueness gives Hz/2^s = (1 - 2^{-s})·ζ ──────────────────────
-    have hHz_val : HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s =
-        (1 - (2 : ℂ) ^ (-s)) * riemannZeta s := by
-      have heq := hζ.unique hcombine
-      linear_combination -heq
-    -- ── [11] LSeries term values ──────────────────────────────────────────────
-    have hterm_odd : ∀ k : ℕ,
-        LSeries.term (altChar ·) s (2 * k + 1) = (1 : ℂ) / (2 * ↑k + 1 : ℂ) ^ s := fun k => by
-      rw [LSeries.term_of_ne_zero (by omega), hzmod_odd k, hac1]
-      push_cast; ring
-    have hterm_even : ∀ k : ℕ,
-        LSeries.term (altChar ·) s (2 * (k + 1)) = -(1 : ℂ) / (2 * (↑k + 1) : ℂ) ^ s := fun k => by
-      rw [LSeries.term_of_ne_zero (by omega), hzmod_even k, hac0]
-      push_cast; ring
-    -- ── [12] Even LSeries sub-series HasSum ──────────────────────────────────
-    have heven_shift : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * (k + 1)))
-        (-((2 : ℂ) ^ (-s) * riemannZeta s)) := by
-      apply heven.neg.congr
-      intro k; rw [hterm_even k]; ring
-    have heven_L : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * k))
-        (-((2 : ℂ) ^ (-s) * riemannZeta s)) := by
-      have h := heven_shift.zero_add
-      simp only [mul_zero, LSeries.term_zero, zero_add] at h
-      exact h
-    -- ── [13] Odd LSeries sub-series HasSum ───────────────────────────────────
-    have hodd_L : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * k + 1))
-        ((1 - (2 : ℂ) ^ (-s)) * riemannZeta s) := by
-      have h := hodd.congr fun k => (hterm_odd k).symm
-      rwa [hHz_val] at h
-    -- ── [14] Combine via even_add_odd → total HasSum ─────────────────────────
-    have hTotal := heven_L.even_add_odd hodd_L
-    -- ── [15] Conclude: -(2^{-s}·ζ) + (1-2^{-s})·ζ = (1-2^{1-s})·ζ ──────────
-    have h2pow : (2 : ℂ) ^ (1 - s) = 2 * (2 : ℂ) ^ (-s) := by
-      rw [show (1 : ℂ) - s = 1 + (-s) from by ring,
-          cpow_add (by norm_num : (2 : ℂ) ≠ 0), cpow_one]
-    unfold LSeries
-    rw [hTotal.tsum_eq, h2pow]
-    ring
-  -- ── Step B (PROVED): identity theorem extends equality to all of ℂ \ {1} ──
-  --    eqOn_of_preconnected_of_eventuallyEq (Analytic/Uniqueness.lean L226):
-  --      · lf_analytic_ne_one  : ZMod.LFunction altChar analytic on {s | s ≠ 1}
-  --      · eta_factor_analytic : s ↦ (1−2^{1−s})·ζ(s) analytic on {s | s ≠ 1}
-  --      · compl_one_preconnected : {s : ℂ | s ≠ 1} is preconnected
-  --      · basepoint 2 ∈ {s | s ≠ 1}
-  --      · hfg : both functions agree in 𝓝 (2:ℂ), since {Re(s)>1} is a neighborhood
-  --        of 2 in ℂ and Step A gives agreement on {Re(s)>1}.
+  -- Step B: identity theorem extends Step A to ℂ \ {1}
   have heqOn : EqOn (ZMod.LFunction altChar)
       (fun s => (1 - (2 : ℂ) ^ (1 - s)) * riemannZeta s) {s : ℂ | s ≠ 1} :=
     lf_analytic_ne_one.eqOn_of_preconnected_of_eventuallyEq
@@ -479,103 +584,46 @@ lemma eta_identity (σ : ℝ) (hσ0 : 0 < σ) (hσ1 : σ < 1) :
       (Filter.eventually_of_mem
         ((isOpen_lt continuous_const continuous_re).mem_nhds
           (show 1 < (2 : ℂ).re from by norm_num [Complex.ofReal_re]))
-        (fun s hs => hA s hs))
-  -- Evaluate at (σ:ℂ) ∈ ℂ \ {1}:
+        (fun s hs => lfunction_altChar_eq_cpow_mul_zeta s hs))
+  -- Evaluate at (σ:ℂ) ∈ ℂ \ {1}
   have hval : ZMod.LFunction altChar (σ : ℂ) =
       (1 - (2 : ℂ) ^ (1 - (σ : ℂ))) * riemannZeta (σ : ℂ) :=
     heqOn hσ_ne1
-  -- ── Step C (PROVED): real-part extraction ──────────────────────────────────
-  --    Since σ : ℝ, the exponent 1−σ is real, so (2:ℂ)^(1−σ) is a positive real
-  --    raised to a real power: Complex.ofReal_cpow gives (2:ℂ)^(1−σ:ℂ) = ↑((2:ℝ)^(1−σ)).
-  --    Therefore the eta factor (1−2^{1−σ:ℂ}) is real, and:
-  --      Re((1−2^{1−σ:ℂ})·ζ(σ)) = (1−2^{1−σ})·Re(ζ(σ)).
-  have h2pow : (2 : ℂ) ^ (1 - (σ : ℂ)) = ((2 : ℝ) ^ (1 - σ) : ℝ) := by
+  -- Step C: real-part extraction (2:ℂ)^(1−σ:ℂ) is real
+  have h2pow_real : (2 : ℂ) ^ (1 - (σ : ℂ)) = ((2 : ℝ) ^ (1 - σ) : ℝ) := by
     rw [show (1 : ℂ) - (σ : ℂ) = ((1 - σ : ℝ) : ℂ) by push_cast; ring]
     exact (Complex.ofReal_cpow (by norm_num : (0 : ℝ) ≤ 2) (1 - σ)).symm
   have hC : ((1 - (2 : ℂ) ^ (1 - (σ : ℂ))) * riemannZeta (σ : ℂ)).re =
       (1 - (2 : ℝ) ^ (1 - σ)) * (riemannZeta (σ : ℂ)).re := by
-    rw [mul_re, h2pow]
-    simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im,
-               Complex.one_re, Complex.one_im]
+    rw [mul_re, h2pow_real]
+    simp only [Complex.sub_re, Complex.ofReal_re, Complex.one_re,
+               Complex.sub_im, Complex.ofReal_im, Complex.one_im]
     ring
-  -- ── Step D: Abelian theorem — proved given hasSum_alternating_Dirichlet ────
-  --    We need: (ZMod.LFunction altChar (σ:ℂ)).re = l,
-  --    where hl : HasSum (fun n => (−1)^n * eta_term σ n) l.
-  --
-  --    PROOF ROUTE:
-  --    1. hasSum_alternating_Dirichlet gives HasSum (complex series) (L-function value).
-  --    2. Map through Complex.reCLM (continuous ℝ-linear map Re : ℂ →L[ℝ] ℝ)
-  --       to get HasSum (fun n => (term_n).re) (ZMod.LFunction altChar σ).re.
-  --    3. Each (term_n).re = (−1)^n * (n+1)^{−σ} = eta_term σ n (real computation).
-  --    4. HasSum.unique against hl gives (ZMod.LFunction altChar σ).re = l.
-  have hD : (ZMod.LFunction altChar (σ : ℂ)).re = l := by
-    -- Step D1: get complex HasSum from hasSum_alternating_Dirichlet (sorry'd)
-    have hAD : HasSum (fun n : ℕ => (-1 : ℂ) ^ n * (↑(n + 1) : ℂ) ^ (-(σ : ℂ)))
-        (ZMod.LFunction altChar (σ : ℂ)) :=
-      hasSum_alternating_Dirichlet (σ : ℂ) (by exact_mod_cast hσ0)
-    -- Step D2: apply Re (continuous ℝ-linear) to get HasSum of real parts.
-    -- Complex.reCLM : ℂ →L[ℝ] ℝ satisfies reCLM z = z.re (reCLM_apply).
-    have hAD_re : HasSum (fun n : ℕ =>
-        ((-1 : ℂ) ^ n * (↑(n + 1) : ℂ) ^ (-(σ : ℂ))).re)
-        (ZMod.LFunction altChar (σ : ℂ)).re := by
-      have h := hAD.mapL Complex.reCLM
-      simp only [Complex.reCLM_apply] at h
-      exact h
-    -- Step D3: each complex term's real part equals the real eta term
-    --   (−1:ℂ)^n = ↑(−1:ℝ)^n   (norm_cast)
-    --   (n+1:ℂ)^{−(σ:ℂ)} = ↑((n+1:ℝ)^{−σ})  (Complex.ofReal_cpow)
-    --   so (term_n).re = (↑((−1:ℝ)^n * (n+1:ℝ)^{−σ})).re = (−1)^n * (n+1)^{−σ}
-    have h_term_re : ∀ n : ℕ,
-        ((-1 : ℂ) ^ n * (↑(n + 1) : ℂ) ^ (-(σ : ℂ))).re =
-        (-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ) := fun n => by
-      rw [mul_re]
-      have h_neg1 : ((-1 : ℂ) ^ n).re = (-1 : ℝ) ^ n := by
-        rw [show (-1 : ℂ) = ((-1 : ℝ) : ℂ) from by norm_cast]
-        simp [← Complex.ofReal_pow, Complex.ofReal_re]
-      have h_neg1_im : ((-1 : ℂ) ^ n).im = 0 := by
-        rw [show (-1 : ℂ) = ((-1 : ℝ) : ℂ) from by norm_cast]
-        simp [← Complex.ofReal_pow, Complex.ofReal_im]
-      -- (n+1:ℂ)^{−(σ:ℂ)} = ↑((n+1:ℝ)^{−σ}) since σ:ℝ and n+1:ℝ, n+1 ≥ 0
-      have h_cpow : (↑(n + 1) : ℂ) ^ (-(σ : ℂ)) =
-          ((n + 1 : ℝ) ^ (-σ) : ℝ) := by
-        rw [show (↑(n + 1) : ℂ) = ((n + 1 : ℝ) : ℂ) from by norm_cast]
-        rw [show -(σ : ℂ) = ((-σ : ℝ) : ℂ) from by push_cast; ring]
-        exact (Complex.ofReal_cpow (by positivity : (0 : ℝ) ≤ n + 1) (-σ)).symm
-      rw [h_cpow, Complex.ofReal_re, Complex.ofReal_im, h_neg1, h_neg1_im]
-      ring
-    -- Step D4: rewrite HasSum to use the real terms, then apply HasSum.unique
-    simp_rw [h_term_re] at hAD_re
-    have hl' : HasSum (fun n : ℕ => (-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ)) l := by
-      simpa [eta_term] using hl
-    exact hAD_re.unique hl'
-  -- ── Combine A+B+C+D ────────────────────────────────────────────────────────
-  --    hval + hC : (ZMod.LFunction altChar (σ:ℂ)).re = (1−2^{1−σ})·ζ(σ).re
-  --    hD        : (ZMod.LFunction altChar (σ:ℂ)).re = l
-  --    Therefore  (1−2^{1−σ})·ζ(σ).re = l, which is the goal.
-  have hstep : (ZMod.LFunction altChar (σ : ℂ)).re =
-      (1 - (2 : ℝ) ^ (1 - σ)) * (riemannZeta (σ : ℂ)).re := by
-    rw [hval]; exact hC
+  -- Step D: (ZMod.LFunction altChar (σ:ℂ)).re = ∑' k, eta_pair σ k
+  have hD : (ZMod.LFunction altChar (σ : ℂ)).re = ∑' k : ℕ, eta_pair σ k :=
+    lfunction_re_eq_pair_tsum σ hσ0
+  -- Combine: LHS = (LFunction).re = ∑' k, eta_pair σ k
+  have hLHS : (1 - (2 : ℝ) ^ (1 - σ)) * (riemannZeta (σ : ℂ)).re =
+      (ZMod.LFunction altChar (σ : ℂ)).re := by
+    rw [hval]; exact hC.symm
   linarith
 
 /-! ## § 5. The main theorem — PROVED -/
 
 /-- **ZetaRealSign** (PROVED):
     ζ(σ) has negative real part for real σ ∈ (0,1).
-    Factor: (1−2^{1−σ}) < 0.  Product: (1−2^{1−σ})·ζ(σ).re = η(σ) > 0.
+    Factor: (1−2^{1−σ}) < 0.  Pair sum: ∑' k, eta_pair σ k > 0.
     Conclusion: ζ(σ).re < 0. -/
 theorem ZetaRealSign (σ : ℝ) (hσ0 : 0 < σ) (hσ1 : σ < 1) :
     (riemannZeta (σ : ℂ)).re < 0 := by
   have h_fac : (1 : ℝ) - 2 ^ (1 - σ) < 0 := factor_neg σ hσ0 hσ1
-  have h_eta : 0 < ∑' n : ℕ, ((-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ)) := eta_pos σ hσ0
+  have h_eta : 0 < ∑' k : ℕ, eta_pair σ k := eta_pos σ hσ0
   have h_id := eta_identity σ hσ0 hσ1
-  -- From h_id: (neg) * ζ(σ).re = (pos) → ζ(σ).re < 0
   by_contra h
   push_neg at h
-  -- h : 0 ≤ ζ(σ).re
-  -- (neg) * (nonneg) ≤ 0, contradicts (neg) * ζ(σ).re = (pos) > 0
   have h_nonpos : (1 - (2 : ℝ) ^ (1 - σ)) * (riemannZeta (σ : ℂ)).re ≤ 0 :=
     mul_nonpos_of_nonpos_of_nonneg (le_of_lt h_fac) h
-  linarith [h_id ▸ h_eta]
+  linarith
 
 /-- Corollary: ζ has no real zeros in (0,1). -/
 theorem zeta_no_real_zero (β : ℝ) (hβ1 : 0 < β) (hβ2 : β < 1)

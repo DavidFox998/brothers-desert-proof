@@ -8,7 +8,7 @@ require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.15.0"
 
 -- Pull brothers, desert, and Hilbert-route facts from eutheos-property
-require eutheos from git
+require «eutheos-property» from git
   "https://github.com/DavidFox998/eutheos-property.git" @ "main"
 
 lean_lib BrothersDesertProof where
@@ -33,6 +33,8 @@ lean_lib BrothersDesertProof where
     .one `Route.RouteC,
     -- SIEGEL: Deuring-Heilbronn-Siegel zero-free region at p5
     .one `Siegel.SiegelZeroFree,
+    -- SIEGEL ELEMENTARY: ζ has no real zeros in (0,1)
+    .one `Siegel.SiegelZeroFreeElementary,
     -- SelfSymmetry layer (wraps eutheos-property theorems)
     .one `SelfSymmetry.Core,
     .one `SelfSymmetry.Desert,
