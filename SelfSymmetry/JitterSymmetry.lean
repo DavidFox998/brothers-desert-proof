@@ -2,7 +2,8 @@
 -- π/10 jitter stays Nodup for all 1419 time steps
 import Family.Brothers1419
 import Family.DirichletJitterTime
-import Family.IrrationalVsRational
+-- Family.IrrationalVsRational removed: DirichletJitterTime imports it transitively;
+-- adding it explicitly causes duplicate 'Eutheos.alpha0_den' declaration.
 
 namespace SelfSymmetry
 
