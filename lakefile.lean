@@ -31,8 +31,14 @@ lean_lib BrothersDesertProof where
     .one `Eutheos.EulerProductLemmas,
     -- Closure: RouteC closes via Hasse + numerical BC certs (no Langlands)
     .one `Closure.RouteCClosed,
-    -- RouteC: Bost-Connes → Ramanujan/Deligne → GRH for 140 curves → p5
+    -- Route A: Abbes-Ullmo Arakelov positivity → equidistribution → RH
+    .one `Route.RouteA,
+    -- Route B: spectral gap λ₁≥975/4096 → BC6 → GRH → RH (arakelov-rh-descent)
+    .one `Route.RouteB,
+    -- Route C: Littlewood Ω + Deuring-Heilbronn zero repulsion → contradiction → RH
     .one `Route.RouteC,
+    -- Route D: theta self-symmetry + Eutheos Object + desert → RH (THIS REPO)
+    .one `Route.RouteD,
     -- SIEGEL: Deuring-Heilbronn-Siegel zero-free region at p5
     .one `Siegel.SiegelZeroFree,
     -- SIEGEL ELEMENTARY: ζ has no real zeros in (0,1)
