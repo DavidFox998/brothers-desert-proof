@@ -10,14 +10,14 @@
     · the eta identity (1−2^{1−σ})·ζ(σ) = η(σ)
     · the sign of each factor
 
-  SORRY COUNT: 2  (eta_identity — Step A and Step D; see below)
+  SORRY COUNT: 1  (eta_identity — Step D only; Step A is now fully proved)
   WHY IT'S NOT 0:
 
-  STEP A (sorry): Algebraic identity for Re(s) > 1.
+  STEP A (PROVED): Algebraic identity for Re(s) > 1.
     ZMod.LFunction Φ s = (1−2^{1−s})·ζ(s) for Re(s)>1.
-    Proof route: ZMod.LFunction_eq_LSeries (Mathlib ZMod.lean L90) + even/odd tsum splitting
-    (tsum_even_add_odd, zeta_eq_tsum_one_div_nat_add_one_cpow).  The algebra is elementary
-    but the bijection bookkeeping has not yet been written out in this file.
+    Proof: ZMod.LFunction_eq_LSeries (Mathlib ZMod.lean L90) rewrites as LSeries; even/odd
+    tsum splitting (HasSum.even_add_odd) + zeta_eq_tsum_one_div_nat_add_one_cpow and
+    hasSum_hurwitzZeta_of_one_lt_re identify even/odd sub-sums; HasSum.unique + ring closes.
 
   STEP D (sorry): Abelian theorem for Dirichlet L-series.
     Re(ZMod.LFunction Φ σ) = ∑' n, (−1)^n·(n+1)^{−σ}   for σ ∈ (0,1).
@@ -358,16 +358,110 @@ lemma eta_identity (σ : ℝ) (hσ0 : 0 < σ) (hσ1 : σ < 1) :
     have := congr_arg Complex.re h
     simp only [Complex.ofReal_re, Complex.one_re] at this
     linarith
-  -- ── Step A (SORRY): algebraic identity ZMod.LFunction altChar s = (1−2^{1−s})·ζ(s)
+  -- ── Step A (PROVED): algebraic identity ZMod.LFunction altChar s = (1−2^{1−s})·ζ(s)
   --    for all s with Re(s) > 1.
-  --    Proof route: ZMod.LFunction_eq_LSeries (ZMod.lean L90) rewrites the L-function as
-  --    an LSeries, then even/odd tsum splitting (tsum_even_add_odd) and
-  --    zeta_eq_tsum_one_div_nat_add_one_cpow identify the result with (1−2^{1−s})·ζ(s).
-  --    The algebra is elementary; the bijection bookkeeping has not yet been written here.
+  --    Proof: ZMod.LFunction_eq_LSeries rewrites the L-function as LSeries; even/odd
+  --    splitting via HasSum.even_add_odd, with HasSum.unique giving Hz(½,s)/2^s = (1-2^{-s})·ζ;
+  --    LSeries term values reduce to ±1/(2k±1)^s; ring closes the final algebra.
   have hA : ∀ s : ℂ, 1 < s.re →
       ZMod.LFunction altChar s = (1 - (2 : ℂ) ^ (1 - s)) * riemannZeta s := by
-    intro s _hs
-    sorry -- Step A: Re(s)>1 algebraic identity (not yet formalized in this file)
+    intro s hs
+    rw [ZMod.LFunction_eq_LSeries altChar hs]
+    -- ── [1] ζ(s) as a HasSum ────────────────────────────────────────────────
+    have hζ : HasSum (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s) (riemannZeta s) := by
+      rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
+      have hsum : Summable (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s) :=
+        ((summable_nat_add_iff 1).mpr
+          (Complex.summable_one_div_nat_cpow.mpr hs)).congr (fun n => by push_cast; ring)
+      exact hsum.hasSum
+    -- ── [2] altChar values ───────────────────────────────────────────────────
+    have hac0 : altChar (0 : ZMod 2) = (-1 : ℂ) := by
+      simp [altChar, Matrix.cons_val_zero]
+    have hac1 : altChar (1 : ZMod 2) = (1 : ℂ) := by
+      simp [altChar, Matrix.cons_val_one, Matrix.head_cons]
+    -- ── [3] ZMod 2 arithmetic: 2 ≡ 0, so 2k+1 ≡ 1 and 2(k+1) ≡ 0 ──────────
+    have h2mod : (2 : ZMod 2) = 0 := by decide
+    have hzmod_odd : ∀ k : ℕ, (↑(2 * k + 1) : ZMod 2) = 1 := fun k => by
+      push_cast; simp [h2mod]
+    have hzmod_even : ∀ k : ℕ, (↑(2 * (k + 1)) : ZMod 2) = 0 := fun k => by
+      push_cast; simp [h2mod]
+    -- ── [4] cpow factoring for even denominators: (2(k+1))^s = 2^s·(k+1)^s ─
+    have cpow_factor : ∀ k : ℕ,
+        (2 * (↑k + 1) : ℂ) ^ s = (2 : ℂ) ^ s * (↑k + 1 : ℂ) ^ s := fun k => by
+      have h : (2 : ℂ) * (↑k + 1) = (↑(2 : ℕ) : ℂ) * (↑(k + 1 : ℕ) : ℂ) := by push_cast; ring
+      rw [h, natCast_mul_natCast_cpow]
+      push_cast; ring
+    -- ── [5] cpow factoring for odd denominators: (2k+1)^s = (k+½)^s · 2^s ──
+    have cpow_odd : ∀ k : ℕ,
+        (2 * (↑k : ℂ) + 1) ^ s = ((↑k : ℂ) + (1 / 2 : ℝ)) ^ s * (2 : ℂ) ^ s := fun k => by
+      have h : (2 : ℂ) * ↑k + 1 = ((↑k + 1 / 2 : ℝ) : ℂ) * ((2 : ℝ) : ℂ) := by push_cast; ring
+      rw [h, mul_cpow_ofReal_nonneg (by positivity) (by norm_num)]
+      push_cast; ring
+    -- ── [6] Even-denominator HasSum: ∑ 1/(2(k+1))^s = 2^{-s}·ζ(s) ──────────
+    have heven : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k + 1) : ℂ) ^ s)
+        ((2 : ℂ) ^ (-s) * riemannZeta s) := by
+      apply (hζ.mul_left ((2 : ℂ) ^ (-s))).congr
+      intro k
+      rw [cpow_factor k, cpow_neg]
+      have h2 : (2 : ℂ) ^ s ≠ 0 := cpow_ne_zero (by norm_num) s
+      have hk : (↑k + 1 : ℂ) ^ s ≠ 0 := cpow_ne_zero (by push_cast; positivity) s
+      field_simp
+    -- ── [7] Hurwitz zeta HasSum: ∑ 1/(m + ½)^s = Hz(½, s) ──────────────────
+    have hHz : HasSum (fun m : ℕ => (1 : ℂ) / ((↑m : ℂ) + (1 / 2 : ℝ)) ^ s)
+        (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s) :=
+      HurwitzZeta.hasSum_hurwitzZeta_of_one_lt_re
+        (by norm_num : (1 / 2 : ℝ) ∈ Set.Icc 0 1) hs
+    -- ── [8] Odd-denominator HasSum: ∑ 1/(2k+1)^s = Hz/2^s ──────────────────
+    have hodd : HasSum (fun k : ℕ => (1 : ℂ) / (2 * (↑k : ℂ) + 1) ^ s)
+        (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s) := by
+      apply (hHz.div_const _).congr
+      intro k
+      rw [div_div, ← cpow_odd k]
+    -- ── [9] Split ζ via even_add_odd: f(2k) = 1/(2k+1)^s, f(2k+1) = 1/(2k+2)^s
+    have hcombine : HasSum (fun n : ℕ => (1 : ℂ) / (↑n + 1 : ℂ) ^ s)
+        (HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s +
+         (2 : ℂ) ^ (-s) * riemannZeta s) := by
+      apply HasSum.even_add_odd
+      · exact hodd.congr fun k => by push_cast; ring
+      · exact heven.congr fun k => by push_cast; ring
+    -- ── [10] Uniqueness gives Hz/2^s = (1 - 2^{-s})·ζ ──────────────────────
+    have hHz_val : HurwitzZeta.hurwitzZeta ((1 / 2 : ℝ) : UnitAddCircle) s / (2 : ℂ) ^ s =
+        (1 - (2 : ℂ) ^ (-s)) * riemannZeta s := by
+      have heq := hζ.unique hcombine
+      linear_combination -heq
+    -- ── [11] LSeries term values ──────────────────────────────────────────────
+    have hterm_odd : ∀ k : ℕ,
+        LSeries.term (altChar ·) s (2 * k + 1) = (1 : ℂ) / (2 * ↑k + 1 : ℂ) ^ s := fun k => by
+      rw [LSeries.term_of_ne_zero (by omega), hzmod_odd k, hac1]
+      push_cast; ring
+    have hterm_even : ∀ k : ℕ,
+        LSeries.term (altChar ·) s (2 * (k + 1)) = -(1 : ℂ) / (2 * (↑k + 1) : ℂ) ^ s := fun k => by
+      rw [LSeries.term_of_ne_zero (by omega), hzmod_even k, hac0]
+      push_cast; ring
+    -- ── [12] Even LSeries sub-series HasSum ──────────────────────────────────
+    have heven_shift : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * (k + 1)))
+        (-((2 : ℂ) ^ (-s) * riemannZeta s)) := by
+      apply heven.neg.congr
+      intro k; rw [hterm_even k]; ring
+    have heven_L : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * k))
+        (-((2 : ℂ) ^ (-s) * riemannZeta s)) := by
+      have h := heven_shift.zero_add
+      simp only [mul_zero, LSeries.term_zero, zero_add] at h
+      exact h
+    -- ── [13] Odd LSeries sub-series HasSum ───────────────────────────────────
+    have hodd_L : HasSum (fun k : ℕ => LSeries.term (altChar ·) s (2 * k + 1))
+        ((1 - (2 : ℂ) ^ (-s)) * riemannZeta s) := by
+      have h := hodd.congr fun k => (hterm_odd k).symm
+      rwa [hHz_val] at h
+    -- ── [14] Combine via even_add_odd → total HasSum ─────────────────────────
+    have hTotal := heven_L.even_add_odd hodd_L
+    -- ── [15] Conclude: -(2^{-s}·ζ) + (1-2^{-s})·ζ = (1-2^{1-s})·ζ ──────────
+    have h2pow : (2 : ℂ) ^ (1 - s) = 2 * (2 : ℂ) ^ (-s) := by
+      rw [show (1 : ℂ) - s = 1 + (-s) from by ring,
+          cpow_add (by norm_num : (2 : ℂ) ≠ 0), cpow_one]
+    unfold LSeries
+    rw [hTotal.tsum_eq, h2pow]
+    ring
   -- ── Step B (PROVED): identity theorem extends equality to all of ℂ \ {1} ──
   --    eqOn_of_preconnected_of_eventuallyEq (Analytic/Uniqueness.lean L226):
   --      · lf_analytic_ne_one  : ZMod.LFunction altChar analytic on {s | s ≠ 1}
