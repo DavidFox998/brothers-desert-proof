@@ -7,7 +7,7 @@
     --   alpha := ⟨a/2,  √d/2⟩  (complex number)
     --   beta  := ⟨a/2, -√d/2⟩  (complex conjugate)
     -- Then:
-    --   ‖alpha‖ = ‖beta‖ = √p    (norm from normSq = p)
+    --   |alpha| = |beta| = √p    (norm from normSq = p)
     --   alpha + beta = (a : ℂ)   (by Complex.ext + ring)
     --   alpha * beta = (p : ℂ)   (re = a²/4 + d/4 = p; im = 0 by ring)
     --
@@ -41,25 +41,32 @@
     have hsqd_sq : sqd ^ 2 = d := Real.sq_sqrt hd
     -- witnesses
     refine ⟨⟨a / 2, sqd / 2⟩, ⟨a / 2, -(sqd / 2)⟩, ?_, ?_, ?_, ?_⟩
-    -- Complex.abs alpha = √p : unfold via normSq, then nlinarith
+    -- |alpha| = √p
     · rw [Complex.abs_apply]
       have h1 : Complex.normSq (⟨a / 2, sqd / 2⟩ : ℂ) = (p : ℝ) := by
         simp only [Complex.normSq_mk]
         nlinarith [hsqd_sq]
       rw [h1]
-    -- Complex.abs beta = √p
+    -- |beta| = √p
     · rw [Complex.abs_apply]
       have h1 : Complex.normSq (⟨a / 2, -(sqd / 2)⟩ : ℂ) = (p : ℝ) := by
-        simp only [Complex.normSq_mk, neg_mul, mul_neg, neg_neg]
-        nlinarith [hsqd_sq]
+        simp only [Complex.normSq_mk]
+        have : -(sqd / 2) * -(sqd / 2) = sqd / 2 * (sqd / 2) := by ring
+        rw [this]; nlinarith [hsqd_sq]
       rw [h1]
-    -- alpha + beta = (a : ℂ) : apply Complex.ext, close re and im by ring
-    · apply Complex.ext <;> simp [Complex.add_re, Complex.add_im] <;> ring
-    -- alpha * beta = (p : ℂ) : apply Complex.ext, re by nlinarith, im by ring
+    -- alpha + beta = (a : ℂ)
     · apply Complex.ext
-      · simp only [Complex.mul_re, Complex.re, Complex.im]
-        push_cast; nlinarith [hsqd_sq]
-      · simp only [Complex.mul_im, Complex.re, Complex.im]; ring
+      · simp only [Complex.add_re, Complex.ofReal_re]
+        ring
+      · simp only [Complex.add_im, Complex.ofReal_im]
+        ring
+    -- alpha * beta = (p : ℂ)
+    · apply Complex.ext
+      · simp only [Complex.mul_re, Complex.ofReal_re]
+        push_cast
+        nlinarith [hsqd_sq]
+      · simp only [Complex.mul_im, Complex.ofReal_im]
+        ring
 
     /-! ## Consequence for Deligne's bound -/
 
