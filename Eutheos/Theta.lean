@@ -38,7 +38,7 @@ theorem theta_range (T : ℝ) :
   constructor
   · have h := Complex.neg_pi_lt_arg (zeta_half T)
     have hpi : (0 : ℝ) < 2 * Real.pi := by positivity
-    rw [gt_iff_lt, lt_div_iff hpi]
+    rw [lt_div_iff hpi]
     linarith
   · have h := Complex.arg_le_pi (zeta_half T)
     have hpi : (0 : ℝ) < 2 * Real.pi := by positivity
