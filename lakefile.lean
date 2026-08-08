@@ -29,6 +29,8 @@ lean_lib BrothersDesertProof where
     .one `Eutheos.RamanujanFactorization,
     -- Euler product non-vanishing lemmas (0 sorry, from uploaded proofs)
     .one `Eutheos.EulerProductLemmas,
+    -- Closure: fixed ArakelovFoundations (named open surfaces, prop wrappers)
+    .one `Closure.ArakelovFoundations,
     -- RouteC: Bost-Connes → Ramanujan/Deligne → GRH for 140 curves → p5
     .one `Route.RouteC,
     -- SIEGEL: Deuring-Heilbronn-Siegel zero-free region at p5
