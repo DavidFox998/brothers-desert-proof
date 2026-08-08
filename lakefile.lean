@@ -31,6 +31,8 @@ lean_lib BrothersDesertProof where
     .one `Eutheos.EulerProductLemmas,
     -- Closure: RouteC closes via Hasse + numerical BC certs (no Langlands)
     .one `Closure.RouteCClosed,
+    -- Universal binder: gate arithmetic + brothers structure + BC cert
+    .one `UniversalRH_Binder_FINAL_0_SORRY_0_AXIOM,
     -- Route A: Abbes-Ullmo Arakelov positivity → equidistribution → RH
     .one `Route.RouteA,
     -- Route B: spectral gap λ₁≥975/4096 → BC6 → GRH → RH (arakelov-rh-descent)
