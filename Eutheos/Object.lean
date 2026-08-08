@@ -1,14 +1,10 @@
 -- Eutheos/Object.lean
     -- The Object: theta(T) modelled by pi/10; gate; route; certified chain.
     -- Clay rules: 0 sorry, 0 new axioms beyond the Lean 4 kernel trio.
-    --
-    -- Import note (Mathlib v4.15.0):
-    --   Complex.exp and Complex.abs_exp live in
-    --     Mathlib.Analysis.SpecialFunctions.Complex.Circle
-    --   Mathlib.Analysis.Complex.Exponential does NOT exist in v4.15.0.
     import Mathlib.Data.Complex.Basic
     import Mathlib.Analysis.SpecialFunctions.Complex.Circle
     import Mathlib.Data.Real.Irrational
+    import Mathlib.Data.Real.Pi.Irrational
 
     namespace Eutheos
 
@@ -16,10 +12,9 @@
 
     /-! ## 0. The Object -/
 
-    /-- Model theta: argζ(1/2+iT)/2π ≈ π/10 -/
     noncomputable def theta0 : ℝ := Real.pi / 10
 
-    /-- Standard fractional part: frac x = x − ⌊x⌋ ∈ [0,1). -/
+    /-- Standard fractional part: frac x = x − ⌊x⌋ ∈ [0, 1). -/
     noncomputable def frac (x : ℝ) : ℝ := x - ⌊x⌋
     noncomputable def dist (x : ℝ) : ℝ := min (frac x) (1 - frac x)
     noncomputable def V (p : Nat) (a : ℝ) : ℝ := dist (p * a) - 1 / p
@@ -35,7 +30,6 @@
     apply irrational_pi
     exact ⟨q * 10, by push_cast at hq ⊢; linarith⟩
 
-    /-- General: dist(n·a) > 0 for any irrational a and any n ≠ 0. -/
     theorem dist_pos_of_irrational (a : ℝ) (ha : Irrational a)
       (n : Nat) (hn : n ≠ 0) : dist (↑n * a) > 0 := by
     have hnn : 0 ≤ frac (↑n * a) := by
@@ -104,13 +98,10 @@
 
     /-! ## 6. W = 11·13·17·19 and brothers_v2 — the +W trick -/
 
-    /-- W = 11·13·17·19 = 46189. -/
     def W : ℕ := 46189
 
     theorem W_eq_product : W = 11 * 13 * 17 * 19 := by native_decide
 
-    /-- brothers_v2: 52481 → 47608 = 1419 + W.
-      Every divisor of W gets a collision witness (1419, 47608). -/
     def brothers_v2 : List ℕ :=
     [1419,1841,1907,2113,2411,2777,3251,3467,3671,4091,4273,4639,
      5059,5347,5639,5779,6197,6427,6823,7043,7583,8321,8999,9413,9859,10259,11311,12433,
@@ -125,12 +116,13 @@
         ∃ p1 ∈ brothers_v2, ∃ p2 ∈ brothers_v2, p1 ≠ p2 ∧ p1 % q = p2 % q := by
     native_decide
 
-    /-- For any q ∣ W, the explicit witness is (1419, 47608 = 1419 + W = 1419 + q·k). -/
+    /-- For any q ∣ W, the witness is (1419, 47608) since 47608 = 1419 + W and q ∣ W. -/
     theorem collision_mod_q (q : ℕ) (hq : q ∣ W) :
       ∃ p1 ∈ brothers_v2, ∃ p2 ∈ brothers_v2, p1 ≠ p2 ∧ p1 % q = p2 % q := by
     refine ⟨1419, by native_decide, 47608, by native_decide, by native_decide, ?_⟩
-    obtain ⟨k, hk⟩ := hq
-    simp only [W] at hk
+    -- W % q = 0 because q ∣ W; then (1419 + W) % q = 1419 % q; omega closes.
+    have hWq : W % q = 0 := Nat.mod_eq_zero_of_dvd hq
+    have h47 : (47608 : ℕ) = 1419 + W := by norm_num [W]
     omega
 
     end Eutheos
