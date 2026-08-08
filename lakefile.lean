@@ -15,6 +15,7 @@ require «eutheos-property» from git
 lean_lib BrothersDesertProof where
   srcDir := "."
   globs := #[
+    .one `Closure.ArakelovFoundations,
     .one `Eutheos.Object,
     .one `Eutheos.Theta,
     .one `Eutheos.RationalTheta,
