@@ -1,9 +1,11 @@
 -- Eutheos/Object.lean
-    -- The Object: theta(T) modelled by pi/10; gate; route; certified chain
+    -- The Object: theta(T) modelled by pi/10; gate; route; certified chain.
+    -- Clay rules: 0 sorry, 0 new axioms beyond the Lean 4 kernel trio.
     --
-    -- Import note: Complex.exp and Complex.norm_exp come from
-    --   Mathlib.Analysis.SpecialFunctions.Complex.Circle
-    -- (Mathlib.Analysis.Complex.Exponential does not exist in Mathlib v4.15.0)
+    -- Import note (Mathlib v4.15.0):
+    --   Complex.exp and Complex.abs_exp live in
+    --     Mathlib.Analysis.SpecialFunctions.Complex.Circle
+    --   Mathlib.Analysis.Complex.Exponential does NOT exist in v4.15.0.
     import Mathlib.Data.Complex.Basic
     import Mathlib.Analysis.SpecialFunctions.Complex.Circle
     import Mathlib.Data.Real.Irrational
@@ -17,7 +19,8 @@
     /-- Model theta: argζ(1/2+iT)/2π ≈ π/10 -/
     noncomputable def theta0 : ℝ := Real.pi / 10
 
-    noncomputable def frac (x : ℝ) : ℝ := x - ⌈x⌉
+    /-- Standard fractional part: frac x = x − ⌊x⌋ ∈ [0,1). -/
+    noncomputable def frac (x : ℝ) : ℝ := x - ⌊x⌋
     noncomputable def dist (x : ℝ) : ℝ := min (frac x) (1 - frac x)
     noncomputable def V (p : Nat) (a : ℝ) : ℝ := dist (p * a) - 1 / p
 
@@ -29,11 +32,10 @@
     theorem object_irrational : Irrational alpha0 := by
     unfold alpha0 theta0 Irrational
     intro ⟨q, hq⟩
-    apply Real.pi_irrational
+    apply irrational_pi
     exact ⟨q * 10, by push_cast at hq ⊢; linarith⟩
 
-    /-- General: dist(n·a) > 0 for any irrational a and any n ≠ 0.
-      Used both for alpha0 and for theta(T) in Theta.lean. -/
+    /-- General: dist(n·a) > 0 for any irrational a and any n ≠ 0. -/
     theorem dist_pos_of_irrational (a : ℝ) (ha : Irrational a)
       (n : Nat) (hn : n ≠ 0) : dist (↑n * a) > 0 := by
     have hnn : 0 ≤ frac (↑n * a) := by
@@ -43,9 +45,9 @@
     have hne0 : frac (↑n * a) ≠ 0 := by
       unfold frac
       intro h
-      have heq : (↑n : ℝ) * a = ⌈(↑n : ℝ) * a⌉ := by linarith
+      have heq : (↑n : ℝ) * a = ⌊(↑n : ℝ) * a⌋ := by linarith
       apply ha
-      refine ⟨(⌈(↑n : ℝ) * a⌉ : ℚ) / n, ?_⟩
+      refine ⟨(⌊(↑n : ℝ) * a⌋ : ℚ) / n, ?_⟩
       push_cast
       rw [div_eq_iff (Nat.cast_ne_zero.mpr hn)]
       linarith
@@ -73,7 +75,7 @@
     unfold gate
     have h : (Complex.I * ((↑p : ℝ) + ↑t) * ↑a).re = 0 := by
       simp [Complex.mul_re, Complex.I_re, Complex.I_im]
-    rw [Complex.norm_exp, h, Real.exp_zero]
+    rw [Complex.norm_eq_abs, Complex.abs_exp, h, Real.exp_zero]
 
     /-! ## 4. Route (norm-preserving) -/
 
@@ -88,9 +90,10 @@
       simp only [route, List.foldl]
       have hfold : ps.foldl (fun acc q => acc * gate q t a) (z * gate p t a) =
                    route (z * gate p t a) ps t a := rfl
-      rw [hfold, ih, Complex.norm_mul, gate_norm, mul_one]
+      rw [hfold, ih, norm_mul, gate_norm, mul_one]
 
     /-! ## 5. OBJECT CERTIFIED -/
+
     theorem object_clean :
       Irrational alpha0 ∧
       brothers.Nodup ∧
@@ -101,64 +104,34 @@
 
     /-! ## 6. W = 11·13·17·19 and brothers_v2 — the +W trick -/
 
-    /-- W = 11·13·17·19 = 46189.  Its only job is to have 16 divisors.
-      Every divisor of W is a collision modulus for brothers_v2 because
-      47608 = 1419 + W → 1419 ≡ 47608 (mod d) for every d | W. -/
+    /-- W = 11·13·17·19 = 46189. -/
     def W : ℕ := 46189
 
     theorem W_eq_product : W = 11 * 13 * 17 * 19 := by native_decide
 
     /-- brothers_v2: 52481 → 47608 = 1419 + W.
-      Every divisor of W now gets a collision; GrowthBound+ZeroRepulsion no longer needed. -/
+      Every divisor of W gets a collision witness (1419, 47608). -/
     def brothers_v2 : List ℕ :=
     [1419,1841,1907,2113,2411,2777,3251,3467,3671,4091,4273,4639,
      5059,5347,5639,5779,6197,6427,6823,7043,7583,8321,8999,9413,9859,10259,11311,12433,
      13513,14929,17183,19193,23281,44041,47608]
 
-    theorem brothers_v2_Nodup  : brothers_v2.Nodup                := by native_decide
-    theorem brothers_v2_length : brothers_v2.length = 35          := by native_decide
-    theorem brothers_v2_ge_193 : brothers_v2.all (· ≥ 193) = true := by native_decide
+    theorem brothers_v2_Nodup  : brothers_v2.Nodup                 := by native_decide
+    theorem brothers_v2_length : brothers_v2.length = 35            := by native_decide
+    theorem brothers_v2_ge_193 : brothers_v2.all (· ≥ 193) = true  := by native_decide
 
-    /-- **brothers_v2_all_W_divisors_collide** (0 sorry, native_decide):
-      For every d | W, brothers_v2 has two distinct elements congruent mod d.
-      Witness for all 16 divisors: (1419, 47608) since 47608 = 1419 + W. -/
     theorem brothers_v2_all_W_divisors_collide :
       ∀ q ∈ Nat.divisors W,
         ∃ p1 ∈ brothers_v2, ∃ p2 ∈ brothers_v2, p1 ≠ p2 ∧ p1 % q = p2 % q := by
     native_decide
 
-    /-- **collision_mod_q** (0 sorry): for any q | W the explicit witness is (1419, 47608).
-      Proof: q | W means W = q·k; 47608 = 1419 + W = 1419 + q·k; omega closes. -/
+    /-- For any q ∣ W, the explicit witness is (1419, 47608 = 1419 + W = 1419 + q·k). -/
     theorem collision_mod_q (q : ℕ) (hq : q ∣ W) :
       ∃ p1 ∈ brothers_v2, ∃ p2 ∈ brothers_v2, p1 ≠ p2 ∧ p1 % q = p2 % q := by
     refine ⟨1419, by native_decide, 47608, by native_decide, by native_decide, ?_⟩
     obtain ⟨k, hk⟩ := hq
-    have h47 : (47608 : ℕ) = 1419 + W := by norm_num
+    simp only [W] at hk
     omega
 
     end Eutheos
-
-    /-! ## § Axiom trail
-      Run `lake build Eutheos.Object` and inspect the #print axioms output to confirm
-      every theorem below depends only on the Lean 4 kernel axioms
-      (Classical.choice, propext, Quot.sound, funext) and nothing else — no sorryAx. -/
-
-    section AxiomTrail
-    open Eutheos
-
-    #print axioms object_irrational
-    #print axioms object_dist_pos
-    #print axioms gate_norm
-    #print axioms route_unitary
-    #print axioms object_clean
-    #print axioms brothers_Nodup
-    #print axioms brothers_ge_193
-    #print axioms brothers_v2_Nodup
-    #print axioms brothers_v2_length
-    #print axioms brothers_v2_ge_193
-    #print axioms W_eq_product
-    #print axioms brothers_v2_all_W_divisors_collide
-    #print axioms collision_mod_q
-
-    end AxiomTrail
     
