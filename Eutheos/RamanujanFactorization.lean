@@ -8,7 +8,7 @@
     --   beta  := ⟨a/2, -√d/2⟩  (complex conjugate)
     -- Then:
     --   |alpha| = |beta| = √p    (norm from normSq = p)
-    --   alpha + beta = (a : ℂ)   (by Complex.ext + ring)
+    --   alpha + beta = (a : ℂ)   (definitional + ring)
     --   alpha * beta = (p : ℂ)   (re = a²/4 + d/4 = p; im = 0 by ring)
     --
     -- SORRY: 0. Axiom footprint: classical trio.
@@ -23,10 +23,7 @@
     /-- **ramanujan_factorization** (PROVED, 0 sorry):
     Given a prime p and a real number a with a² ≤ 4p,
     there exist complex roots alpha, beta with
-      |alpha| = |beta| = √p,  alpha + beta = a,  alpha * beta = p.
-
-    Explicit witnesses: alpha = ⟨a/2, √(4p-a²)/2⟩,
-                        beta  = ⟨a/2, -√(4p-a²)/2⟩. -/
+      |alpha| = |beta| = √p,  alpha + beta = a,  alpha * beta = p. -/
     theorem ramanujan_factorization (p : ℕ) (hp : 0 < p) (a : ℝ)
       (ha : a ^ 2 ≤ 4 * (p : ℝ)) :
       ∃ alpha beta : ℂ,
@@ -34,14 +31,12 @@
         Complex.abs beta  = Real.sqrt p ∧
         alpha + beta = (a : ℂ)       ∧
         alpha * beta = (p : ℂ) := by
-    -- discriminant
     have hd : (0 : ℝ) ≤ 4 * (p : ℝ) - a ^ 2 := by linarith
     set d   := 4 * (p : ℝ) - a ^ 2 with hd_def
     set sqd := Real.sqrt d with hsqd_def
     have hsqd_sq : sqd ^ 2 = d := Real.sq_sqrt hd
-    -- witnesses
     refine ⟨⟨a / 2, sqd / 2⟩, ⟨a / 2, -(sqd / 2)⟩, ?_, ?_, ?_, ?_⟩
-    -- |alpha| = √p : via Complex.abs_apply + normSq_mk
+    -- |alpha| = √p
     · rw [Complex.abs_apply]
       have h1 : Complex.normSq (⟨a / 2, sqd / 2⟩ : ℂ) = (p : ℝ) := by
         simp only [Complex.normSq_mk]
@@ -51,17 +46,20 @@
     · rw [Complex.abs_apply]
       have h1 : Complex.normSq (⟨a / 2, -(sqd / 2)⟩ : ℂ) = (p : ℝ) := by
         simp only [Complex.normSq_mk]
-        have heq : -(sqd / 2) * -(sqd / 2) = sqd / 2 * (sqd / 2) := by ring
-        rw [heq]; nlinarith [hsqd_sq]
+        nlinarith [hsqd_sq]
       rw [h1]
-    -- alpha + beta = (a : ℂ) : full simp reduces struct fields, ring closes
+    -- alpha + beta = (a : ℂ) : struct ops are definitionally transparent
     · apply Complex.ext
-      · simp [Complex.add_re]; ring
-      · simp [Complex.add_im]; ring
+      · show a / 2 + a / 2 = a
+        ring
+      · show sqd / 2 + -(sqd / 2) = (0 : ℝ)
+        ring
     -- alpha * beta = (p : ℂ)
     · apply Complex.ext
-      · simp [Complex.mul_re]; push_cast; nlinarith [hsqd_sq]
-      · simp [Complex.mul_im]
+      · show a / 2 * (a / 2) - sqd / 2 * -(sqd / 2) = (p : ℝ)
+        nlinarith [hsqd_sq]
+      · show a / 2 * -(sqd / 2) + sqd / 2 * (a / 2) = (0 : ℝ)
+        ring
 
     /-! ## Consequence for Deligne's bound -/
 
