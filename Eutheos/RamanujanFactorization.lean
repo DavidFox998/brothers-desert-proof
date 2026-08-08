@@ -41,21 +41,22 @@
     have hsqd_sq : sqd ^ 2 = d := Real.sq_sqrt hd
     -- witnesses
     refine ⟨⟨a / 2, sqd / 2⟩, ⟨a / 2, -(sqd / 2)⟩, ?_, ?_, ?_, ?_⟩
-    -- ‖alpha‖ = √p
-    · have h : ‖(⟨a / 2, sqd / 2⟩ : ℂ)‖ ^ 2 = (p : ℝ) := by
-        rw [Complex.norm_eq_abs, Complex.sq_abs, Complex.normSq_mk]
+    -- Complex.abs alpha = √p : unfold via normSq, then nlinarith
+    · rw [Complex.abs_apply]
+      have h1 : Complex.normSq (⟨a / 2, sqd / 2⟩ : ℂ) = (p : ℝ) := by
+        simp only [Complex.normSq_mk]
         nlinarith [hsqd_sq]
-      rw [← Real.sqrt_sq (norm_nonneg _), h]
-    -- ‖beta‖ = √p
-    · have h : ‖(⟨a / 2, -(sqd / 2)⟩ : ℂ)‖ ^ 2 = (p : ℝ) := by
-        rw [Complex.norm_eq_abs, Complex.sq_abs, Complex.normSq_mk]
-        simp only [neg_mul, mul_neg, neg_neg]
+      rw [h1]
+    -- Complex.abs beta = √p
+    · rw [Complex.abs_apply]
+      have h1 : Complex.normSq (⟨a / 2, -(sqd / 2)⟩ : ℂ) = (p : ℝ) := by
+        simp only [Complex.normSq_mk, neg_mul, mul_neg, neg_neg]
         nlinarith [hsqd_sq]
-      rw [← Real.sqrt_sq (norm_nonneg _), h]
-    -- alpha + beta = a
-    · ext <;> simp [Complex.add_re, Complex.add_im] <;> ring
-    -- alpha * beta = p
-    · ext
+      rw [h1]
+    -- alpha + beta = (a : ℂ) : apply Complex.ext, close re and im by ring
+    · apply Complex.ext <;> simp [Complex.add_re, Complex.add_im] <;> ring
+    -- alpha * beta = (p : ℂ) : apply Complex.ext, re by nlinarith, im by ring
+    · apply Complex.ext
       · simp only [Complex.mul_re, Complex.re, Complex.im]
         push_cast; nlinarith [hsqd_sq]
       · simp only [Complex.mul_im, Complex.re, Complex.im]; ring
