@@ -97,7 +97,7 @@
     Axiom footprint: {S4_implies_RH_closed, ZeroFreeOutsideCriticalStrip_OPEN}. -/
     theorem ZeroRepulsion_from_RH : ZeroRepulsion := by
     intro ⟨ρ, hzero, hne_one, hnot_trivial, hre_ne⟩
-    exact absurd (RH_proved_from_S4 ρ hzero hne_one hnot_trivial) hre_ne
+    exact absurd (RH_proved_from_S4 ρ hzero hnot_trivial hne_one) hre_ne
 
     /-! ## §4. GrowthBound_closed -/
 
