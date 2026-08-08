@@ -116,14 +116,11 @@
         ∃ p1 ∈ brothers_v2, ∃ p2 ∈ brothers_v2, p1 ≠ p2 ∧ p1 % q = p2 % q := by
     native_decide
 
-    /-- For any q ∣ W, the witness is (1419, 47608) since 47608 = 1419 + W and q ∣ W. -/
+    /-- For any q ∣ W, the conclusion follows from brothers_v2_all_W_divisors_collide
+      (which covers every element of Nat.divisors W by native_decide). -/
     theorem collision_mod_q (q : ℕ) (hq : q ∣ W) :
-      ∃ p1 ∈ brothers_v2, ∃ p2 ∈ brothers_v2, p1 ≠ p2 ∧ p1 % q = p2 % q := by
-    refine ⟨1419, by native_decide, 47608, by native_decide, by native_decide, ?_⟩
-    -- W % q = 0 because q ∣ W; then (1419 + W) % q = 1419 % q; omega closes.
-    have hWq : W % q = 0 := Nat.mod_eq_zero_of_dvd hq
-    have h47 : (47608 : ℕ) = 1419 + W := by norm_num [W]
-    omega
+      ∃ p1 ∈ brothers_v2, ∃ p2 ∈ brothers_v2, p1 ≠ p2 ∧ p1 % q = p2 % q :=
+    brothers_v2_all_W_divisors_collide q (Nat.mem_divisors.mpr ⟨hq, by norm_num [W]⟩)
 
     end Eutheos
     
