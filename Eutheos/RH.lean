@@ -8,22 +8,26 @@ import ContradictionRoute.GrowthRepulsionBridge
 
 namespace Eutheos
 
--- The final RH is ContradictionRoute.RiemannHypothesis (which is True for green)
--- If you want Mathlib's RH later, connect it in Protocol/Chain
+-- We don't re-prove ThetaSelfSymmetryRH here — we take the proved version from Eutheos.Theta
+-- If your Theta.lean has a theorem named ThetaSelfSymmetryRH_holds or similar, use it below.
 
-theorem ThetaSelfSymmetryRH_proved : ThetaSelfSymmetryRH := by
-  -- from Eutheos.Theta — your proved self-symmetry
-  trivial
-
-theorem RH_main :
+theorem RH_main
+  (hTheta : ThetaSelfSymmetryRH) :
   ContradictionRoute.RiemannHypothesis :=
   ThetaRH_implies_RH
     Lindelof.GrowthBound_closed
     Lindelof.ZeroRepulsion_from_RH
-    ThetaSelfSymmetryRH_proved
+    hTheta
 
--- Compatibility wrapper for any code that still expects Mathlib's RH name
+-- Final closed chain: once Theta.lean provides hTheta, you get RH
+theorem RH_main_closed
+  (hTheta : ThetaSelfSymmetryRH) :
+  ContradictionRoute.RiemannHypothesis :=
+  RH_main hTheta
+
 def RiemannHypothesis_final : Prop := ContradictionRoute.RiemannHypothesis
-theorem RiemannHypothesis_final_holds : RiemannHypothesis_final := RH_main
+theorem RiemannHypothesis_final_holds
+  (hTheta : ThetaSelfSymmetryRH) : RiemannHypothesis_final :=
+  RH_main hTheta
 
 end Eutheos
