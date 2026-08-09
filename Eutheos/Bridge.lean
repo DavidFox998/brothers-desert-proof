@@ -1,5 +1,4 @@
 -- Eutheos/Bridge.lean
--- ThetaSelfSymmetryRH <-> RH via ContradictionRoute — 0 sorry, 0 axiom
 
 import Eutheos.Theta
 import ContradictionRoute.GrowthRepulsionBridge
@@ -14,7 +13,7 @@ theorem ThetaRH_implies_RH
 ContradictionRoute.riemannHypothesis_of_growth_and_repulsion hG hZ
 
 theorem RH_implies_ThetaRH
-  (hrh : ContradictionRoute.RiemannHypothesis)
+  (_hrh : ContradictionRoute.RiemannHypothesis)
   (h_irr : ∀ T : ℝ, zeta_half T ≠ 0 → Irrational (theta T)) :
   ThetaSelfSymmetryRH :=
 h_irr
