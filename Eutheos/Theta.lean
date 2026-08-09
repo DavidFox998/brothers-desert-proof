@@ -38,11 +38,11 @@ theorem theta_range (T : ℝ) :
   constructor
   · have h := Complex.neg_pi_lt_arg (zeta_half T)
     have hpi : (0 : ℝ) < 2 * Real.pi := by positivity
-    rw [lt_div_iff hpi]
+    rw [lt_div_iff₀ hpi]
     linarith
   · have h := Complex.arg_le_pi (zeta_half T)
     have hpi : (0 : ℝ) < 2 * Real.pi := by positivity
-    rw [div_le_iff hpi]
+    rw [div_le_iff₀ hpi]
     linarith
 
 /-! ## 3. The Self-Symmetry connection (honest conditional)
@@ -56,7 +56,7 @@ theorem theta_range (T : ℝ) :
 /-- Honest conditional: given that theta(T) is irrational,
     dist(n·theta(T)) > 0 for all n ≠ 0.
     Irrationality itself is the OPEN input (= Self-Symmetry RH conjecture). -/
-theorem theta_object (T : ℝ) (h_nz : zeta_half T ≠ 0)
+theorem theta_object (T : ℝ) (_h_nz : zeta_half T ≠ 0)
     (h_irr : Irrational (theta T)) :
     Irrational (theta T) ∧ (∀ n : Nat, n ≠ 0 → dist (↑n * theta T) > 0) :=
   ⟨h_irr, fun n hn => dist_pos_of_irrational (theta T) h_irr n hn⟩
