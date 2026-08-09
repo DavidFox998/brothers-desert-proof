@@ -2,8 +2,6 @@
 -- π/10 jitter stays Nodup for all 1419 time steps
 import Family.Brothers1419
 import Family.DirichletJitterTime
--- Family.IrrationalVsRational omitted: conflicts with DirichletJitterTime
--- (both define Eutheos.alpha0_den); the transitive names differ in fold/unfold state.
 
 namespace SelfSymmetry
 
@@ -11,15 +9,9 @@ open Eutheos
 
 /-! ## Jitter self-symmetry -/
 
--- alpha0 = π/10 is irrational.
--- DirichletJitterTime exports alpha0_irrational : Irrational (299 + Real.pi / 10)
--- which equals Irrational alpha0 after unfolding alpha0.
-theorem jitter_alpha0_irrational : Irrational alpha0 := by
-  simp only [alpha0]
-  exact alpha0_irrational
-
--- jitter_dist_pos removed: dist_real is not a function in this import set and
--- alpha0_dist_pos is not exported by DirichletJitterTime.
+-- alpha0 = 299 + π/10 — irrationality already proved in DirichletJitterTime
+theorem jitter_alpha0_irrational : Irrational alpha0 :=
+  alpha0_irrational
 
 -- 35 jitter values stay distinct across all 1420 time steps
 theorem jitter_Nodup_1419 : all_jitters_Nodup_upto 1419 = true := by native_decide
@@ -32,6 +24,6 @@ theorem jitter_emi_reduction :
 theorem jitter_clean :
     all_jitters_Nodup_upto 1419 = true ∧
     Irrational alpha0 :=
-  ⟨by native_decide, by simp only [alpha0]; exact alpha0_irrational⟩
+  ⟨by native_decide, alpha0_irrational⟩
 
 end SelfSymmetry
