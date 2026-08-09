@@ -11,11 +11,11 @@
 --   Eutheos.Theta → Eutheos.Object
 
 import Eutheos.Theta
-import RouteC.GrowthRepulsionBridge
+import ContradictionRoute.GrowthRepulsionBridge
 
 namespace Eutheos
 
-open RouteC
+open ContradictionRoute
 
 /-! ## Named honest axioms -/
 
@@ -48,10 +48,10 @@ axiom Superbrick_FE_base
   Rational theta(T) is incompatible with zeta_half T ≠ 0.
 
   Proof:
-  1. Superbrick_FE_base → q | W and theta(T) = p/q.
-  2. collision_mod_q (Object.lean, 0 sorry) → b1 ≠ b2 ∈ brothers_v2, b1 ≡ b2 (mod q).
-  3. W = 46189 > 0 and q | W → 0 < q (Nat.pos_of_dvd_of_pos).
-  4. Superbrick_SmallDenom → zeta_half T = 0, contradicting h_nz.
+    1. Superbrick_FE_base → q | W and theta(T) = p/q.
+    2. collision_mod_q (Object.lean, 0 sorry) → b1 ≠ b2 ∈ brothers_v2, b1 ≡ b2 (mod q).
+    3. W = 46189 > 0 and q | W → 0 < q (Nat.pos_of_dvd_of_pos).
+    4. Superbrick_SmallDenom → zeta_half T = 0, contradicting h_nz.
 
   Honest axiom footprint: {Superbrick_FE_base, Superbrick_SmallDenom}. -/
 theorem rational_contradicts_brothers_v2
