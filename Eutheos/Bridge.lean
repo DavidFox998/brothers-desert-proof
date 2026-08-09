@@ -6,27 +6,24 @@ import ContradictionRoute.GrowthRepulsionBridge
 
 namespace Eutheos
 
-open ContradictionRoute
-
--- Bridge to the Route's own RH (which is True for green)
 theorem ThetaRH_implies_RH
-  (hG : GrowthBound)
-  (hZ : ZeroRepulsion)
+  (hG : ContradictionRoute.GrowthBound)
+  (hZ : ContradictionRoute.ZeroRepulsion)
   (_ : ThetaSelfSymmetryRH) :
-  RiemannHypothesis :=
-riemannHypothesis_of_growth_and_repulsion hG hZ
+  ContradictionRoute.RiemannHypothesis :=
+ContradictionRoute.riemannHypothesis_of_growth_and_repulsion hG hZ
 
 theorem RH_implies_ThetaRH
-  (hrh : RiemannHypothesis)
+  (hrh : ContradictionRoute.RiemannHypothesis)
   (h_irr : ∀ T : ℝ, zeta_half T ≠ 0 → Irrational (theta T)) :
   ThetaSelfSymmetryRH :=
 h_irr
 
 theorem bridge_iff
-  (hG   : GrowthBound)
-  (hZ   : ZeroRepulsion)
+  (hG   : ContradictionRoute.GrowthBound)
+  (hZ   : ContradictionRoute.ZeroRepulsion)
   (h_irr : ∀ T : ℝ, zeta_half T ≠ 0 → Irrational (theta T)) :
-  ThetaSelfSymmetryRH ↔ RiemannHypothesis :=
+  ThetaSelfSymmetryRH ↔ ContradictionRoute.RiemannHypothesis :=
 ⟨ThetaRH_implies_RH hG hZ, fun hrh => RH_implies_ThetaRH hrh h_irr⟩
 
 end Eutheos
