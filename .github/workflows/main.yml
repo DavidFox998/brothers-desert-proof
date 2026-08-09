@@ -1,41 +1,12 @@
 name: Lean Build - Brothers Desert Proof
-on: [push, pull_request]
+on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Elan
-        run: |
-          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y
-          echo "$HOME/.elan/bin" >> $GITHUB_PATH
-      - name: Lake update
-        run: lake update
-      - name: Eutheos - Object
-        run: lake build Eutheos.Object
-      - name: Eutheos - Theta
-        run: lake build Eutheos.Theta
-      - name: Eutheos - RationalTheta
-        run: lake build Eutheos.RationalTheta
-      - name: ContradictionRoute - GrowthRepulsionBridge
-        run: lake build ContradictionRoute.GrowthRepulsionBridge
-      - name: ContradictionRoute - LanglandsWeilTransfer
-        run: lake build ContradictionRoute.LanglandsWeilTransfer
-      - name: Eutheos - Bridge
-        run: lake build Eutheos.Bridge
-      - name: Eutheos - RH
-        run: lake build Eutheos.RH
-      - name: Eutheos - RamanujanFactorization
-        run: lake build Eutheos.RamanujanFactorization
-      - name: Siegel - SiegelZeroFree
-        run: lake build Siegel.SiegelZeroFree
-      - name: SelfSymmetry - Core
-        run: lake build SelfSymmetry.Core
-      - name: SelfSymmetry - Desert
-        run: lake build SelfSymmetry.Desert
-      - name: SelfSymmetry - JitterSymmetry
-        run: lake build SelfSymmetry.JitterSymmetry
-      - name: SelfSymmetry - TwinWormhole
-        run: lake build SelfSymmetry.TwinWormhole
-      - name: Build all
-        run: lake build
+      - uses: leanprover/lean-action@v1
+        with:
+          use-github-cache: false
+      - run: lake update
+      - run: lake build
