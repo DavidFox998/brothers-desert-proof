@@ -1,64 +1,41 @@
-name: Lean Build -- Brothers Desert Proof
-
-"on":
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-  workflow_dispatch:
-
+name: Lean Build - Brothers Desert Proof
+on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Install Elan
         run: |
-          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:v4.15.0
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y
           echo "$HOME/.elan/bin" >> $GITHUB_PATH
-
       - name: Lake update
         run: lake update
-
-      - name: "Eutheos -- Object"
+      - name: Eutheos - Object
         run: lake build Eutheos.Object
-
-      - name: "Eutheos -- Theta"
+      - name: Eutheos - Theta
         run: lake build Eutheos.Theta
-
-      - name: "Eutheos -- RationalTheta"
+      - name: Eutheos - RationalTheta
         run: lake build Eutheos.RationalTheta
-
-      - name: "RouteC -- GrowthRepulsionBridge"
-        run: lake build RouteC.GrowthRepulsionBridge
-
-      - name: "Eutheos -- Bridge"
+      - name: ContradictionRoute - GrowthRepulsionBridge
+        run: lake build ContradictionRoute.GrowthRepulsionBridge
+      - name: ContradictionRoute - LanglandsWeilTransfer
+        run: lake build ContradictionRoute.LanglandsWeilTransfer
+      - name: Eutheos - Bridge
         run: lake build Eutheos.Bridge
-
-      - name: "Eutheos -- RH"
+      - name: Eutheos - RH
         run: lake build Eutheos.RH
-
-      - name: "Eutheos -- RamanujanFactorization"
+      - name: Eutheos - RamanujanFactorization
         run: lake build Eutheos.RamanujanFactorization
-
-      - name: "Route -- RouteC"
-        run: lake build Route.RouteC
-
-      - name: "Siegel -- SiegelZeroFree"
+      - name: Siegel - SiegelZeroFree
         run: lake build Siegel.SiegelZeroFree
-
-      - name: "SelfSymmetry -- Core"
+      - name: SelfSymmetry - Core
         run: lake build SelfSymmetry.Core
-
-      - name: "SelfSymmetry -- Desert"
+      - name: SelfSymmetry - Desert
         run: lake build SelfSymmetry.Desert
-
-      - name: "SelfSymmetry -- JitterSymmetry"
+      - name: SelfSymmetry - JitterSymmetry
         run: lake build SelfSymmetry.JitterSymmetry
-
-      - name: "SelfSymmetry -- TwinWormhole"
+      - name: SelfSymmetry - TwinWormhole
         run: lake build SelfSymmetry.TwinWormhole
-
       - name: Build all
         run: lake build
