@@ -2,7 +2,6 @@
 -- π/10 jitter stays Nodup for all 1419 time steps
 import Family.Brothers1419
 import Family.DirichletJitterTime
-import Mathlib.Data.Real.Irrational
 
 namespace SelfSymmetry
 
@@ -10,25 +9,21 @@ open Eutheos
 
 /-! ## Jitter self-symmetry -/
 
--- Prove Irrational (π/10) from Irrational (299 + π/10)
+-- From Irrational (299 + π/10) we get Irrational (π/10)
 private theorem pi_div_ten_irrational : Irrational (Real.pi / 10) := by
-  by_contra h
-  -- if π/10 = q ∈ ℚ, then 299 + π/10 = 299 + q ∈ ℚ
+  intro ⟨q, hq⟩
   have h2 : Irrational (299 + Real.pi / 10) := alpha0_irrational
   apply h2
-  obtain ⟨q, hq⟩ := h
   refine ⟨299 + q, ?_⟩
+  -- (299 + q : ℚ) as ℝ = 299 + (π/10)
   rw [← hq]
   push_cast
-  rfl
+  ring
 
--- Now lift to whatever Brothers1419 defines alpha0 as (π/10)
+-- alpha0 = π/10 in Brothers1419, definitionally
 theorem jitter_alpha0_irrational : Irrational alpha0 := by
-  -- alpha0 = π/10 in Brothers1419
-  have h_def : alpha0 = Real.pi / 10 := by
-    unfold alpha0
-    rfl
-  rw [h_def]
+  have h_eq : alpha0 = Real.pi / 10 := rfl
+  rw [h_eq]
   exact pi_div_ten_irrational
 
 -- 35 jitter values stay distinct across all 1420 time steps
