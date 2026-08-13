@@ -48,7 +48,7 @@ open Real Filter Finset Topology Complex Set
 /-! ## § 1. The factor 1 − 2^{1−σ} is negative on (0,1) — PROVED -/
 
 /-- For σ ∈ (0,1), the exponent 1−σ > 0 makes 2^{1−σ} > 1, so 1 − 2^{1−σ} < 0. -/
-lemma factor_neg (σ : ℝ) (hσ0 : 0 < σ) (hσ1 : σ < 1) :
+lemma factor_neg (σ : ℝ) (_hσ0 : 0 < σ) (hσ1 : σ < 1) :
     (1 : ℝ) - 2 ^ (1 - σ) < 0 := by
   have h : (1 : ℝ) < 2 ^ (1 - σ) :=
     Real.one_lt_rpow (by norm_num : (1:ℝ) < 2) (by linarith : 0 < 1 - σ)
@@ -494,7 +494,7 @@ private lemma pair_sum_analyticOnNhd :
     apply Summable.of_nonneg_of_le
       (fun k => Real.rpow_nonneg (le_of_lt (hbase k)) _)
       (fun k => Real.rpow_le_rpow_of_exponent_nonpos (hbase' k)
-        (by push_cast; linarith [Nat.zero_le k]) (by linarith))
+        (by linarith [Nat.zero_le k]) (by linarith))
       hsum1
   -- Apply the Weierstrass theorem on the ball
   have hdiff_ball : DifferentiableOn ℂ
@@ -506,7 +506,7 @@ private lemma pair_sum_analyticOnNhd :
             pair_term_norm_le t (lt_of_lt_of_le hε (hre_lb t ht)) k
         _ ≤ M * (2 * (k : ℝ) + 1) ^ (-ε - 1) :=
             mul_le_mul (hnorm_ub t ht)
-              (Real.rpow_le_rpow_of_exponent_le (by push_cast; linarith [Nat.zero_le k])
+              (Real.rpow_le_rpow_of_exponent_le (by linarith [Nat.zero_le k])
                 (by linarith [hre_lb t ht]))
               (Real.rpow_nonneg (by positivity) _)
               (by linarith [norm_nonneg s₀, le_of_lt hε]))
