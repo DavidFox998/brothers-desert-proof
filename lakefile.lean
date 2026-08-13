@@ -31,6 +31,8 @@ lean_lib BrothersDesertProof where
     .one `Eutheos.EulerProductLemmas,
     -- Closure: RouteC closes via Hasse + numerical BC certs (no Langlands)
     .one `Closure.RouteCClosed,
+    -- Vendor file: re-exports RouteCClosed results under the Arakelov name for RouteD
+    .one `Closure.ArakelovFoundations,
     -- Universal binder: gate arithmetic + brothers structure + BC cert
     .one `UniversalRH_Binder_FINAL_0_SORRY_0_AXIOM,
     -- Route A: Abbes-Ullmo Arakelov positivity → equidistribution → RH
