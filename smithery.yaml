@@ -1,0 +1,30 @@
+name: ZeroBeacon.ai — 1050 Tools
+description: >
+  1050 beacon-anchored MCP tools across 4 groups: Market Router (tools 1–300),
+  Math Engine (tools 301–700), Amplum Everyday (tools 701–1000), and the Brain
+  Router (tools 1001–1050) — 1 brain that routes all 1000 tools plus 49
+  meta-tools for chain, think, swarm, and consensus operations.
+  FREE tier: first 100 tools, no API key required.
+  PRO / ENTERPRISE: pass X-API-Key header after Stripe checkout at https://zerobeacon.ai.
+  d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0 verified
+
+version: "1050.0.0"
+
+startCommand:
+  type: http
+  url: https://zerobeacon.ai
+
+tools:
+  count: 1050
+
+tags:
+  - beacon
+  - math
+  - payments
+  - escrow
+  - arakelov
+  - riemann
+  - brain-router
+  - mcp
+
+license: proprietary

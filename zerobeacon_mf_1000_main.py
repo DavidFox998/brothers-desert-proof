@@ -45,13 +45,14 @@ from routers import (
 )
 
 app = FastAPI(
-    title="ZeroBeacon.ai — 1000 Tools",
-    version="1000.0.0",
+    title="ZeroBeacon.ai — 1050 Tools",
+    version="1050.0.0",
     description=(
-        "**1000 beacon-anchored tools** across 3 groups:\n\n"
+        "**1050 beacon-anchored tools** across 4 groups:\n\n"
         "- **Market Router (tools 1–300):** payment routing, escrow, delivery proof, budget, notary\n"
         "- **Math Engine (tools 301–700):** Arakelov, Riemann Hypothesis, BSD, Navier-Stokes, Yang-Mills, P vs NP\n"
-        "- **Amplum Everyday (tools 701–1000):** scheduling, memory, legal, will, mesh treasury, consciousness proof\n\n"
+        "- **Amplum Everyday (tools 701–1000):** scheduling, memory, legal, will, mesh treasury, consciousness proof\n"
+        "- **Brain Router (tools 1001–1050):** 50 meta-tools — 1 brain that routes all 1000 tools, chain, think, swarm, consensus\n\n"
         "FREE tier: first 100 tools, no key required.  \n"
         "PRO / ENTERPRISE: pass `X-API-Key: zbk_…` header.  \n"
         "Get a key at https://zerobeacon.ai after Stripe checkout.  \n"
@@ -61,6 +62,7 @@ app = FastAPI(
         {"name": "Market-Router",  "description": "Tools 1–300: payment, escrow, delivery, budget, notary"},
         {"name": "Math-Engine",    "description": "Tools 301–700: Arakelov, RH, BSD, Navier-Stokes, Yang-Mills, P vs NP"},
         {"name": "Amplum-Everyday","description": "Tools 701–1000: scheduling, memory, legal, will, mesh, consciousness"},
+        {"name": "Brain-Router",   "description": "Tools 1001–1050: brain meta-router, chain, think, swarm, consensus"},
     ],
 )
 app.add_middleware(
