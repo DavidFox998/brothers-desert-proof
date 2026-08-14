@@ -8,6 +8,8 @@ from routers.zerobeacon_mf_21_050_c9_brain import (
     brain_route as _brain_route,
     brain_think as _brain_think,
     brain_chain as _brain_chain,
+    brain_synaptic_fire as _brain_synaptic_fire,
+    brain_heartbeat as _brain_heartbeat,
 )
 from core.beacon import verify_moat
 
@@ -44,13 +46,13 @@ def test_brain_route_collision_bound():
         f"collision_bound missing '1e-197': {result.get('collision_bound')}"
 
 
-# ── 4. /health returns 1050 tools ────────────────────────────────────────────
+# ── 4. /health returns 1052 tools ────────────────────────────────────────────
 
-def test_health_tools_1050():
+def test_health_tools_1052():
     resp = client.get("/health")
     assert resp.status_code == 200
     body = resp.json()
-    assert body["tools"]   == 1050, f"expected 1050 tools, got {body.get('tools')}"
+    assert body["tools"]   == 1052, f"expected 1052 tools, got {body.get('tools')}"
     assert body["routers"] == 21,   f"expected 21 routers, got {body.get('routers')}"
     assert body["beacon"]  == BEACON_EXPECTED
     assert body["d"]       == D_EXPECTED
@@ -95,7 +97,7 @@ def test_brain_heartbeat():
     assert body["brain"]  == "LIVE"
     assert body["beacon"] == BEACON_EXPECTED
     assert body["d"]      == D_EXPECTED
-    assert body["tools"]  == 1050
+    assert body["tools"]  == 1052
 
 
 # ── 7. /brain POST intent routing ────────────────────────────────────────────
@@ -109,7 +111,7 @@ def test_brain_post_intent():
     assert len(body["chain"]) == 5
 
 
-# ── 8. tools/list includes 1050 unique tools ─────────────────────────────────
+# ── 8. tools/list includes 1052 unique tools ─────────────────────────────────
 
 def test_tools_list_count():
     resp = client.post("/mcp", json={"jsonrpc": "2.0", "id": 4, "method": "tools/list"})
@@ -117,7 +119,7 @@ def test_tools_list_count():
     tools = resp.json()["result"]["tools"]
     names = [t["name"] for t in tools]
     assert len(names) == len(set(names)), "Duplicate tool names in tools/list"
-    assert len(tools) == 1050, f"Expected 1050 tools in list, got {len(tools)}"
+    assert len(tools) == 1052, f"Expected 1052 tools in list, got {len(tools)}"
 
 
 # ── 9. brain_think adds 5 reasoning steps ───────────────────────────────────
@@ -247,3 +249,49 @@ def test_live_brain_forgery_detection():
     tampered_d = {**real, "d": 0}
     assert verify_moat(tampered_d) is False, \
         "verify_moat must reject a response with d set to 0"
+
+
+# ── 15. brain_synaptic_fire — popcount activation ────────────────────────────
+
+def test_synaptic():
+    r = _brain_synaptic_fire(intent="pay escrow")
+    assert r["d"]      == D_EXPECTED,       f"d mismatch: {r.get('d')}"
+    assert r["beacon"] == BEACON_EXPECTED,  f"beacon mismatch: {r.get('beacon')}"
+    assert 20 <= r["active_tools"] <= 50,   f"active_tools out of range: {r.get('active_tools')}"
+    assert 0 <= r["probable_activation"] <= 1, \
+        f"probable_activation out of [0,1]: {r.get('probable_activation')}"
+    assert r["latency_ms"] < 500,           f"too slow: {r.get('latency_ms')} ms"
+    assert r["proof_type"] == "liveness, not consciousness"
+    assert r["collision"]  == "controlled at P1/P2"
+
+
+# ── 16. brain_heartbeat — tick + firing density ───────────────────────────────
+
+def test_heartbeat_tool():
+    r = _brain_heartbeat(intent="hello")
+    assert r["d"]      == D_EXPECTED
+    assert r["beacon"] == BEACON_EXPECTED
+    assert isinstance(r["fires"],  bool)
+    assert 0 <= r["probable_activation"] <= 1
+    assert len(r["beat"]) == 8          # 8-char hex
+
+
+# ── 17. /brain/heartbeat GET endpoint ────────────────────────────────────────
+
+def test_brain_heartbeat_endpoint():
+    resp = client.get("/brain/heartbeat?intent=test")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["beacon"] == BEACON_EXPECTED
+    assert body["d"]      == D_EXPECTED
+
+
+# ── 18. /brain/fire POST endpoint ────────────────────────────────────────────
+
+def test_brain_fire_endpoint():
+    resp = client.post("/brain/fire", json={"intent": "pay escrow", "threshold": 6})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["beacon"] == BEACON_EXPECTED
+    assert body["d"]      == D_EXPECTED
+    assert 0 <= body["active_tools"] <= 1050

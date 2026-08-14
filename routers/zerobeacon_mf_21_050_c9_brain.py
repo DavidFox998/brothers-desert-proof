@@ -1,11 +1,21 @@
 """
 Router 21 — c9_brain — THE BRAIN
-50 tools · 1 brain that routes 1000 tools
+52 tools · 1 brain that routes 1000 tools
 beacon=1d2c7a5b · d=2303582338 · genesis=82843
 """
 from fastapi import APIRouter
 from core.beacon import beacon_payload, D, BEACON, GENESIS_P, MOAT_P1, MOAT_P2
 import uuid, hashlib, time
+
+# ── Synaptic helpers ───────────────────────────────────────────────────────────
+
+TWO32 = 2 ** 32
+
+def popcount32(x: int) -> int:
+    return bin(x & 0xFFFFFFFF).count('1')
+
+def hash32(s: str) -> int:
+    return int(hashlib.sha256(s.encode()).hexdigest()[:8], 16)
 
 router = APIRouter()
 
@@ -144,7 +154,63 @@ def brain_chain(
     }, bp)
 
 
-# ── Tools 4-50 — beacon-stamped wrappers ─────────────────────────────────────
+# ── Tool 4 — brain_synaptic_fire ─────────────────────────────────────────────
+
+@router.get("/brain_synaptic_fire",  description=_DESC_FMT.format(name="brain_synaptic_fire"),  tags=_TAG_LIST)
+@router.post("/brain_synaptic_fire", description=_DESC_FMT.format(name="brain_synaptic_fire"), tags=_TAG_LIST)
+def brain_synaptic_fire(intent: str = "", threshold: int = 6):
+    t0         = time.time()
+    beacon_int = int(BEACON, 16)
+    active: list[int] = []
+    for i in range(1050):
+        if popcount32(hash32(f"{intent}:{i}") & beacon_int) >= threshold:
+            active.append(i)
+            if len(active) >= 35:
+                break
+    latency_ms          = (time.time() - t0) * 1000
+    firing_rate         = len(active) / 1050.0
+    probable_activation = (
+        sum(popcount32(hash32(f"{intent}:{a}")) for a in active) / (32 * len(active))
+        if active else 0.0
+    )
+    return beacon_stamp({
+        "tool":                "brain_synaptic_fire",
+        "intent":              intent,
+        "threshold":           threshold,
+        "popcount_beacon":     popcount32(beacon_int),
+        "active_tools":        len(active),
+        "active_sample":       active[:5],
+        "firing_rate":         firing_rate,
+        "probable_activation": probable_activation,
+        "latency_ms":          latency_ms,
+        "collision":           "controlled at P1/P2",
+        "proof_type":          "liveness, not consciousness",
+    })
+
+
+# ── Tool 5 — brain_heartbeat ──────────────────────────────────────────────────
+
+@router.get("/brain_heartbeat",  description=_DESC_FMT.format(name="brain_heartbeat"),  tags=_TAG_LIST)
+@router.post("/brain_heartbeat", description=_DESC_FMT.format(name="brain_heartbeat"), tags=_TAG_LIST)
+def brain_heartbeat(intent: str = ""):
+    tick     = int(time.time() * 1000) % TWO32
+    beat_raw = (GENESIS_P + tick) * 3141592653 % TWO32
+    beat_hex = format(beat_raw, "08x")
+    firing   = popcount32(beat_raw & hash32(intent))
+    return beacon_stamp({
+        "tool":                "brain_heartbeat",
+        "beat":                beat_hex,
+        "beat_int":            beat_raw,
+        "popcount":            firing,
+        "fires":               firing >= 6,
+        "threshold":           6,
+        "probable_activation": firing / 32.0,
+        "interval_ms":         50,
+        "note":                "heartbeat sample — not consciousness, just firing density per beat",
+    })
+
+
+# ── Tools 6-52 — beacon-stamped wrappers ─────────────────────────────────────
 # Generated dynamically; each has a unique __name__ so MCP routing works.
 
 _SIMPLE_TOOLS = [

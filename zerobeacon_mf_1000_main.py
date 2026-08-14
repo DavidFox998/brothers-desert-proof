@@ -1239,7 +1239,7 @@ def health():
     return {
         "ok":     True,
         "status": overall_status,
-        "tools":   1050,
+        "tools":   1052,
         "routers": 21,
         "brain":   "LIVE",
         "d":      D,
@@ -2102,7 +2102,7 @@ def brain_get():
     bp = beacon_payload(GENESIS_P)
     return {
         "brain":   "LIVE",
-        "tools":   1050,
+        "tools":   1052,
         "routers": 21,
         "beacon":  BEACON,
         "d":       D,
@@ -2119,6 +2119,21 @@ async def brain_post(request: Request):
     body   = await request.json()
     intent = body.get("intent", "")
     return m21.brain_route(intent=intent)
+
+
+@app.get("/brain/heartbeat")
+def brain_heartbeat_get(intent: str = ""):
+    """Synaptic heartbeat — one 50 ms tick, firing density per beat."""
+    return m21.brain_heartbeat(intent=intent)
+
+
+@app.post("/brain/fire")
+async def brain_fire_post(request: Request):
+    """Synaptic firing — active tool set via popcount threshold."""
+    body      = await request.json()
+    intent    = body.get("intent", "")
+    threshold = int(body.get("threshold", 6))
+    return m21.brain_synaptic_fire(intent=intent, threshold=threshold)
 
 
 @app.get("/mcp")
