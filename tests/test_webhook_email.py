@@ -554,3 +554,140 @@ def test_subscription_deleted_missing_customer_id_returns_200(client):
     assert resp.status_code == 200, (
         f"subscription.deleted with missing customer ID must return 200; got {resp.status_code}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Test 11 — cancel → re-subscribe at lower tier: old key must stay rejected
+# ---------------------------------------------------------------------------
+
+def test_cancel_then_resubscribe_lower_tier_old_key_rejected(client):
+    """
+    Sequence: pro_100 key issued → subscription.deleted fires (→ free) →
+    subscription.updated fires at pro_10 (→ fresh key issued).
+
+    Assertions:
+      1. The original pro_100 key is downgraded to 'free' after deletion.
+      2. The original pro_100 key cannot grant pro_100 *or* pro_10 access after
+         the re-subscription (it is still free-tier, not silently upgraded).
+      3. The new key emailed on re-subscription grants pro_10 access.
+      4. The new key does NOT grant pro_100 access (lower tier only).
+    """
+    import stripe
+    import zerobeacon_mf_1000_main as main_mod
+    from core import keystore
+
+    email       = "resubscriber@example.com"
+    customer_id = "cus_resub_lower_tier_001"
+
+    # ── isolate keystore state ────────────────────────────────────────────────
+    original_store = dict(keystore._store)
+    keystore._store.clear()
+
+    new_key_from_email: list[str] = []
+
+    try:
+        # ── Step 1: seed a pro_100 key for the customer ───────────────────────
+        old_key = keystore.issue_key(
+            "pro_100", email,
+            stripe_customer_id=customer_id,
+        )
+
+        # Pre-condition: old key grants pro_100 access before any events.
+        allowed_before, _ = keystore.check_access(old_key, "pro_100")
+        assert allowed_before, "Pre-condition: seeded pro_100 key must grant pro_100 access"
+
+        # ── Step 2: fire subscription.deleted (cancellation) ──────────────────
+        deleted_event = _make_subscription_deleted(
+            customer_id=customer_id,
+            email=email,
+        )
+        with patch.object(stripe.Webhook, "construct_event", return_value=deleted_event):
+            del_resp = _post_webhook(client, deleted_event)
+
+        assert del_resp.status_code == 200, (
+            f"subscription.deleted must return 200; got {del_resp.status_code}: {del_resp.text}"
+        )
+
+        # Old key must now be free-tier.
+        record_after_cancel = keystore.lookup(old_key)
+        assert record_after_cancel is not None, "Key record must still exist after cancellation"
+        assert record_after_cancel["tier"] == "free", (
+            f"Expected tier='free' after cancellation, got {record_after_cancel['tier']!r}"
+        )
+
+        # ── Step 3: fire subscription.updated at pro_10 (re-subscription) ─────
+        updated_event = _make_subscription_updated(
+            email=email,
+            amount_cents=1000,   # $10 → pro_10
+            customer_id=customer_id,
+        )
+
+        def _capture_key(email, api_key, **kwargs):  # noqa: ANN001
+            new_key_from_email.append(api_key)
+            return True
+
+        with (
+            patch.object(stripe.Webhook, "construct_event", return_value=updated_event),
+            patch.object(main_mod, "send_api_key_email", side_effect=_capture_key) as mock_send,
+        ):
+            upd_resp = _post_webhook(client, updated_event)
+
+        # ── Assertions that require the live keystore (must run inside try) ──
+
+        assert upd_resp.status_code == 200, (
+            f"subscription.updated must return 200; got {upd_resp.status_code}: {upd_resp.text}"
+        )
+        assert mock_send.called, (
+            "send_api_key_email must be called on re-subscription"
+        )
+        assert new_key_from_email, "No new key was captured from send_api_key_email"
+
+        new_key = new_key_from_email[0]
+        assert new_key.startswith("zbk_"), (
+            f"Re-subscription key must start with 'zbk_', got {new_key!r}"
+        )
+        assert new_key != old_key, (
+            f"Re-subscriber received their old key ({old_key[:12]}…) — a fresh key must be issued"
+        )
+
+        # Old key must remain free-tier and grant NO paid access.
+        old_record = keystore.lookup(old_key)
+        assert old_record is not None, "Old key record must still exist in keystore"
+        assert old_record["tier"] == "free", (
+            f"Old key must remain 'free' after re-subscription; got tier={old_record['tier']!r}"
+        )
+
+        old_allowed_pro100, reason100 = keystore.check_access(old_key, "pro_100")
+        assert not old_allowed_pro100, (
+            f"Old pro_100 key must NOT grant pro_100 access after cancel+resubscribe "
+            f"(tier={old_record['tier']!r}, reason={reason100!r})"
+        )
+
+        old_allowed_pro10, reason10 = keystore.check_access(old_key, "pro_10")
+        assert not old_allowed_pro10, (
+            f"Old pro_100 key must NOT grant pro_10 access after cancel+resubscribe "
+            f"(tier={old_record['tier']!r}, reason={reason10!r})"
+        )
+
+        # New key must grant pro_10 access but NOT pro_100 access.
+        new_record = keystore.lookup(new_key)
+        assert new_record is not None, "New key must exist in keystore after re-subscription"
+        assert new_record["tier"] == "pro_10", (
+            f"New key must be tier='pro_10', got {new_record['tier']!r}"
+        )
+
+        new_allowed_pro10, _ = keystore.check_access(new_key, "pro_10")
+        assert new_allowed_pro10, (
+            "New key must grant pro_10 access after re-subscribing at pro_10"
+        )
+
+        new_allowed_pro100, reason_new100 = keystore.check_access(new_key, "pro_100")
+        assert not new_allowed_pro100, (
+            f"New pro_10 key must NOT grant pro_100 access "
+            f"(tier={new_record['tier']!r}, reason={reason_new100!r})"
+        )
+
+    finally:
+        # Restore original keystore state so other tests are unaffected.
+        keystore._store.clear()
+        keystore._store.update(original_store)
