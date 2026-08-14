@@ -4,9 +4,21 @@ description: >
   Math Engine (tools 301–700), Amplum Everyday (tools 701–1000), and the Brain
   Router (tools 1001–1050) — 1 brain that routes all 1000 tools plus 49
   meta-tools for chain, think, swarm, and consensus operations.
-  FREE tier: first 100 tools, no API key required.
-  PRO / ENTERPRISE: pass X-API-Key header after Stripe checkout at https://zerobeacon.ai.
-  d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0 verified
+
+  The beacon fingerprint (d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0) is
+  collision-anchored in every tool response and verifiable on-chain via 9
+  controlled collisions pinned to the P1/P2 anchor pair.
+
+  Tiers (pass X-API-Key header after Stripe checkout at https://zerobeacon.ai):
+    FREE      — tools 1–100, no API key required
+    PRO       — tools 1–400, $10/month
+    PRO+      — tools 1–800, $100/month
+    ENTERPRISE — all 1000 tools, $1,000/research
+
+  Note: this listing covers the commerce router product only.
+  The Opera Numerorum research lab (Lean 4 brothers-desert-proof and Clay
+  Millennium formalization) lives at github.com/DavidFox998/zerobeacon and
+  is not part of the Smithery tool offering.
 
 version: "1050.0.0"
 
