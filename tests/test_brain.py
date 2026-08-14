@@ -199,6 +199,25 @@ def test_mcp_brain_route_wrong_beacon_rejected():
         "verify_moat must return False when beacon is tampered in an MCP result"
 
 
+def test_mcp_brain_route_wrong_d_rejected():
+    """Zero out d in an MCP tools/call result — verify_moat must return False."""
+    with _allow_all:
+        resp = client.post("/mcp", json={
+            "jsonrpc": "2.0", "id": 22,
+            "method": "tools/call",
+            "params": {
+                "name": "mf_21_brain_route",
+                "arguments": {"intent": "escrow payment"},
+            },
+        })
+    assert resp.status_code == 200
+    result = resp.json()["result"]
+    # Simulate MITM zeroing out d
+    forged = {**result, "d": 0}
+    assert verify_moat(forged) is False, \
+        "verify_moat must return False when d is zeroed in an MCP result"
+
+
 # ── 13. Live-endpoint smoke tests (skipped when ZEROBEACON_URL not set) ───────
 #
 # Set ZEROBEACON_URL=https://zerobeacon.ai (or your Fly.io URL) to run these
