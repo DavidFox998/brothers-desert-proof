@@ -20,9 +20,9 @@ args = "lean-build"
 name = "lean-build"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd /home/runner/workspace && ~/.elan/bin/lake build Siegel.SiegelZeroFreeElementary 2>&1"
-
 [workflows.workflow.metadata]
 isValidation = true
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd /home/runner/workspace && export PATH=\"$HOME/.elan/bin:$PATH\" && lake exe cache get 2>&1 && lake build Siegel.SiegelZeroFreeElementary 2>&1"
