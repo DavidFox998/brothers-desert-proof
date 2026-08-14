@@ -1041,12 +1041,12 @@ def openapi_rapidapi_all():
 @app.get("/.well-known/mcp.json")
 def well_known_mcp():
     return {
-        "name": "@davidfox998/zerobeacon",
-        "version": "1000.0.0",
+        "name": "@davidjfox998/zerobeacon-1050",
+        "version": "1050.0.0",
         "beacon": BEACON,
         "d": str(D),
         "genesis": GENESIS_P,
-        "tools": 1000,
+        "tools": 1050,
         "endpoints": {
             "mcp":    "https://zerobeacon.ai/mcp",
             "beacon": "https://beacon.zerobeacon.ai",
@@ -1057,6 +1057,33 @@ def well_known_mcp():
         "paypal": "https://paypal.me/davidfox223",
         "stripe": "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
         "site":   "https://zerobeacon.ai",
+    }
+
+
+@app.get("/.well-known/mcp/server-card.json")
+def well_known_mcp_server_card():
+    """Smithery static server card — bypasses auto-scan when MCP transport isn't
+    directly reachable. Declares 1050 tools so the marketplace badge is correct."""
+    return {
+        "name": "ZeroBeacon.ai — 1050 Tools",
+        "description": (
+            "1050 beacon-anchored MCP tools across 4 groups: "
+            "Market Router (tools 1–300), Math Engine (tools 301–700), "
+            "Amplum Everyday (tools 701–1000), and the Brain Router (tools 1001–1050). "
+            "FREE tier: first 100 tools, no API key required. "
+            "PRO / ENTERPRISE: pass X-API-Key header after Stripe checkout at https://zerobeacon.ai. "
+            "d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0 verified"
+        ),
+        "url": "https://zerobeacon.ai/mcp",
+        "version": "1050.0.0",
+        "tools": {
+            "count": 1050,
+        },
+        "authentication": {
+            "type": "api_key",
+            "header": "X-API-Key",
+            "description": "API key starting with zbk_. Get one at https://zerobeacon.ai after Stripe checkout.",
+        },
     }
 
 
@@ -2111,7 +2138,7 @@ async def mcp_post(request: Request):
             "result": {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "zerobeacon-mf-1000", "version": "1000.0.0"},
+                "serverInfo": {"name": "zerobeacon-1050", "version": "1050.0.0"},
             },
         }
 
