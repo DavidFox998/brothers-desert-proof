@@ -1,0 +1,233 @@
+"""Smoke tests — MCP tools/list must return exactly 1050 entries.
+
+These tests guard the marketplace badge: smithery.yaml advertises
+tools.count: 1050, so the live /mcp response must match.
+
+In-process tests (always run):
+  - POST /mcp  {"method": "tools/list"} → result.tools length == 1050
+  - GET  /mcp                           → result.tools length == 1050
+
+Live-endpoint tests (run when ZEROBEACON_URL is set):
+  - Hits the deployed server and asserts 1050 tools.
+  - On mismatch, fires the ALERT_WEBHOOK_URL so the operator is notified
+    without tailing Fly.io logs.
+"""
+import json
+import os
+import urllib.request
+import urllib.error
+
+import pytest
+from fastapi.testclient import TestClient
+
+from zerobeacon_mf_1000_main import app
+
+EXPECTED_COUNT = 1050
+
+client = TestClient(app, raise_server_exceptions=True)
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+def _fire_alert(title: str, message: str, remediation: str) -> None:
+    """POST a structured alert to ALERT_WEBHOOK_URL (Slack-compatible).
+
+    No-ops silently when the env var is absent or the delivery fails,
+    so the test assertion is always the canonical signal.
+    """
+    url = os.environ.get("ALERT_WEBHOOK_URL", "")
+    if not url:
+        return
+    payload = {
+        "text": f":rotating_light: *{title}*",
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f":rotating_light: *{title}*\n"
+                        f"*Detail:* {message}\n"
+                        f"*Fix:* `{remediation}`"
+                    ),
+                },
+            }
+        ],
+    }
+    body = json.dumps(payload).encode()
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10):
+            pass
+    except Exception:
+        pass  # alert delivery failure must never mask the test assertion
+
+
+# ── In-process tests ──────────────────────────────────────────────────────────
+
+def test_mcp_post_tools_list_count():
+    """POST /mcp tools/list must return exactly 1050 tool entries (in-process)."""
+    resp = client.post(
+        "/mcp",
+        json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
+    )
+    assert resp.status_code == 200, f"POST /mcp returned {resp.status_code}: {resp.text}"
+    body = resp.json()
+    tools = body.get("result", {}).get("tools", [])
+    assert len(tools) == EXPECTED_COUNT, (
+        f"MCP tools/list returned {len(tools)} tools — expected {EXPECTED_COUNT}. "
+        "Check that all 21 router modules are mounted in ROUTERS and that "
+        "_build_tool_list() deduplication isn't discarding entries."
+    )
+
+
+def test_mcp_get_tools_list_count():
+    """GET /mcp must return exactly 1050 tool entries (in-process)."""
+    resp = client.get("/mcp")
+    assert resp.status_code == 200, f"GET /mcp returned {resp.status_code}: {resp.text}"
+    body = resp.json()
+    tools = body.get("result", {}).get("tools", [])
+    assert len(tools) == EXPECTED_COUNT, (
+        f"GET /mcp returned {len(tools)} tools — expected {EXPECTED_COUNT}. "
+        "Check that all 21 router modules are mounted in ROUTERS and that "
+        "_build_tool_list() deduplication isn't discarding entries."
+    )
+
+
+def test_mcp_tool_names_unique():
+    """All tool names in the tools/list response must be unique (no silent duplicates)."""
+    resp = client.post(
+        "/mcp",
+        json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
+    )
+    assert resp.status_code == 200
+    tools = resp.json().get("result", {}).get("tools", [])
+    names = [t["name"] for t in tools]
+    unique_names = set(names)
+    assert len(names) == len(unique_names), (
+        f"tools/list contains {len(names) - len(unique_names)} duplicate tool names. "
+        f"Duplicates: {[n for n in names if names.count(n) > 1][:10]}"
+    )
+
+
+def test_mcp_tools_have_required_fields():
+    """Every tool entry must carry name, description, and inputSchema."""
+    resp = client.post(
+        "/mcp",
+        json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
+    )
+    assert resp.status_code == 200
+    tools = resp.json().get("result", {}).get("tools", [])
+    missing = [
+        t.get("name", "<unnamed>")
+        for t in tools
+        if not t.get("name") or not t.get("description") or not t.get("inputSchema")
+    ]
+    assert not missing, (
+        f"{len(missing)} tool(s) are missing name/description/inputSchema: "
+        f"{missing[:10]}"
+    )
+
+
+def test_mcp_jsonrpc_envelope():
+    """POST /mcp tools/list response must include jsonrpc='2.0' and id echo."""
+    req_id = 42
+    resp = client.post(
+        "/mcp",
+        json={"jsonrpc": "2.0", "id": req_id, "method": "tools/list", "params": {}},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body.get("jsonrpc") == "2.0", f"jsonrpc field wrong: {body.get('jsonrpc')}"
+    assert body.get("id") == req_id, f"id not echoed: got {body.get('id')}, want {req_id}"
+    assert "result" in body, "response missing 'result' key"
+    assert "tools" in body["result"], "result missing 'tools' key"
+
+
+# ── Live-endpoint smoke tests (skipped when ZEROBEACON_URL not set) ────────────
+
+_live_url = os.getenv("ZEROBEACON_URL", "").rstrip("/")
+_skip_live = pytest.mark.skipif(
+    not _live_url,
+    reason="ZEROBEACON_URL not set — skipping live-endpoint smoke tests",
+)
+
+
+@_skip_live
+def test_live_mcp_post_tools_list_count():
+    """Live POST /mcp tools/list must return exactly 1050 entries.
+
+    Fires ALERT_WEBHOOK_URL on mismatch so the operator is notified
+    without tailing Fly.io logs.
+    """
+    import requests  # noqa: PLC0415
+
+    resp = requests.post(
+        f"{_live_url}/mcp",
+        json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
+        timeout=30,
+    )
+    assert resp.status_code == 200, (
+        f"Live POST /mcp returned {resp.status_code}. URL: {_live_url}/mcp"
+    )
+    body = resp.json()
+    tools = body.get("result", {}).get("tools", [])
+    count = len(tools)
+    if count != EXPECTED_COUNT:
+        _fire_alert(
+            title=f"MCP tools/list count mismatch — got {count}, expected {EXPECTED_COUNT}",
+            message=(
+                f"The live /mcp endpoint at {_live_url} returned {count} tools. "
+                f"The smithery.yaml badge advertises {EXPECTED_COUNT}. "
+                "A router may have failed to mount or _build_tool_list() "
+                "is dropping entries via deduplication."
+            ),
+            remediation=(
+                f"1. Check Fly.io logs: fly logs --app zerobeacon-mf-1000\n"
+                f"2. Confirm all 21 routers mounted at startup.\n"
+                f"3. Redeploy: fly deploy --app zerobeacon-mf-1000"
+            ),
+        )
+    assert count == EXPECTED_COUNT, (
+        f"Live MCP tools/list returned {count} tools — expected {EXPECTED_COUNT}. "
+        f"URL: {_live_url}/mcp"
+    )
+
+
+@_skip_live
+def test_live_mcp_get_tools_list_count():
+    """Live GET /mcp must return exactly 1050 entries.
+
+    Fires ALERT_WEBHOOK_URL on mismatch so the operator is notified
+    without tailing Fly.io logs.
+    """
+    import requests  # noqa: PLC0415
+
+    resp = requests.get(f"{_live_url}/mcp", timeout=30)
+    assert resp.status_code == 200, (
+        f"Live GET /mcp returned {resp.status_code}. URL: {_live_url}/mcp"
+    )
+    body = resp.json()
+    tools = body.get("result", {}).get("tools", [])
+    count = len(tools)
+    if count != EXPECTED_COUNT:
+        _fire_alert(
+            title=f"MCP tools/list count mismatch — got {count}, expected {EXPECTED_COUNT}",
+            message=(
+                f"The live GET /mcp endpoint at {_live_url} returned {count} tools. "
+                f"The smithery.yaml badge advertises {EXPECTED_COUNT}. "
+                "A router may have failed to mount."
+            ),
+            remediation=(
+                "fly logs --app zerobeacon-mf-1000 to check startup errors, "
+                "then fly deploy --app zerobeacon-mf-1000 to redeploy."
+            ),
+        )
+    assert count == EXPECTED_COUNT, (
+        f"Live GET /mcp returned {count} tools — expected {EXPECTED_COUNT}. "
+        f"URL: {_live_url}/mcp"
+    )
