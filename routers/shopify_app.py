@@ -146,7 +146,7 @@ def _exchange_token(shop: str, code: str) -> str | None:
         return None
 
 def _install_script_tag(shop: str, token: str) -> dict:
-    """Inject the ZeroBeacon collision-proof search script into the storefront.
+    """Inject the ZeroBeacon collision-anchored search script into the storefront.
 
     The injected script (/shopify/beacon.js) intercepts Shopify predictive-search
     API calls and routes them through /shopify/search, which returns beacon-verified
@@ -480,7 +480,7 @@ async def shopify_beacon_js(
   function zbBadge() {{
     var el = document.createElement('div');
     el.id = 'zerobeacon-badge';
-    el.title = 'ZeroBeacon collision-proof search active';
+    el.title = 'ZeroBeacon collision-anchored search active';
     el.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:9999;'
       + 'display:flex;align-items:center;gap:4px;padding:4px 10px;'
       + 'border-radius:12px;background:#0f172a;color:#38bdf8;'
