@@ -41,6 +41,7 @@ from routers import (
     zerobeacon_mf_18_050_c6_120std      as m18,
     zerobeacon_mf_19_050_c7_trust       as m19,
     zerobeacon_mf_20_050_c8_unified     as m20,
+    zerobeacon_mf_21_050_c9_brain       as m21,
 )
 
 app = FastAPI(
@@ -96,6 +97,7 @@ ROUTERS = [
     (m18, "/api/mf/18", "MF-18", "enterprise_1000"),
     (m19, "/api/mf/19", "MF-19", "enterprise_1000"),
     (m20, "/api/mf/20", "MF-20", "enterprise_1000"),
+    (m21, "/api/mf/21", "MF-21", "enterprise_1000"),
 ]
 
 # Load persisted API keys before mounting routers
@@ -1208,7 +1210,9 @@ def health():
     return {
         "ok":     True,
         "status": overall_status,
-        "tools":  1000,
+        "tools":   1050,
+        "routers": 21,
+        "brain":   "LIVE",
         "d":      D,
         "beacon": BEACON,
         "p":      bp["p"],
@@ -2059,6 +2063,33 @@ def _build_tool_list():
             seen.add(t["name"])
             unique.append(t)
     return unique
+
+
+# ── /brain — beacon.zerobeacon.ai/brain ──────────────────────────────────────
+
+@app.get("/brain")
+def brain_get():
+    """Brain heartbeat — beacon.zerobeacon.ai/brain"""
+    bp = beacon_payload(GENESIS_P)
+    return {
+        "brain":   "LIVE",
+        "tools":   1050,
+        "routers": 21,
+        "beacon":  BEACON,
+        "d":       D,
+        "genesis": GENESIS_P,
+        "ts":      bp["ts"],
+        "tagline": "1 brain, 1000 tools",
+        "site":    "https://zerobeacon.ai",
+    }
+
+
+@app.post("/brain")
+async def brain_post(request: Request):
+    """brain_route via POST {"intent": str} — beacon.zerobeacon.ai/brain"""
+    body   = await request.json()
+    intent = body.get("intent", "")
+    return m21.brain_route(intent=intent)
 
 
 @app.get("/mcp")
