@@ -355,6 +355,96 @@ def test_subscription_updated_sends_fresh_key_email(client):
         keystore._store.clear()
         keystore._store.update(original_store)
 
+
+# ---------------------------------------------------------------------------
+# Test 12 — subscription.deleted: email-fallback revokes legacy keys that
+#            carry no stripe_customer_id
+# ---------------------------------------------------------------------------
+
+def test_subscription_deleted_revokes_legacy_key_via_email_fallback(client):
+    """
+    When a key was issued before stripe_customer_id tracking was added it
+    carries no customer ID in its record.  A customer.subscription.deleted
+    event must still downgrade that key to 'free' via the revoke_by_email
+    fallback path.
+
+    Setup:
+      - Seed a pro_10 key for the customer's email WITHOUT a stripe_customer_id.
+      - Fire a customer.subscription.deleted event that includes the matching
+        email (customer_email field) but a real customer ID that does NOT match
+        anything in the store — so revoke_by_customer_id finds nothing.
+      - Assert the webhook returns HTTP 200.
+      - Assert the legacy key's tier is now 'free'.
+      - Assert check_access returns False for pro_10 on that key.
+
+    The test is fully offline — no real Stripe signature or network traffic.
+    """
+    import stripe
+    import zerobeacon_mf_1000_main as main_mod
+    from core import keystore
+
+    email       = "legacy@example.com"
+    customer_id = "cus_legacy_001"   # present in the event but not on the key record
+
+    # ── isolate keystore state ────────────────────────────────────────────────
+    original_store = dict(keystore._store)
+    keystore._store.clear()
+
+    try:
+        # Seed a legacy key — no stripe_customer_id stored.
+        legacy_key = keystore.issue_key("pro_10", email)   # no stripe_customer_id kwarg
+
+        # Pre-condition: key must not carry a customer ID.
+        record_before = keystore.lookup(legacy_key)
+        assert record_before is not None
+        assert "stripe_customer_id" not in record_before, (
+            "Pre-condition failed: legacy key must not have a stripe_customer_id"
+        )
+
+        # Pre-condition: key must grant paid access before the event.
+        allowed_before, _ = keystore.check_access(legacy_key, "pro_10")
+        assert allowed_before, (
+            "Pre-condition: legacy key must grant pro_10 access before cancellation"
+        )
+
+        event = _make_subscription_deleted(
+            customer_id=customer_id,
+            email=email,
+        )
+
+        with patch.object(stripe.Webhook, "construct_event", return_value=event):
+            resp = _post_webhook(client, event)
+
+        # ── assertions ───────────────────────────────────────────────────────
+
+        assert resp.status_code == 200, (
+            f"subscription.deleted must return 200 so Stripe ACKs; "
+            f"got {resp.status_code}: {resp.text}"
+        )
+
+        # The key record must still exist but its tier must now be 'free'.
+        record_after = keystore.lookup(legacy_key)
+        assert record_after is not None, (
+            "Legacy key record was removed; expected it to be downgraded to 'free', not deleted"
+        )
+        assert record_after["tier"] == "free", (
+            f"Expected legacy key tier='free' after email-fallback revocation, "
+            f"got tier={record_after['tier']!r}"
+        )
+
+        # Access check must now deny any paid-tier request.
+        allowed_after, reason = keystore.check_access(legacy_key, "pro_10")
+        assert not allowed_after, (
+            f"Cancelled legacy key must not grant pro_10 access; "
+            f"check_access returned allowed=True "
+            f"(tier={keystore.tier_of(legacy_key)!r}, reason={reason!r})"
+        )
+
+    finally:
+        # Restore original keystore state so other tests are unaffected.
+        keystore._store.clear()
+        keystore._store.update(original_store)
+
     assert resp.status_code == 200, (
         f"Expected 200 from subscription.updated, got {resp.status_code}: {resp.text}"
     )
@@ -535,6 +625,96 @@ def test_subscription_deleted_revokes_key_immediately(client):
 
 
 # ---------------------------------------------------------------------------
+# Test 12 — subscription.deleted: email-fallback revokes legacy keys that
+#            carry no stripe_customer_id
+# ---------------------------------------------------------------------------
+
+def test_subscription_deleted_revokes_legacy_key_via_email_fallback(client):
+    """
+    When a key was issued before stripe_customer_id tracking was added it
+    carries no customer ID in its record.  A customer.subscription.deleted
+    event must still downgrade that key to 'free' via the revoke_by_email
+    fallback path.
+
+    Setup:
+      - Seed a pro_10 key for the customer's email WITHOUT a stripe_customer_id.
+      - Fire a customer.subscription.deleted event that includes the matching
+        email (customer_email field) but a real customer ID that does NOT match
+        anything in the store — so revoke_by_customer_id finds nothing.
+      - Assert the webhook returns HTTP 200.
+      - Assert the legacy key's tier is now 'free'.
+      - Assert check_access returns False for pro_10 on that key.
+
+    The test is fully offline — no real Stripe signature or network traffic.
+    """
+    import stripe
+    import zerobeacon_mf_1000_main as main_mod
+    from core import keystore
+
+    email       = "legacy@example.com"
+    customer_id = "cus_legacy_001"   # present in the event but not on the key record
+
+    # ── isolate keystore state ────────────────────────────────────────────────
+    original_store = dict(keystore._store)
+    keystore._store.clear()
+
+    try:
+        # Seed a legacy key — no stripe_customer_id stored.
+        legacy_key = keystore.issue_key("pro_10", email)   # no stripe_customer_id kwarg
+
+        # Pre-condition: key must not carry a customer ID.
+        record_before = keystore.lookup(legacy_key)
+        assert record_before is not None
+        assert "stripe_customer_id" not in record_before, (
+            "Pre-condition failed: legacy key must not have a stripe_customer_id"
+        )
+
+        # Pre-condition: key must grant paid access before the event.
+        allowed_before, _ = keystore.check_access(legacy_key, "pro_10")
+        assert allowed_before, (
+            "Pre-condition: legacy key must grant pro_10 access before cancellation"
+        )
+
+        event = _make_subscription_deleted(
+            customer_id=customer_id,
+            email=email,
+        )
+
+        with patch.object(stripe.Webhook, "construct_event", return_value=event):
+            resp = _post_webhook(client, event)
+
+        # ── assertions ───────────────────────────────────────────────────────
+
+        assert resp.status_code == 200, (
+            f"subscription.deleted must return 200 so Stripe ACKs; "
+            f"got {resp.status_code}: {resp.text}"
+        )
+
+        # The key record must still exist but its tier must now be 'free'.
+        record_after = keystore.lookup(legacy_key)
+        assert record_after is not None, (
+            "Legacy key record was removed; expected it to be downgraded to 'free', not deleted"
+        )
+        assert record_after["tier"] == "free", (
+            f"Expected legacy key tier='free' after email-fallback revocation, "
+            f"got tier={record_after['tier']!r}"
+        )
+
+        # Access check must now deny any paid-tier request.
+        allowed_after, reason = keystore.check_access(legacy_key, "pro_10")
+        assert not allowed_after, (
+            f"Cancelled legacy key must not grant pro_10 access; "
+            f"check_access returned allowed=True "
+            f"(tier={keystore.tier_of(legacy_key)!r}, reason={reason!r})"
+        )
+
+    finally:
+        # Restore original keystore state so other tests are unaffected.
+        keystore._store.clear()
+        keystore._store.update(original_store)
+
+
+# ---------------------------------------------------------------------------
 # Test 10 — subscription.deleted: missing customer ID returns 200 and skips
 # ---------------------------------------------------------------------------
 
@@ -685,6 +865,96 @@ def test_cancel_then_resubscribe_lower_tier_old_key_rejected(client):
         assert not new_allowed_pro100, (
             f"New pro_10 key must NOT grant pro_100 access "
             f"(tier={new_record['tier']!r}, reason={reason_new100!r})"
+        )
+
+    finally:
+        # Restore original keystore state so other tests are unaffected.
+        keystore._store.clear()
+        keystore._store.update(original_store)
+
+
+# ---------------------------------------------------------------------------
+# Test 12 — subscription.deleted: email-fallback revokes legacy keys that
+#            carry no stripe_customer_id
+# ---------------------------------------------------------------------------
+
+def test_subscription_deleted_revokes_legacy_key_via_email_fallback(client):
+    """
+    When a key was issued before stripe_customer_id tracking was added it
+    carries no customer ID in its record.  A customer.subscription.deleted
+    event must still downgrade that key to 'free' via the revoke_by_email
+    fallback path.
+
+    Setup:
+      - Seed a pro_10 key for the customer's email WITHOUT a stripe_customer_id.
+      - Fire a customer.subscription.deleted event that includes the matching
+        email (customer_email field) but a real customer ID that does NOT match
+        anything in the store — so revoke_by_customer_id finds nothing.
+      - Assert the webhook returns HTTP 200.
+      - Assert the legacy key's tier is now 'free'.
+      - Assert check_access returns False for pro_10 on that key.
+
+    The test is fully offline — no real Stripe signature or network traffic.
+    """
+    import stripe
+    import zerobeacon_mf_1000_main as main_mod
+    from core import keystore
+
+    email       = "legacy@example.com"
+    customer_id = "cus_legacy_001"   # present in the event but not on the key record
+
+    # ── isolate keystore state ────────────────────────────────────────────────
+    original_store = dict(keystore._store)
+    keystore._store.clear()
+
+    try:
+        # Seed a legacy key — no stripe_customer_id stored.
+        legacy_key = keystore.issue_key("pro_10", email)   # no stripe_customer_id kwarg
+
+        # Pre-condition: key must not carry a customer ID.
+        record_before = keystore.lookup(legacy_key)
+        assert record_before is not None
+        assert "stripe_customer_id" not in record_before, (
+            "Pre-condition failed: legacy key must not have a stripe_customer_id"
+        )
+
+        # Pre-condition: key must grant paid access before the event.
+        allowed_before, _ = keystore.check_access(legacy_key, "pro_10")
+        assert allowed_before, (
+            "Pre-condition: legacy key must grant pro_10 access before cancellation"
+        )
+
+        event = _make_subscription_deleted(
+            customer_id=customer_id,
+            email=email,
+        )
+
+        with patch.object(stripe.Webhook, "construct_event", return_value=event):
+            resp = _post_webhook(client, event)
+
+        # ── assertions ───────────────────────────────────────────────────────
+
+        assert resp.status_code == 200, (
+            f"subscription.deleted must return 200 so Stripe ACKs; "
+            f"got {resp.status_code}: {resp.text}"
+        )
+
+        # The key record must still exist but its tier must now be 'free'.
+        record_after = keystore.lookup(legacy_key)
+        assert record_after is not None, (
+            "Legacy key record was removed; expected it to be downgraded to 'free', not deleted"
+        )
+        assert record_after["tier"] == "free", (
+            f"Expected legacy key tier='free' after email-fallback revocation, "
+            f"got tier={record_after['tier']!r}"
+        )
+
+        # Access check must now deny any paid-tier request.
+        allowed_after, reason = keystore.check_access(legacy_key, "pro_10")
+        assert not allowed_after, (
+            f"Cancelled legacy key must not grant pro_10 access; "
+            f"check_access returned allowed=True "
+            f"(tier={keystore.tier_of(legacy_key)!r}, reason={reason!r})"
         )
 
     finally:
