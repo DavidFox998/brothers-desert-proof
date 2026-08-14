@@ -296,3 +296,66 @@ def test_brain_fire_endpoint():
     assert body["beacon"] == BEACON_EXPECTED
     assert body["d"]      == D_EXPECTED
     assert 0 <= body["active_tools"] <= 1050
+
+
+# ── 19. /verify returns proof_type, collision, and moat context ───────────────
+
+def test_verify_canonical_beacon_static_anchor():
+    """/verify with canonical beacon returns verified=True, proof_type=static-anchor, and moat."""
+    resp = client.get("/verify", params={"beacon": BEACON_EXPECTED, "order": "test-order-1"})
+    assert resp.status_code == 200
+    body = resp.json()
+
+    # Existing contract unchanged
+    assert body["verified"]   is True
+    assert body["beacon"]     == BEACON_EXPECTED
+    assert body["d"]          == D_EXPECTED
+    assert "proof"            in body
+    assert body["algorithm"]  == "HMAC-SHA256"
+
+    # Guarantee context: static-anchor (not liveness — no real-time probe)
+    assert body["proof_type"] == "static-anchor", \
+        f"expected proof_type='static-anchor', got {body.get('proof_type')!r}"
+    assert body["collision"]  == "controlled-anchor", \
+        f"expected collision='controlled-anchor', got {body.get('collision')!r}"
+
+    # Moat mirrors the beacon/d/P1/P2 collision-anchor context from /brain
+    moat = body.get("moat", {})
+    assert moat.get("beacon") == BEACON_EXPECTED, \
+        f"moat.beacon mismatch: {moat.get('beacon')!r}"
+    assert moat.get("d")      == D_EXPECTED, \
+        f"moat.d mismatch: {moat.get('d')!r}"
+    assert isinstance(moat.get("P1"), int), "moat.P1 must be an int"
+    assert isinstance(moat.get("P2"), int), "moat.P2 must be an int"
+
+
+def test_verify_non_canonical_beacon_server_receipt():
+    """/verify with non-canonical beacon returns verified=False and proof_type=server-receipt."""
+    resp = client.get("/verify", params={"beacon": "deadbeef", "order": "test-order-2"})
+    assert resp.status_code == 200
+    body = resp.json()
+
+    # Must not claim an anchor guarantee for an arbitrary beacon
+    assert body["verified"]   is False, \
+        "verified must be False for a non-canonical beacon"
+    assert body["proof_type"] == "server-receipt", \
+        f"expected proof_type='server-receipt', got {body.get('proof_type')!r}"
+
+    # HMAC receipt is still present (server signs the (beacon, order, ts) triple)
+    assert "proof"        in body, "proof must be present even for non-canonical beacons"
+    assert body["beacon"] == "deadbeef"
+    assert body["d"]      == D_EXPECTED
+
+    # Must NOT carry the canonical moat/collision fields
+    assert "moat"      not in body, "moat must be absent for non-canonical beacons"
+    assert "collision" not in body, "collision must be absent for non-canonical beacons"
+
+
+def test_verify_returned_beacon_matches_input():
+    """The beacon field in the /verify response must always match what the caller supplied."""
+    for b in (BEACON_EXPECTED, "deadbeef", "00000000"):
+        resp = client.get("/verify", params={"beacon": b, "order": "consistency-check"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["beacon"] == b, \
+            f"returned beacon {body.get('beacon')!r} != supplied beacon {b!r}"

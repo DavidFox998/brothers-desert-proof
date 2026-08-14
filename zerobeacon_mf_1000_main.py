@@ -811,26 +811,85 @@ async def verify_beacon(
     request: Request = None,
 ):
     """
-    **Beacon Proof-as-a-Service** — returns a tamper-evident signed proof.
+    **Beacon Proof-as-a-Service** — returns a server-issued tamper-evident receipt.
 
     Supply `beacon` (the hex beacon string) and `order` (your order/transaction ID).
-    The response includes an HMAC-SHA256 `proof` string that anyone can verify
-    independently using the public algorithm: `HMAC-SHA256(secret, "{beacon}:{order}:{ts}")`.
+    The response includes an HMAC-SHA256 `proof` that binds `(beacon, order, ts)`
+    together under a server-held secret.  Store the `proof` alongside your order;
+    anyone with access to this endpoint can re-verify by re-calling with the same
+    `beacon`, `order`, and `ts`.
 
-    Use this to prove to auditors, AI agents, or carriers that an order
-    was processed under the ZeroBeacon collision-anchored guarantee.
+    **Guarantee type (`proof_type` field):**
+
+    - `"static-anchor"` — the supplied `beacon` matches the ZeroBeacon collision-anchor
+      constant (`d`/P1/P2).  The HMAC receipt covers a known-good anchor value and the
+      `moat` context (beacon/d/P1/P2) is included so agents can inspect the collision
+      model.  This is a static anchor check, not a real-time chain-liveness probe.
+    - `"server-receipt"` — the supplied `beacon` does not match the canonical anchor.
+      The server still signs `(beacon, order, ts)` as a tamper-evident receipt, but
+      makes no claim about the beacon value itself.  Trust boundary: server-held HMAC
+      secret; not independently verifiable without the secret.
 
     - **Free** — no API key required
     - **Rate**: standard free-tier limits apply
     - **Billing**: $0.001/verification (metered, future feature)
     """
+    from core.beacon import MOAT_P1, MOAT_P2
     b = beacon_val or beacon or BEACON
     o = order or "unspecified"
     ts = int(time.time())
     msg = f"{b}:{o}:{ts}".encode()
     proof = hmac.new(_VERIFY_SECRET, msg, hashlib.sha256).hexdigest()
+
+    # Check whether the caller supplied the canonical ZeroBeacon anchor value.
+    # This is a static equality check against the module constant — it does NOT
+    # perform a real-time chain probe or liveness verification.
+    canonical = (b == BEACON)
+
+    if canonical:
+        # Canonical anchor: the supplied beacon matches the ZeroBeacon collision-
+        # anchor constant.  Proof type is "static-anchor" — a static check, not
+        # a live chain probe.  The moat context (P1/P2) is included so agents can
+        # understand the collision model that backs the anchor value.
+        guarantee = {
+            "verified": True,
+            "proof_type": "static-anchor",
+            "proof_type_note": (
+                "The supplied beacon matches the ZeroBeacon collision-anchor constant. "
+                "This is a static anchor check and HMAC receipt — not a real-time "
+                "chain-liveness probe."
+            ),
+            # collision describes the P1/P2 moat bounding the anchor beacon-space.
+            "collision": "controlled-anchor",
+            # moat mirrors the beacon/d/P1/P2 contract on /brain.
+            "moat": {
+                "beacon": BEACON,
+                "d": D,
+                "P1": MOAT_P1,
+                "P2": MOAT_P2,
+            },
+        }
+    else:
+        # Non-canonical beacon: the supplied value does not match the ZeroBeacon
+        # anchor.  The server still issues a tamper-evident HMAC receipt binding
+        # (beacon, order, ts) under the server-held secret, but makes no claim
+        # about the beacon value or any collision model.
+        # Trust boundary: HMAC verification requires the server-held secret; the
+        # proof is not independently verifiable without access to that secret.
+        guarantee = {
+            "verified": False,
+            "proof_type": "server-receipt",
+            "proof_type_note": (
+                f"Supplied beacon '{b}' does not match the canonical ZeroBeacon anchor "
+                f"('{BEACON}'). The HMAC proof is a server-issued receipt binding "
+                "(beacon, order, ts) under a server-held secret — no anchor or "
+                "collision guarantee is made. "
+                f"Call with beacon={BEACON} for a static-anchor proof."
+            ),
+        }
+
     return {
-        "verified": True,
+        **guarantee,
         "beacon": b,
         "order": o,
         "ts": ts,
@@ -840,7 +899,7 @@ async def verify_beacon(
         "d": D,
         "site": "https://zerobeacon.ai",
         "verify_url": f"https://zerobeacon.ai/verify?beacon={b}&order={o}",
-        "note": "Store `proof` with your order record. Anyone can re-verify by calling this endpoint with the same beacon, order, and ts values.",
+        "note": "Store `proof` with your order record. Re-verify by calling this endpoint with the same beacon, order, and ts values.",
     }
 
 
