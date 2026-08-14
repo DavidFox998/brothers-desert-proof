@@ -273,3 +273,166 @@ def test_email_failure_still_returns_200(client):
     assert resp.status_code == 200, (
         f"Webhook must return 200 even when email fails; got {resp.status_code}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Helpers — subscription.updated event fixture
+# ---------------------------------------------------------------------------
+
+def _make_subscription_updated(
+    email: str = "resub@example.com",
+    amount_cents: int = 1000,          # plan.amount in cents
+    customer_id: str = "cus_resub_xyz",
+) -> dict:
+    """Return a minimal customer.subscription.updated event dict."""
+    return {
+        "id": "evt_test_sub_001",
+        "type": "customer.subscription.updated",
+        "data": {
+            "object": {
+                "id": "sub_test_001",
+                "object": "subscription",
+                "customer": customer_id,
+                "customer_email": email,
+                "plan": {
+                    "amount": amount_cents,
+                },
+                "status": "active",
+            }
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Test 7 — subscription.updated: re-subscriber gets a FRESH key, not the old one
+# ---------------------------------------------------------------------------
+
+def test_subscription_updated_sends_fresh_key_email(client):
+    """
+    A customer.subscription.updated event for a re-subscribing customer must:
+      1. Return HTTP 200.
+      2. Call send_api_key_email with the customer's email.
+      3. The emailed key must be a newly-issued zbk_ key — NOT the old key that
+         was active before the re-subscription.
+
+    Setup: seed an old pro_10 key for the same Stripe customer, then fire
+    subscription.updated.  Assert the emailed key differs from the seeded one.
+    The keystore is reset to a clean state before and after the test so other
+    tests are not polluted.
+    """
+    import stripe
+    import zerobeacon_mf_1000_main as main_mod
+    from core import keystore
+
+    email       = "resub@example.com"
+    customer_id = "cus_resub_fresh_001"
+
+    # ── isolate keystore state ────────────────────────────────────────────────
+    original_store = dict(keystore._store)
+    keystore._store.clear()
+
+    try:
+        # Seed an old key so we can prove the new one is different.
+        old_key = keystore.issue_key(
+            "pro_10", email,
+            stripe_customer_id=customer_id,
+        )
+
+        event = _make_subscription_updated(
+            email=email,
+            amount_cents=1000,
+            customer_id=customer_id,
+        )
+
+        with (
+            patch.object(stripe.Webhook, "construct_event", return_value=event),
+            patch.object(main_mod, "send_api_key_email", return_value=True) as mock_send,
+        ):
+            resp = _post_webhook(client, event)
+
+    finally:
+        # Restore original keystore state so other tests are unaffected.
+        keystore._store.clear()
+        keystore._store.update(original_store)
+
+    assert resp.status_code == 200, (
+        f"Expected 200 from subscription.updated, got {resp.status_code}: {resp.text}"
+    )
+    assert mock_send.called, (
+        "send_api_key_email was never called for subscription.updated"
+    )
+
+    call_kwargs = mock_send.call_args
+    args   = call_kwargs.args   if call_kwargs.args   else ()
+    kwargs = call_kwargs.kwargs if call_kwargs.kwargs else {}
+
+    called_email   = kwargs.get("email",   args[0] if len(args) > 0 else None)
+    called_api_key = kwargs.get("api_key", args[1] if len(args) > 1 else None)
+
+    assert called_email == email, (
+        f"send_api_key_email called with wrong email: {called_email!r}"
+    )
+    assert called_api_key, (
+        "send_api_key_email called with empty/None api_key for re-subscriber"
+    )
+    assert called_api_key.startswith("zbk_"), (
+        f"Expected fresh key to start with 'zbk_', got: {called_api_key!r}"
+    )
+    assert called_api_key != old_key, (
+        f"Re-subscriber received their OLD key ({old_key[:12]}…) instead of a freshly "
+        f"issued one — the handler must always issue a new key on re-subscription"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Test 8 — subscription.updated: email resolved via Customer.retrieve fallback
+# ---------------------------------------------------------------------------
+
+def test_subscription_updated_resolves_email_via_stripe_customer(client):
+    """
+    When customer_email is absent from the subscription object, the handler
+    must call stripe.Customer.retrieve and use the email from there.
+    The webhook must still return 200 and send_api_key_email must be called
+    with the resolved email.
+    """
+    resolved_email = "retrieved@example.com"
+    customer_id    = "cus_noemail_001"
+
+    event = _make_subscription_updated(
+        email="",            # blank — forces Customer.retrieve fallback
+        amount_cents=10000,  # $100 → pro_100
+        customer_id=customer_id,
+    )
+    # Blank the customer_email in the event object too
+    event["data"]["object"]["customer_email"] = ""
+
+    import stripe
+    import zerobeacon_mf_1000_main as main_mod
+
+    fake_customer = MagicMock()
+    fake_customer.get = lambda key, default=None: (
+        resolved_email if key == "email" else default
+    )
+
+    with (
+        patch.object(stripe.Webhook, "construct_event", return_value=event),
+        patch.object(stripe.Customer, "retrieve", return_value=fake_customer),
+        patch.object(main_mod, "send_api_key_email", return_value=True) as mock_send,
+    ):
+        resp = _post_webhook(client, event)
+
+    assert resp.status_code == 200, (
+        f"Expected 200 when email resolved via Customer.retrieve, got {resp.status_code}: {resp.text}"
+    )
+    assert mock_send.called, (
+        "send_api_key_email was not called when email resolved via Customer.retrieve"
+    )
+
+    call_kwargs  = mock_send.call_args
+    args         = call_kwargs.args   if call_kwargs.args   else ()
+    kwargs       = call_kwargs.kwargs if call_kwargs.kwargs else {}
+    called_email = kwargs.get("email", args[0] if len(args) > 0 else None)
+
+    assert called_email == resolved_email, (
+        f"Expected email={resolved_email!r}, got {called_email!r}"
+    )
