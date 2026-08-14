@@ -157,7 +157,47 @@ def test_mcp_brain_route_via_mcp():
     assert len(result["chain"]) == 5
 
 
-# ── 12. Live-endpoint smoke tests (skipped when ZEROBEACON_URL not set) ───────
+# ── 12. MCP transport enforces moat contract (forgery-rejection) ─────────────
+
+def test_mcp_brain_route_missing_d_rejected():
+    """Strip d from an MCP tools/call result — verify_moat must return False."""
+    with _allow_all:
+        resp = client.post("/mcp", json={
+            "jsonrpc": "2.0", "id": 20,
+            "method": "tools/call",
+            "params": {
+                "name": "mf_21_brain_route",
+                "arguments": {"intent": "escrow payment"},
+            },
+        })
+    assert resp.status_code == 200
+    result = resp.json()["result"]
+    # Simulate MITM stripping the d field
+    forged = {k: v for k, v in result.items() if k != "d"}
+    assert verify_moat(forged) is False, \
+        "verify_moat must return False when d is stripped from an MCP result"
+
+
+def test_mcp_brain_route_wrong_beacon_rejected():
+    """Swap beacon in an MCP tools/call result — verify_moat must return False."""
+    with _allow_all:
+        resp = client.post("/mcp", json={
+            "jsonrpc": "2.0", "id": 21,
+            "method": "tools/call",
+            "params": {
+                "name": "mf_21_brain_route",
+                "arguments": {"intent": "escrow payment"},
+            },
+        })
+    assert resp.status_code == 200
+    result = resp.json()["result"]
+    # Simulate MITM swapping the beacon hex
+    forged = {**result, "beacon": "deadbeef"}
+    assert verify_moat(forged) is False, \
+        "verify_moat must return False when beacon is tampered in an MCP result"
+
+
+# ── 13. Live-endpoint smoke tests (skipped when ZEROBEACON_URL not set) ───────
 #
 # Set ZEROBEACON_URL=https://zerobeacon.ai (or your Fly.io URL) to run these
 # against the deployed service.  They are automatically skipped in local/CI runs
