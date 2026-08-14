@@ -705,8 +705,8 @@ async def landing():
 
   <h1>ZERO<span>BEACON</span>.AI</h1>
   <p class="tagline">
-    <b>Collision-proof commerce router for AI agents.</b><br>
-    1000 tools &nbsp;·&nbsp; 20 blocks &nbsp;·&nbsp; 0 collisions &nbsp;·&nbsp; ω²=48/13&gt;0 verified
+    <b>Collision-anchored commerce router for AI agents.</b><br>
+    1050 tools &nbsp;·&nbsp; 21 blocks &nbsp;·&nbsp; 9 controlled collisions &nbsp;·&nbsp; ω²=48/13&gt;0 verified
   </p>
 
   <div class="beacon-box">{{
@@ -797,7 +797,7 @@ async def beacon():
 # ── Beacon Proof-as-a-Service (#7) ───────────────────────────────────────────
 # GET /verify?beacon=1d2c7a5b&order=ORD-12345
 # Returns a tamper-evident HMAC-SHA256 proof that a specific order was
-# processed under the ZeroBeacon collision-free guarantee.
+# processed under the ZeroBeacon collision-anchored guarantee.
 # Auditors, carriers, and AI agents call this to confirm the transaction.
 # Pricing: $0.001 per verification (metered via future Stripe usage billing).
 
@@ -818,7 +818,7 @@ async def verify_beacon(
     independently using the public algorithm: `HMAC-SHA256(secret, "{beacon}:{order}:{ts}")`.
 
     Use this to prove to auditors, AI agents, or carriers that an order
-    was processed under the ZeroBeacon collision-free guarantee.
+    was processed under the ZeroBeacon collision-anchored guarantee.
 
     - **Free** — no API key required
     - **Rate**: standard free-tier limits apply
@@ -867,13 +867,13 @@ async def beacon_js(
     The script verifies the beacon server-side and optionally injects a
     "ZeroBeacon Verified ✓" badge next to your product title.
 
-    License: **$99/year per store** — your `d` value is your collision-proof store ID.
+    License: **$99/year per store** — your `d` value is your collision-anchored store ID.
     """
     show_badge = badge != "0"
     badge_html = """
       const badge = document.createElement('span');
       badge.id = 'zerobeacon-badge';
-      badge.title = 'ZeroBeacon collision-free product ID verified';
+      badge.title = 'ZeroBeacon collision-anchored product ID verified';
       badge.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;background:#0f172a;color:#38bdf8;font-size:11px;font-family:system-ui,sans-serif;font-weight:600;letter-spacing:.3px;cursor:pointer;text-decoration:none;border:1px solid #38bdf8;margin-left:8px;vertical-align:middle;';
       badge.innerHTML = '&#9711; ZeroBeacon <b style="color:#fff">Verified</b>';
       badge.onclick = () => window.open(data.verify_url, '_blank');
@@ -885,7 +885,7 @@ async def beacon_js(
  * Store ID (d): {d}
  * Beacon: {beacon}
  * License: $99/year per store — see https://zerobeacon.ai/license
- * This script verifies your store's collision-proof product ID
+ * This script verifies your store's collision-anchored product ID
  * and optionally renders a trust badge on your storefront.
  */
 (function() {{

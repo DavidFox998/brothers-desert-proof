@@ -80,6 +80,8 @@ def brain_route(
         "chain":           chain,
         "conductor_hash":  cond_hash,
         "collision_bound": "(9/4M)^35\u22481e-197",
+        "collision":       "controlled at P1/P2 — intentional anchor, not proof of global uniqueness",
+        "proof_type":      "liveness",
         "s4":              sorted(S4),
         "sieve_mod":       SIEVE_MOD,
         "sieve_target":    SIEVE_TARGET,
