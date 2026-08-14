@@ -874,6 +874,103 @@ def test_cancel_then_resubscribe_lower_tier_old_key_rejected(client):
 
 
 # ---------------------------------------------------------------------------
+# Test 11b — mid-cycle downgrade: pro_100 → pro_10 without prior cancellation
+# ---------------------------------------------------------------------------
+
+def test_mid_cycle_downgrade_pro100_to_pro10_revokes_higher_access(client):
+    """
+    A direct mid-cycle plan downgrade (subscription.updated from pro_100 to
+    pro_10, with NO prior subscription.deleted) must immediately strip the
+    customer's existing key of enterprise access via downgrade_by_customer_id.
+
+    Assertions:
+      1. Pre-condition: seeded pro_100 key grants pro_100 access.
+      2. After subscription.updated fires at pro_10, the original key's stored
+         tier is 'pro_10', not 'pro_100'.
+      3. The original key can NOT grant pro_100 access (higher tier blocked).
+      4. The original key CAN still grant pro_10 access (downgraded in-place,
+         not revoked).
+
+    The test is fully offline — no real Stripe signature or network traffic.
+    """
+    import stripe
+    import zerobeacon_mf_1000_main as main_mod
+    from core import keystore
+
+    email       = "enterprise_downgrader@example.com"
+    customer_id = "cus_enterprise_downgrade_001"
+
+    # ── isolate keystore state ────────────────────────────────────────────────
+    original_store = dict(keystore._store)
+    keystore._store.clear()
+
+    try:
+        # ── Step 1: seed a pro_100 key for the customer ───────────────────────
+        old_key = keystore.issue_key(
+            "pro_100", email,
+            stripe_customer_id=customer_id,
+        )
+
+        # Pre-condition: old key must grant pro_100 access before any event.
+        allowed_before, _ = keystore.check_access(old_key, "pro_100")
+        assert allowed_before, (
+            "Pre-condition: seeded pro_100 key must grant pro_100 access before downgrade"
+        )
+
+        # ── Step 2: fire subscription.updated at pro_10 (mid-cycle downgrade) ─
+        # $10/month = 1000 cents → tier resolved to 'pro_10' by the handler.
+        updated_event = _make_subscription_updated(
+            email=email,
+            amount_cents=1000,   # $10 → pro_10
+            customer_id=customer_id,
+        )
+
+        def _noop_email(email, api_key, **kwargs):  # noqa: ANN001
+            return True
+
+        with (
+            patch.object(stripe.Webhook, "construct_event", return_value=updated_event),
+            patch.object(main_mod, "send_api_key_email", side_effect=_noop_email),
+        ):
+            resp = _post_webhook(client, updated_event)
+
+        assert resp.status_code == 200, (
+            f"subscription.updated must return 200; got {resp.status_code}: {resp.text}"
+        )
+
+        # ── Assertions on the original key ────────────────────────────────────
+
+        old_record = keystore.lookup(old_key)
+        assert old_record is not None, "Original key record must still exist after downgrade"
+
+        # Tier must be updated in-place to pro_10.
+        assert old_record["tier"] == "pro_10", (
+            f"Expected original key tier='pro_10' after mid-cycle downgrade, "
+            f"got tier={old_record['tier']!r}"
+        )
+
+        # Must NOT grant the higher pro_100 tier.
+        allowed_pro100, reason100 = keystore.check_access(old_key, "pro_100")
+        assert not allowed_pro100, (
+            f"Downgraded key must NOT grant pro_100 access "
+            f"(tier={old_record['tier']!r}, reason={reason100!r})"
+        )
+
+        # MUST still grant the new (lower) pro_10 tier — key is downgraded,
+        # not revoked.
+        allowed_pro10, reason10 = keystore.check_access(old_key, "pro_10")
+        assert allowed_pro10, (
+            f"Downgraded key MUST grant pro_10 access after downgrade "
+            f"(tier={old_record['tier']!r}, reason={reason10!r})"
+        )
+
+    finally:
+        # Restore original keystore state so other tests are unaffected.
+        keystore._store.clear()
+        keystore._store.update(original_store)
+
+
+# ---------------------------------------------------------------------------
 # Test 12 — subscription.deleted: email-fallback revokes legacy keys that
 #            carry no stripe_customer_id
 # ---------------------------------------------------------------------------
