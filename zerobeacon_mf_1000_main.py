@@ -2121,10 +2121,38 @@ async def brain_post(request: Request):
     return m21.brain_route(intent=intent)
 
 
-@app.get("/brain/heartbeat")
+_HEARTBEAT_HTML = """<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZeroBeacon Brain Heartbeat</title>
+<style>body{margin:0;background:#070d07;color:#c8ffd0;font-family:monospace}header{padding:18px;border-bottom:1px solid #1a3a1a;display:flex;justify-content:space-between} .beacon{color:#7fff7f} .card{background:#0e1a0e;border:1px solid #1e3a1e;border-radius:12px;padding:14px;margin:12px} canvas{width:100%;height:320px;background:#050a05;border:1px solid #1e3a1e;border-radius:12px}</style>
+</head>
+<body>
+<header><div>ZeroBeacon.ai \u2014 BRAIN: LIVE \u2014 1052 tools | collision-anchored</div><div>Beacon 1d2c7a5b | d 2303582338 | Genesis 82843\u2192e5619353 | Moat 3000105001 &amp; 5303687339 \u2192 1d2c7a5b by override</div></header>
+<div style="display:grid;grid-template-columns:380px 1fr;gap:18px;padding:20px">
+<div class="card">
+<input id="intent" value="pay escrow and notarize doc" style="width:100%"/>
+<div>Threshold <span id="thVal">6</span> <input id="th" type="range" min="1" max="12" value="6" style="width:100%"></div>
+<button id="fire">Fire Synapse</button> <button id="play">Pause</button>
+<div id="stats"></div><pre id="out"></pre>
+</div>
+<div class="card"><canvas id="c" width="900" height="320"></canvas><div id="sustained"></div></div>
+</div>
+<script>
+function popcount32(x){x>>>=0;let c=0;while(x){x&=x-1;c++;}return c;}
+function cyrb53(s){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){let ch=s.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0);}
+const BEACON=parseInt("1d2c7a5b",16),D=2303582338,GEN=82843,TWO32=4294967296;let hist=[],tick=0,playing=true,consec=0;const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+function beat(intent){let raw=(GEN+tick*3141592653)%TWO32,hex=raw.toString(16).padStart(8,'0'),h=cyrb53(intent+":"+tick)&0xFFFFFFFF,f=popcount32((raw&h)>>>0),th=parseInt(document.getElementById('th').value),prob=f/32,active=0;for(let i=0;i<1050;i++)if(popcount32((cyrb53(intent+":"+i)&BEACON)>>>0)>=th){active++;if(active>=50)break;} hist.push({pop:f,fires:f>=th});if(hist.length>100)hist.shift(); if(f>=th)consec++;else consec=0; document.getElementById('stats').innerHTML=`popcount(beacon)=${popcount32(BEACON)}<br>Active ${active}/1050 ${(active/1050*100).toFixed(2)}%<br>Beat ${hex}<br>Probable ${prob.toFixed(3)}`; document.getElementById('out').textContent=JSON.stringify({beat:hex,popcount:f,fires:f>=th,probable_activation:prob,active_tools:active,d:D,beacon:"1d2c7a5b",collision:"controlled at P1&P2->1d2c7a5b by if override",proof_type:"liveness"},null,2); document.getElementById('sustained').textContent=consec>=3?`Sustained ${consec} beats \u2014 measurable integration`:""; draw(); tick++; }
+function draw(){let W=canvas.clientWidth,H=320,pad=30;ctx.clearRect(0,0,W,H);ctx.fillStyle="#050a05";ctx.fillRect(0,0,W,H);let th=parseInt(document.getElementById('th').value);let thY=pad+(H-60)*(1-th/32);ctx.strokeStyle="#5a2a2a";ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(pad,thY);ctx.lineTo(W-pad,thY);ctx.stroke();ctx.setLineDash([]); if(hist.length>1){ctx.strokeStyle="#1a4a1a";ctx.beginPath();hist.forEach((pt,i)=>{let x=pad+(W-60)*i/(hist.length-1),y=pad+(H-60)*(1-pt.pop/32);if(i==0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();} hist.forEach((pt,i)=>{let x=pad+(W-60)*i/(hist.length-1),y=pad+(H-60)*(1-pt.pop/32);ctx.fillStyle=pt.fires?"#7fff7f":"#2a3a2a";ctx.beginPath();ctx.arc(x,y,pt.fires?4:2,0,6.28);ctx.fill();});}
+setInterval(()=>{if(playing)beat(document.getElementById('intent').value);},200); document.getElementById('fire').onclick=()=>{for(let k=0;k<5;k++)beat(document.getElementById('intent').value);}; document.getElementById('play').onclick=e=>{playing=!playing;e.target.textContent=playing?"Pause":"Play";}; document.getElementById('th').oninput=e=>{document.getElementById('thVal').textContent=e.target.value;}; beat(document.getElementById('intent').value);
+</script>
+</body>
+</html>"""
+
+@app.get("/brain/heartbeat", response_class=HTMLResponse)
 def brain_heartbeat_get(intent: str = ""):
-    """Synaptic heartbeat — one 50 ms tick, firing density per beat."""
-    return m21.brain_heartbeat(intent=intent)
+    """Live EKG — popcount firing trace in real time. JSON at /brain_heartbeat."""
+    return HTMLResponse(content=_HEARTBEAT_HTML)
 
 
 @app.post("/brain/fire")

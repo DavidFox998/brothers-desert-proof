@@ -276,14 +276,15 @@ def test_heartbeat_tool():
     assert len(r["beat"]) == 8          # 8-char hex
 
 
-# ── 17. /brain/heartbeat GET endpoint ────────────────────────────────────────
+# ── 17. /brain/heartbeat GET endpoint — serves live EKG HTML ─────────────────
 
 def test_brain_heartbeat_endpoint():
     resp = client.get("/brain/heartbeat?intent=test")
     assert resp.status_code == 200
-    body = resp.json()
-    assert body["beacon"] == BEACON_EXPECTED
-    assert body["d"]      == D_EXPECTED
+    assert "text/html" in resp.headers["content-type"]
+    assert "1d2c7a5b" in resp.text   # beacon constant baked into the page
+    assert "2303582338" in resp.text  # d constant baked into the page
+    assert "brain_heartbeat" in resp.text.lower() or "ZeroBeacon" in resp.text
 
 
 # ── 18. /brain/fire POST endpoint ────────────────────────────────────────────
