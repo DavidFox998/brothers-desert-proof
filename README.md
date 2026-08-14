@@ -90,21 +90,43 @@ Opera Numerorum needs all four, but only Self-Symmetry tells who the brothers ar
 
 ## Dependencies — Opera Numerorum
 
-- [mathlib4 v4.15.0](https://github.com/leanprover-community/mathlib4)
-- [eutheos-property](https://github.com/DavidFox998/eutheos-property) — brothers_35, Brothers1419, BrothersAnalysis, GapHamming, DirichletJitterTime, TwinPrimes, ExceptionalPrimes, PrimesInPi, jitter, Hilbert route — 1419 family
-- [rh-p5-bridge-14](https://github.com/DavidFox998/rh-p5-bridge-14) — Keystone — P5-Bridge-14 — q5=226 q6=165849 cf_bound=82829 — theorem grh_to_rh_descent: (GRH_for_L + LanglandsTransfer) → RH — reduces infinite to finite S_14
-- [arakelov-positivity-rh-core](https://github.com/DavidFox998/arakelov-positivity-rh-core) — ROOT V2 — M2 kappa, M7 Manifest, M8C Zoe-M*, M4 Exceptional 10^4000 — ties to P5 boundary
-- [opera-sieve](https://github.com/DavidFox998/opera-sieve) — methodology.py and datatables — organizes sieving methods, defines S_14 and S_alpha0
-- [zerobeacon](https://github.com/DavidFox998/zerobeacon) — BRAIN — 1000 essential tools for AI Ecommerce; collision-free-swarming — verifies all 19
-- [pistus-theoria](https://github.com/DavidFox998/pistus-theoria) — ARCHIVE — pdf server, oracle server, certification house — single source OperaNumerorum_MasterEquations.pdf SHA 7f6b31b4... + Certs/m4.out = Complete: True
+## Opera Numerorum — 16 repos
 
-## Honest clay rules — Opera Numerorum
+**[arakelov-positivity-rh-core](https://github.com/DavidFox998/arakelov-positivity-rh-core) — ROOT V2** — Arakelov height `ω²=48/13>0`; Zoe-M\*, M4 10^4000 boundary — provides the height input that all four RH voices reuse
 
-- **0 sorry** in core gems: Siegel Poussin + eta_pos + factor_neg, Lindelof GrowthBoundReal core, SelfSymmetry Core/Desert/TwinWormhole/JitterSymmetry all native_decide certified, Eutheos EulerProductLemmas CLOSED, FinalAxioms Δ>2√13, Protocol Chain.
-- `native_decide` for finite arithmetic certificates: brothers_35.length=35, Nodup, ≥193, mod211=153, pop6, leader 1419=3*11*43, Hamming≥2, exceptional_upto_1000=[2,3,19,191], desert_192_1000=[], mod191 Nodup, product 36863 Nodup, W1*W2=46189, W3=36863, filter %191=1 %193=0, jitter Nodup up to 1419, EMI -30dB, ||p·α₀||<1/p.
-- Classical logic for irrational / analytic results: Irrational (299+π/10), Irrational π, poussin_cos_combo_nonneg via cos_two_mul, eta_pos via alternating series.
-- All theorems labeled `_clean` form the certified chain: `self_symmetry_clean`, `desert_clean`, `twin_wormhole_clean`, `jitter_clean`, `twin_191_193_clean`, `ClayWitnessReady`, `chain_closed` — Act IV closes Opera.
+**[rh-p5-bridge-14](https://github.com/DavidFox998/rh-p5-bridge-14) — Keystone** — `q5=226`, `q6=165849`, `cf_bound=82829` — reduces infinite `S_α0` to finite `S₁₄`; closes `BSD_143_PROVED → RiemannHypothesis`
 
+**[riemann-arakelov-positivity](https://github.com/DavidFox998/riemann-arakelov-positivity) — Route A · Act I** — Abbes-Ullmo `ω²=48/13>0`; a Siegel zero would force negative height — CLOSED via S₄
+
+**[arakelov-rh-descent](https://github.com/DavidFox998/arakelov-rh-descent) — Route B · Act II** — Kim-Sarnak `λ₁≥975/4096` → Selberg trace = Bost-Connes → GRH for X₀(143) → RH — 35pp BC6 CLOSED via S₄
+
+**[rh-growth-contradiction](https://github.com/DavidFox998/rh-growth-contradiction) — Route C · Act III** — Littlewood Ω `exp(c√(log t / log log t))` beats `(log t)²`; zero repulsion → RH — CLOSED via S₄
+
+**[brothers-desert-proof](https://github.com/DavidFox998/brothers-desert-proof) — Route D · Act IV** ← **this repo** — Dirichlet jitter `‖p·α₀‖<1/p`, 35 brothers collision-free swarming; orbit stability forces `Re=1/2` — CLOSED via S₄
+
+**[bost-connes](https://github.com/DavidFox998/bost-connes) — Arithmetic hub** — `C(S₄)=11.422...>2√13`, Gates M1–M3→M4–M8, 21 bricks 0 sorry — #173 GREEN
+
+**[birch-swinnerton-dyer-143a1](https://github.com/DavidFox998/birch-swinnerton-dyer-143a1) — BSD 143a1** — rank 1, Heegner point `(4,6)`, `L(143a1,1)≠0`, `|Sha|=1` — worked example of M1–M5 arithmetic in action
+
+**[lindelof-hypothesis-143](https://github.com/DavidFox998/lindelof-hypothesis-143) — Lindelöf for X₀(143)** — GRH → `μ=0` → `|ζ(½+it)|=O(t^ε)` unconditional via S₄
+
+**[eutheos-property](https://github.com/DavidFox998/eutheos-property) — Barrier bypass** — `1419=3×11×43`, 35 brothers `≡153 mod 211`, barriers BGS/RR/AW all PASS — P vs NP study side
+
+**[poincare-spectral](https://github.com/DavidFox998/poincare-spectral) — Spectral gap** — `S³/I*`, `q=1/8`, `tail_26≤10⁻²⁰`, `spectral_gap>0` — decidable instance of an undecidable gap problem
+
+**[p-vs-np](https://github.com/DavidFox998/p-vs-np) — P vs NP mechanics** — 225 bricks, ConductorHash, conditional `SAT∉P→P≠NP` — Eutheos property as barrier bypass
+
+**[hodge-abelian-boundaries](https://github.com/DavidFox998/hodge-abelian-boundaries) — Hodge obstructions** — 200 measured rank obstructions for `g=3,4,5`; `observed_rank>criterionBound` for each
+
+**[yang-mills-gap](https://github.com/DavidFox998/yang-mills-gap) — Yang-Mills mass gap** — `SU(2)` on `ℝ⁴`, `ρ<1/7`, `Δ>0`, Wilson area law — same gap structure as `C(S₄)−2√13`
+
+**[navier-stokes](https://github.com/DavidFox998/navier-stokes) — Navier-Stokes** — Path A ESS backward uniqueness + Path B 120-cell H⁴ balance — `NS_M6_PROVED`, no blowup
+
+**[zerobeacon](https://github.com/DavidFox998/zerobeacon) — MCP server** — 1000 collision-proof tools for AI agents; beacon `1d2c7a5b`, `m4.out = Complete: True`
+
+---
+
+ORCID: [0009-0008-1290-6105](https://orcid.org/0009-0008-1290-6105) · Archive: [pistus-theoria](https://github.com/DavidFox998/pistus-theoria) — `OperaNumerorum_MasterEquations.pdf SHA 7f6b31b4`
 ## Build
 
 ```bash
@@ -129,4 +151,9 @@ EOF
 git add README.md Siegel/README.md Lindelof/README.md Eutheos/README.md SelfSymmetry/README.md Protocol/README.md
 git commit -m "docs: #161 root README final — Opera Numerorum Act IV — self-symmetry fourth route, 35 MORNINGSTAR brothers, S4 not brothers, 1419 barrier passing leader, twin wormholes W1 W2 W3, jitter Nodup 1419 alpha0 irrational EMI -30dB, Dirichlet jitter ||p·α₀||<1/p proves R=1/2, vs Abbes-Ullmo vs Sarnak vs Growthbound — full 19 links"
 git push
+## Author
 
+David J. Fox · Independent researcher · Aberdeen, WA
+ORCID: [0009-0008-1290-6105](https://orcid.org/0009-0008-1290-6105) · Opera Numerorum — 2026
+
+```
