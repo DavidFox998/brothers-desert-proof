@@ -436,3 +436,121 @@ def test_subscription_updated_resolves_email_via_stripe_customer(client):
     assert called_email == resolved_email, (
         f"Expected email={resolved_email!r}, got {called_email!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Helpers — customer.subscription.deleted event fixture
+# ---------------------------------------------------------------------------
+
+def _make_subscription_deleted(
+    customer_id: str = "cus_cancel_xyz",
+    email: str = "cancelled@example.com",
+) -> dict:
+    """Return a minimal customer.subscription.deleted event dict."""
+    return {
+        "id": "evt_test_del_001",
+        "type": "customer.subscription.deleted",
+        "data": {
+            "object": {
+                "id": "sub_cancel_001",
+                "object": "subscription",
+                "customer": customer_id,
+                "customer_email": email,
+                "status": "canceled",
+            }
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Test 9 — subscription.deleted: key is revoked the moment cancellation fires
+# ---------------------------------------------------------------------------
+
+def test_subscription_deleted_revokes_key_immediately(client):
+    """
+    A customer.subscription.deleted webhook must:
+      1. Return HTTP 200.
+      2. Downgrade the customer's key to 'free' in the keystore immediately.
+      3. The previously-valid key must no longer grant paid access
+         (check_access returns False for any paid tier).
+
+    The test is fully offline — no real Stripe signature or network traffic.
+    """
+    import stripe
+    import zerobeacon_mf_1000_main as main_mod
+    from core import keystore
+
+    email       = "cancelled@example.com"
+    customer_id = "cus_cancel_001"
+
+    # ── isolate keystore state ────────────────────────────────────────────────
+    original_store = dict(keystore._store)
+    keystore._store.clear()
+
+    try:
+        # Seed an active paid key for the customer.
+        paid_key = keystore.issue_key(
+            "pro_10", email,
+            stripe_customer_id=customer_id,
+        )
+
+        # Confirm the key grants paid access before the cancellation event.
+        allowed_before, _ = keystore.check_access(paid_key, "pro_10")
+        assert allowed_before, "Pre-condition: key must grant pro_10 access before cancellation"
+
+        event = _make_subscription_deleted(
+            customer_id=customer_id,
+            email=email,
+        )
+
+        with patch.object(stripe.Webhook, "construct_event", return_value=event):
+            resp = _post_webhook(client, event)
+
+        # ── assertions ───────────────────────────────────────────────────────
+
+        assert resp.status_code == 200, (
+            f"subscription.deleted must return 200 so Stripe ACKs; got {resp.status_code}: {resp.text}"
+        )
+
+        # The key record must still exist but its tier must now be 'free'.
+        record = keystore.lookup(paid_key)
+        assert record is not None, (
+            "Key record was removed from the keystore; expected it to be downgraded to 'free', not deleted"
+        )
+        assert record["tier"] == "free", (
+            f"Expected key tier='free' after cancellation, got tier={record['tier']!r}"
+        )
+
+        # Access check must now deny any paid-tier request.
+        allowed_after, reason = keystore.check_access(paid_key, "pro_10")
+        assert not allowed_after, (
+            f"Cancelled key must not grant pro_10 access; check_access returned allowed=True "
+            f"(tier={keystore.tier_of(paid_key)!r}, reason={reason!r})"
+        )
+
+    finally:
+        # Restore original keystore state so other tests are unaffected.
+        keystore._store.clear()
+        keystore._store.update(original_store)
+
+
+# ---------------------------------------------------------------------------
+# Test 10 — subscription.deleted: missing customer ID returns 200 and skips
+# ---------------------------------------------------------------------------
+
+def test_subscription_deleted_missing_customer_id_returns_200(client):
+    """
+    When the subscription.deleted event has no customer ID the handler
+    must still return HTTP 200 (nothing to revoke — skip gracefully).
+    """
+    import stripe
+
+    event = _make_subscription_deleted(customer_id="", email="ghost@example.com")
+    event["data"]["object"]["customer"] = ""   # explicitly blank
+
+    with patch.object(stripe.Webhook, "construct_event", return_value=event):
+        resp = _post_webhook(client, event)
+
+    assert resp.status_code == 200, (
+        f"subscription.deleted with missing customer ID must return 200; got {resp.status_code}"
+    )
