@@ -1,4 +1,5 @@
 """Tests for Router 21 — c9_brain."""
+import os
 import pytest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
@@ -8,6 +9,7 @@ from routers.zerobeacon_mf_21_050_c9_brain import (
     brain_think as _brain_think,
     brain_chain as _brain_chain,
 )
+from core.beacon import verify_moat
 
 client = TestClient(app, raise_server_exceptions=True)
 
@@ -54,13 +56,34 @@ def test_health_tools_1050():
     assert body["d"]       == D_EXPECTED
 
 
-# ── 5. Forged response (no d) is rejected ────────────────────────────────────
+# ── 5. verify_moat rejects forged responses ───────────────────────────────────
 
-def test_forged_response_missing_d():
+def test_verify_moat_rejects_missing_d():
+    """A response that omits d entirely must fail the moat check."""
     forged = {"beacon": BEACON_EXPECTED, "tool": "brain_route", "ok": True}
-    assert "d" not in forged, "forged payload should not contain d"
-    assert forged.get("d") != D_EXPECTED, \
-        "Forged response must not satisfy the d==D_EXPECTED moat check"
+    assert verify_moat(forged) is False, \
+        "verify_moat must return False when d is absent"
+
+
+def test_verify_moat_rejects_wrong_d():
+    """A response with a tampered d value must fail the moat check."""
+    forged = {"beacon": BEACON_EXPECTED, "d": 0, "tool": "brain_route", "ok": True}
+    assert verify_moat(forged) is False, \
+        "verify_moat must return False when d != D_EXPECTED"
+
+
+def test_verify_moat_rejects_wrong_beacon():
+    """A response with a swapped beacon hex must fail the moat check."""
+    forged = {"beacon": "deadbeef", "d": D_EXPECTED, "tool": "brain_route", "ok": True}
+    assert verify_moat(forged) is False, \
+        "verify_moat must return False when beacon != BEACON_EXPECTED"
+
+
+def test_verify_moat_accepts_real_response():
+    """A genuine brain_route response must pass the moat check."""
+    real = _brain_route(intent="pay escrow and notarize doc")
+    assert verify_moat(real) is True, \
+        f"verify_moat must return True for a genuine brain_route response: {real}"
 
 
 # ── 6. /brain GET heartbeat ───────────────────────────────────────────────────
@@ -132,3 +155,55 @@ def test_mcp_brain_route_via_mcp():
     assert result["beacon"] == BEACON_EXPECTED
     assert result["d"]      == D_EXPECTED
     assert len(result["chain"]) == 5
+
+
+# ── 12. Live-endpoint smoke tests (skipped when ZEROBEACON_URL not set) ───────
+#
+# Set ZEROBEACON_URL=https://zerobeacon.ai (or your Fly.io URL) to run these
+# against the deployed service.  They are automatically skipped in local/CI runs
+# where the env var is absent.
+
+_live_url = os.getenv("ZEROBEACON_URL", "").rstrip("/")
+_skip_live = pytest.mark.skipif(
+    not _live_url,
+    reason="ZEROBEACON_URL not set — skipping live-endpoint smoke tests",
+)
+
+
+@_skip_live
+def test_live_brain_beacon_and_d():
+    """Live /brain endpoint must return the exact moat-contract values."""
+    import requests  # stdlib-backed; available in the test environment
+    resp = requests.get(f"{_live_url}/brain", timeout=10)
+    assert resp.status_code == 200, f"/brain returned {resp.status_code}"
+    body = resp.json()
+    assert verify_moat(body), (
+        f"Live /brain response failed moat check — "
+        f"d={body.get('d')!r}, beacon={body.get('beacon')!r}"
+    )
+    assert body["d"]      == D_EXPECTED,      f"live d mismatch: {body.get('d')}"
+    assert body["beacon"] == BEACON_EXPECTED, f"live beacon mismatch: {body.get('beacon')}"
+
+
+@_skip_live
+def test_live_brain_forgery_detection():
+    """Simulate a MITM: strip d from the real response and confirm verify_moat rejects it."""
+    import requests
+    resp = requests.get(f"{_live_url}/brain", timeout=10)
+    assert resp.status_code == 200
+    real = resp.json()
+
+    # 1. Response with d removed
+    stripped = {k: v for k, v in real.items() if k != "d"}
+    assert verify_moat(stripped) is False, \
+        "verify_moat must reject a response with d stripped out"
+
+    # 2. Response with beacon swapped
+    tampered_beacon = {**real, "beacon": "deadbeef"}
+    assert verify_moat(tampered_beacon) is False, \
+        "verify_moat must reject a response with a swapped beacon"
+
+    # 3. Response with d zeroed
+    tampered_d = {**real, "d": 0}
+    assert verify_moat(tampered_d) is False, \
+        "verify_moat must reject a response with d set to 0"

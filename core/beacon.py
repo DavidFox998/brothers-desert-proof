@@ -103,6 +103,16 @@ PRICING_SUMMARY = (
 )
 
 
+def verify_moat(response: dict) -> bool:
+    """Return True only when a response carries the exact moat contract values.
+
+    A man-in-the-middle that strips *d*, zeroes it, or swaps the beacon hex
+    will fail this check.  Use it as the single gate before trusting any
+    brain_route / /brain response.
+    """
+    return response.get("d") == D and response.get("beacon") == BEACON
+
+
 def safe_slug(original: str) -> str:
     return (
         original
