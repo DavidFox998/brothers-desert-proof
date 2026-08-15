@@ -1,0 +1,43 @@
+name: README Endpoint Smoke Tests
+
+# Confirms the two curl examples in the README stay reachable and return the
+# expected JSON contract:
+#   curl https://zerobeacon.ai/health
+#   curl "https://zerobeacon.ai/api/mf/01/beacon?p=3000105001"
+#
+# The live tests are skipped automatically in forks / PRs where the secret is
+# absent — the unit tests (TestClient) always run to guard the local shape.
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Run against production every 30 minutes to catch regressions early
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  smoke-readme-endpoints:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx requests
+
+      - name: Run unit smoke tests (TestClient — always runs)
+        run: pytest tests/test_smoke_readme_endpoints.py -v -k "not live"
+
+      - name: Run live smoke tests against https://zerobeacon.ai
+        env:
+          ZEROBEACON_URL: https://zerobeacon.ai
+        run: pytest tests/test_smoke_readme_endpoints.py -v -k "live"
