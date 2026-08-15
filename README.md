@@ -1,5 +1,8 @@
 # brothers-desert-proof — Route D — Self-Symmetry via Dirichlet Jitter & Orbit — CLOSED via S₄
 
+> **Opera Numerorum ensemble** — 19 repos · chain `7472f4e5` · [REPOS.md →](https://github.com/DavidFox998/rh-p5-bridge-14/blob/main/REPOS.md)
+
+
 **Self-Symmetry formalization of the Clay Millennium Claim — Opera Numerorum Act IV — The Fourth Voice**
 
 **David J. Fox** — ORCID 0009-0008-1290-6105 — Independent researcher — Opera Numerorum — July 2026
