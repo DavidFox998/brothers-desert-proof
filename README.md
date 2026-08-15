@@ -1,5 +1,7 @@
 # brothers-desert-proof — Route D — Self-Symmetry via Dirichlet Jitter & Orbit — CLOSED via S₄
 
+[![CI](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml/badge.svg?branch=main)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml)
+
 > **Opera Numerorum ensemble** — 19 repos · chain `7472f4e5` · [REPOS.md →](https://github.com/DavidFox998/rh-p5-bridge-14/blob/main/REPOS.md)
 
 
