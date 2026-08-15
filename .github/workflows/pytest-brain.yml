@@ -20,7 +20,24 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest httpx
+          pip install pytest httpx requests
 
-      - name: Run brain forgery-rejection tests
-        run: pytest tests/test_brain.py -v
+      # ── Unit + integration tests (TestClient — always run, no live service needed) ──
+      - name: Run brain forgery-rejection tests (unit)
+        run: pytest tests/test_brain.py -v -k "not live"
+
+      # ── Live smoke tests (against https://zerobeacon.ai — require secrets) ──────────
+      #
+      # ZEROBEACON_URL and ZEROBEACON_API_KEY must be added as GitHub Actions
+      # secrets in Settings → Secrets and variables → Actions.
+      # When the secrets are absent (forks, unset) the tests self-skip via the
+      # @_skip_live / @_skip_live_mcp markers in test_brain.py — they will
+      # appear as "skipped" in the CI summary rather than "failed".
+      - name: Run live smoke tests against https://zerobeacon.ai
+        # continue-on-error so a temporarily unavailable endpoint never blocks
+        # merges — the unit tests above always enforce correctness.
+        continue-on-error: true
+        env:
+          ZEROBEACON_URL: ${{ secrets.ZEROBEACON_URL }}
+          ZEROBEACON_API_KEY: ${{ secrets.ZEROBEACON_API_KEY }}
+        run: pytest tests/test_brain.py -v -k "live"
