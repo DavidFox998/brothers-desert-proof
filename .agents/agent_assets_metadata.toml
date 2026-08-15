@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "BnotHtmGVRiEd2ZWGS4GE"
+uri = "file://provisional_patent_zerobeacon.md"
+type = "text"
+title = "Provisional Patent Application — ZeroBeacon"
+description = "726-line provisional covering 3 inventions: Collision-Anchored API Platform, 1052-Tool MCP System, and Formal Mathematics Audit Infrastructure. 24 claims across 3 independent claim sets."
