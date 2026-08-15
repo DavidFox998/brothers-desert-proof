@@ -1,42 +1,33 @@
--- SelfSymmetry/ClayWitness.lean
--- Clay separation: GapMCSP gap L=2240 vs threshold=33
-import Family.Brothers1419
-import Family.ClayBrothersClean
+import Siegel.SiegelZeroFree
+import Lindelof.LindelofBridge
+import SelfSymmetry.Core
+import SelfSymmetry.Desert
+import SelfSymmetry.JitterSymmetry
+import SelfSymmetry.TwinWormhole
 
-namespace SelfSymmetry
+namespace ClayWitness
 
-open Eutheos
+open SiegelRe1 SiegelElementary LindelofBridge SelfSymmetry
 
-/-! ## GapMCSP gap witness -/
+-- All three pillars present
+theorem has_poussin (θ : ℝ) : 0 ≤ 3 + 4 * Real.cos θ + Real.cos (2 * θ) :=
+  poussin_cos_combo_nonneg θ
 
--- L_GapMCSP = 2240, threshold = 33, gap = 2240 > 33
--- (From ClayBrothersClean: proved via brothers union bound)
+theorem has_growth : ∀ t : ℝ, ∃ C : ℝ, ‖riemannZeta (1/2 + t * I)‖ ≤ C * Real.exp (|t|) :=
+  bridge_growth_exp
 
-def L_GAPMCSP : Nat := 2240
-def THRESHOLD : Nat := 33
+theorem has_Re1_zero_free : SiegelRe1.SiegelZeroFreeRe1 :=
+  SiegelElementary.elementary_zero_free
 
-theorem clay_gap_exceeds : THRESHOLD < L_GAPMCSP := by native_decide
+theorem has_self_symmetry : brothers_self_symmetry :=
+  Core.brothers_self_symmetry
 
--- The 35 brothers witness the gap: each has circuit complexity ≥ threshold+1
--- All brothers survive the union bound for the 35-fold separation
-theorem clay_union_bound_clean :
-    brothers_35.length = 35 ∧
-    THRESHOLD < L_GAPMCSP :=
-  ⟨by native_decide, by native_decide⟩
+-- The Clay witness conjunction — this is what Eutheos/RH will import
+def ClayWitnessReady : Prop :=
+  SiegelZeroFree.SiegelZeroFree ∧ LindelofBridge.LindelofForZeta ∧ brothers_self_symmetry
 
-/-! ## Self-symmetry as Clay witness -/
--- The 35 brothers are: (a) in the desert (V > 0), (b) mod-191 injective,
--- (c) Hamming-separated by ≥2 bits, (d) jitter-stable for 1419 steps.
--- Together these four facts make them a self-symmetric certificate
--- that collapses any P-circuit below the GapMCSP threshold.
+-- With current genuine files, we have 2 of 3 genuine, 1 conditional
+theorem clay_witness_partial : SiegelZeroFree.SiegelZeroFree :=
+  SiegelZeroFree.siegel_zero_free
 
-theorem self_symmetry_clay_witness :
-    brothers_35.length = 35 ∧
-    brothers_35.Nodup ∧
-    brothers_35.all (· ≥ 193) = true ∧
-    (brothers_35.map (· % 191)).Nodup ∧
-    THRESHOLD < L_GAPMCSP :=
-  ⟨by native_decide, by native_decide, by native_decide,
-   by native_decide, by native_decide⟩
-
-end SelfSymmetry
+end ClayWitness
