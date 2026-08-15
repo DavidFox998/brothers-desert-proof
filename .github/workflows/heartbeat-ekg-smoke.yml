@@ -1,0 +1,49 @@
+name: Heartbeat EKG Smoke Tests
+
+# Confirms /brain/heartbeat serves a well-formed EKG page after every push:
+#   - HTTP 200 with text/html content-type
+#   - <canvas id="c"> element is present
+#   - setInterval beat loop and popcount32 function are present
+#   - canonical beacon value 1d2c7a5b is embedded
+#
+# Unit tests (TestClient) always run in CI.
+# Live tests hit https://zerobeacon.ai and run on push to main/master
+# so a broken deploy is caught immediately without waiting for a manual check.
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Run against production every 30 minutes alongside the README smoke tests
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  heartbeat-ekg-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx requests
+
+      - name: Run unit EKG smoke tests (TestClient — always runs)
+        run: pytest tests/test_heartbeat_ekg.py -v -k "not live"
+
+      - name: Run live EKG smoke tests against https://zerobeacon.ai
+        # continue-on-error so a not-yet-deployed or temporarily down endpoint
+        # doesn't block the required CI check.  The unit tests above always guard
+        # the local shape; live tests are best-effort canary runs.
+        continue-on-error: true
+        env:
+          ZEROBEACON_URL: https://zerobeacon.ai
+        run: pytest tests/test_heartbeat_ekg.py -v -k "live"
