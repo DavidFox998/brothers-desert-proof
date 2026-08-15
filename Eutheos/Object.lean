@@ -30,6 +30,8 @@
     apply irrational_pi
     exact ⟨q * 10, by push_cast at hq ⊢; linarith⟩
 
+
+
     theorem dist_pos_of_irrational (a : ℝ) (ha : Irrational a)
       (n : Nat) (hn : n ≠ 0) : dist (↑n * a) > 0 := by
     have hnn : 0 ≤ frac (↑n * a) := by
@@ -123,4 +125,4 @@
     brothers_v2_all_W_divisors_collide q (Nat.mem_divisors.mpr ⟨hq, by norm_num [W]⟩)
 
     end Eutheos
-    
+

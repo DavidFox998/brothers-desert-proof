@@ -78,5 +78,6 @@
     have ⟨h_neg, h_pos⟩ := abs_le.mp hram
     nlinarith [Real.sq_sqrt hp_nn, Real.sqrt_nonneg (p : ℝ)]
 
+
     end Eutheos.RamanujanFactorization
     
