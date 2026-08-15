@@ -168,3 +168,75 @@ def test_beat_loop_advances_tick(page):
         f"/brain/heartbeat: tick counter did not advance after 1.2 s "
         f"(before={tick_before}, after={tick_after}) — beat loop may be frozen"
     )
+
+
+# ---------------------------------------------------------------------------
+# Cold-start beat rate — at least 5 ticks in 2 seconds @ 200 ms each
+# ---------------------------------------------------------------------------
+
+@_skip
+def test_beat_fires_at_200ms_rate_cold_start(page):
+    """After a cold start, the 200 ms setInterval must fire ≥5 times within 2 seconds.
+
+    At 200 ms per beat, 2 seconds should yield ~10 ticks.  We require only 5
+    to give ample headroom for cold-start VM wake latency (Fly.io auto-stop),
+    GC pauses, and browser timer coalescing, while still catching a completely
+    frozen or drastically slowed beat loop.
+
+    No browser console errors must appear during the observation window.
+    """
+    errors: list[str] = []
+
+    def _capture(msg):
+        if msg.type == "error":
+            errors.append(msg.text)
+
+    uncaught: list[str] = []
+
+    def _capture_exc(exc):
+        uncaught.append(str(exc))
+
+    page.on("console", _capture)
+    page.on("pageerror", _capture_exc)
+
+    # Navigate fresh (simulates a cold-start user hitting the page for the first time).
+    page.goto(_heartbeat_url(), wait_until="domcontentloaded")
+
+    # Sample the tick counter immediately after load.
+    tick_start = page.evaluate("() => typeof tick !== 'undefined' ? tick : null")
+
+    # Wait 2 seconds — the full observation window.
+    page.wait_for_timeout(2000)
+
+    tick_end = page.evaluate("() => typeof tick !== 'undefined' ? tick : null")
+
+    # ── tick counter must be accessible ──────────────────────────────────────
+    assert tick_start is not None, (
+        "/brain/heartbeat: 'tick' variable is not exposed in global scope — "
+        "cannot verify beat rate; add `window.tick = tick` or confirm variable name"
+    )
+    assert tick_end is not None, (
+        "/brain/heartbeat: 'tick' variable disappeared after 2 s observation"
+    )
+
+    ticks_fired = tick_end - tick_start
+
+    # ── at least 5 beats must have fired ─────────────────────────────────────
+    assert ticks_fired >= 5, (
+        f"/brain/heartbeat: only {ticks_fired} beat(s) fired in 2 s after cold start "
+        f"(expected ≥5 at 200 ms each). "
+        f"tick at load={tick_start}, tick after 2 s={tick_end}. "
+        "The beat loop may be paused, throttled, or the Fly.io VM did not wake in time."
+    )
+
+    # ── no console errors during the observation window ───────────────────────
+    assert not errors, (
+        f"/brain/heartbeat produced {len(errors)} JS console error(s) during the "
+        "2-second cold-start observation window:\n"
+        + "\n".join(f"  • {e}" for e in errors)
+    )
+    assert not uncaught, (
+        f"/brain/heartbeat produced {len(uncaught)} uncaught JS exception(s) during the "
+        "2-second cold-start observation window:\n"
+        + "\n".join(f"  • {e}" for e in uncaught)
+    )

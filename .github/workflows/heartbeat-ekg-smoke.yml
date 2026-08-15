@@ -74,6 +74,12 @@ jobs:
         run: pytest tests/test_heartbeat_ekg.py -v -k "live"
 
       # ── Webhook alert on failure ───────────────────────────────────────────
+      # NOTE: the cold-start beat-rate Playwright test runs in the separate
+      # ekg-coldstart-beat-rate job below (workflow_dispatch / push / PR only —
+      # intentionally excluded from the 30-min cron to avoid Playwright install
+      # overhead on every scheduled run).
+
+      
       - name: Fire webhook alert on EKG smoke failure
         if: failure()
         env:
@@ -110,4 +116,81 @@ jobs:
             echo "[ekg-alert] webhook returned unexpected status ${HTTP_STATUS}"
           else
             echo "[ekg-alert] webhook alert delivered (HTTP ${HTTP_STATUS})"
+          fi
+
+  # ── Optional cold-start beat-rate job ──────────────────────────────────────
+  # Runs on push, PR, and manual workflow_dispatch — intentionally EXCLUDED from
+  # the 30-min cron schedule to avoid Playwright install overhead on every probe.
+  # Validates that the 200 ms setInterval fires ≥5 times in 2 seconds after a
+  # simulated cold start, and that no JS console errors appear in that window.
+  ekg-coldstart-beat-rate:
+    runs-on: ubuntu-latest
+    # Only run on push / PR / manual dispatch — never on the scheduled cron.
+    if: github.event_name != 'schedule'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-playwright
+
+      - name: Install Playwright Chromium browser
+        run: playwright install chromium --with-deps
+
+      - name: Start local uvicorn server
+        run: |
+          uvicorn zerobeacon_mf_1000_main:app --host 127.0.0.1 --port 8765 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8765/health > /dev/null && echo "Server ready after ${i}s" && break
+            sleep 1
+          done
+
+      - name: Run cold-start beat-rate test (≥5 ticks in 2 s, no JS errors)
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
+        run: |
+          pytest tests/test_heartbeat_playwright.py \
+            -v -k "test_beat_fires_at_200ms_rate_cold_start"
+
+      - name: Fire webhook alert on cold-start beat-rate failure
+        if: failure()
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          if [ -z "$ALERT_WEBHOOK_URL" ]; then
+            echo "[ekg-coldstart-alert] ALERT_WEBHOOK_URL not configured — skipping"
+            exit 0
+          fi
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          PAYLOAD=$(cat <<EOF
+          {
+            "text": ":rotating_light: *EKG cold-start beat-rate test failed*",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":rotating_light: *EKG cold-start beat-rate test failed*\n*Workflow:* \`ekg-coldstart-beat-rate\`\n*Time:* \`${TIMESTAMP}\`\n*Detail:* The 200 ms beat loop fired fewer than 5 times in 2 seconds, or a JS console error was detected. The Fly.io VM may not be waking fast enough after auto_stop, or the beat loop has regressed.\n*Fix:* \`gh run view --repo \${{ github.repository }} \${{ github.run_id }} --log-failed\`"
+                }
+              }
+            ]
+          }
+          EOF
+          )
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "$ALERT_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+          if [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "204" ]; then
+            echo "[ekg-coldstart-alert] webhook returned unexpected status ${HTTP_STATUS}"
+          else
+            echo "[ekg-coldstart-alert] webhook alert delivered (HTTP ${HTTP_STATUS})"
           fi
