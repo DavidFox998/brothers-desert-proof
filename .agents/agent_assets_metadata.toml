@@ -21,3 +21,10 @@ uri = "file://appendix_g_patent.html"
 type = "text"
 title = "Appendix G — Conception & Reduction to Practice (Print-to-PDF)"
 description = "Open → File → Print → Save as PDF. Attorney-client privileged. Not committed to any repo."
+
+[[outputs]]
+id = "z7StJu_PxHG1RPvHcJatE"
+uri = "file://patent_disclosure_package_20260815.pdf"
+type = "pdf"
+title = "Patent Disclosure Package — August 15, 2026"
+description = "All 3 documents combined: Provisional Patent (ZeroBeacon), Morningstar Invention Disclosure, and Appendix G. 39 pages. Attorney-client privileged."
