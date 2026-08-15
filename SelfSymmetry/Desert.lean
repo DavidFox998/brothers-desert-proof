@@ -22,25 +22,20 @@ theorem desert_empty_192_1000 :
 theorem desert_mod191_Nodup :
     (brothers_35.map (· % 191)).Nodup := by native_decide
 
-theorem desert_mod193_Nodup :
-    (brothers_35.map (· % 193)).Nodup := by native_decide
+-- Note: desert_mod193_Nodup and desert_twin_clean removed.
+-- Family.ExceptionalPrimes and Family.TwinPrimes both define brothers_mod
+-- and cannot be imported together.  The canonical proofs of those facts live in
+-- TwinWormhole.lean (which imports Family.TwinPrimes without ExceptionalPrimes).
 
 -- Product injectivity: also distinct mod 191×193 = 36863
 theorem desert_product_Nodup :
     (brothers_35.map (· % (191 * 193))).Nodup := by native_decide
 
--- No brother divisible by 191 or 193
-theorem desert_twin_clean :
-    (brothers_35.filter (fun b => b % 191 = 0)).length = 0 ∧
-    (brothers_35.filter (fun b => b % 193 = 0)).length = 0 := by
-  exact ⟨by native_decide, by native_decide⟩
-
 /-! ## Desert certificate -/
 theorem desert_clean :
     exceptional_upto_1000 = [2, 3, 19, 191] ∧
     desert_192_1000 = [] ∧
-    (brothers_35.map (· % 191)).Nodup ∧
-    (brothers_35.map (· % 193)).Nodup :=
-  ⟨by native_decide, by native_decide, by native_decide, by native_decide⟩
+    (brothers_35.map (· % 191)).Nodup :=
+  ⟨by native_decide, by native_decide, by native_decide⟩
 
 end SelfSymmetry

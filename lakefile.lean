@@ -7,27 +7,22 @@ package «brothers-desert-proof» where
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.15.0"
 
--- Pull brothers, desert, and Hilbert-route facts from eutheos-property
+-- FIXED: Package is named «eutheos-property», require must match
 require «eutheos-property» from git
   "https://github.com/DavidFox998/eutheos-property.git" @ "main"
 
 lean_lib BrothersDesertProof where
   srcDir := "."
   globs := #[
-    -- The Object layer (0 sorry)
+    .one `Closure.ArakelovFoundations,
     .one `Eutheos.Object,
     .one `Eutheos.Theta,
-    -- Rational-theta contradiction + brothers Nodup (0 sorry)
     .one `Eutheos.RationalTheta,
-    -- Number-theoretic bridge: ThetaSelfSymmetryRH ↔ RH
     .one `RouteC.GrowthRepulsionBridge,
     .one `Lindelof.LindelofBridge,
     .one `Eutheos.Bridge,
-    -- Assembly: theta_irrational → ThetaSelfSymmetryRH → RH
     .one `Eutheos.RH,
-    -- Ramanujan factorization (0 sorry, pure algebra)
     .one `Eutheos.RamanujanFactorization,
-    -- Euler product non-vanishing lemmas (0 sorry, from uploaded proofs)
     .one `Eutheos.EulerProductLemmas,
     -- Closure: RouteC closes via Hasse + numerical BC certs (no Langlands)
     .one `Closure.RouteCClosed,
@@ -55,6 +50,3 @@ lean_lib BrothersDesertProof where
     .one `SelfSymmetry.ClayWitness,
     .one `Protocol.Chain
   ]
-
-lean_lib EutheosFinalAxioms { roots := #[`Eutheos.FinalAxioms] }
-lean_lib EutheosUnconditional { roots := #[`Eutheos.Unconditional] }
