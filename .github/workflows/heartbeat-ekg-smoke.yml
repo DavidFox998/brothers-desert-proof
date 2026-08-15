@@ -72,3 +72,42 @@ jobs:
         env:
           ZEROBEACON_URL: https://zerobeacon.ai
         run: pytest tests/test_heartbeat_ekg.py -v -k "live"
+
+      # ── Webhook alert on failure ───────────────────────────────────────────
+      - name: Fire webhook alert on EKG smoke failure
+        if: failure()
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          if [ -z "$ALERT_WEBHOOK_URL" ]; then
+            echo "[ekg-alert] ALERT_WEBHOOK_URL not configured — skipping webhook notification"
+            exit 0
+          fi
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          PAYLOAD=$(cat <<EOF
+          {
+            "text": ":rotating_light: *Heartbeat EKG smoke test failed*",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":rotating_light: *Heartbeat EKG smoke test failed*\n*Workflow:* \`heartbeat-ekg-smoke\`\n*Time:* \`${TIMESTAMP}\`\n*Detail:* One or more EKG smoke tests (unit, Playwright canvas, or live canary) failed against https://zerobeacon.ai. The /brain/heartbeat canvas page may be broken or the beat loop may have stopped.\n*Fix:* \`gh run view --repo \${{ github.repository }} \${{ github.run_id }} --log-failed\` to see which test failed, then check https://zerobeacon.ai/brain/heartbeat and redeploy if the live site is affected.",
+                  "ekg_smoke_failed": true,
+                  "deployed_url": "https://zerobeacon.ai/brain/heartbeat",
+                  "run_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                }
+              }
+            ]
+          }
+          EOF
+          )
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "$ALERT_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+          if [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "204" ]; then
+            echo "[ekg-alert] webhook returned unexpected status ${HTTP_STATUS}"
+          else
+            echo "[ekg-alert] webhook alert delivered (HTTP ${HTTP_STATUS})"
+          fi
