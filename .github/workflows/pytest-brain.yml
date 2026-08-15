@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+permissions:
+  checks: write
+  pull-requests: write
+  contents: read
+
 jobs:
   pytest-brain:
     runs-on: ubuntu-latest
@@ -24,7 +29,7 @@ jobs:
 
       # ── Unit + integration tests (TestClient — always run, no live service needed) ──
       - name: Run brain forgery-rejection tests (unit)
-        run: pytest tests/test_brain.py -v -k "not live"
+        run: pytest tests/test_brain.py -v -k "not live" --junit-xml=test-results/unit.xml
 
       # ── Live smoke tests (against https://zerobeacon.ai — require secrets) ──────────
       #
@@ -40,4 +45,23 @@ jobs:
         env:
           ZEROBEACON_URL: ${{ secrets.ZEROBEACON_URL }}
           ZEROBEACON_API_KEY: ${{ secrets.ZEROBEACON_API_KEY }}
-        run: pytest tests/test_brain.py -v -k "live"
+        run: pytest tests/test_brain.py -v -k "live" --junit-xml=test-results/live.xml
+
+      # ── Publish test results to the GitHub Actions job summary ───────────────
+      - name: Publish unit test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: "Unit Tests (brain forgery-rejection)"
+          path: "test-results/unit.xml"
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Publish live smoke test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: "Live Smoke Tests (zerobeacon.ai MCP)"
+          path: "test-results/live.xml"
+          reporter: java-junit
+          fail-on-error: false
