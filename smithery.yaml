@@ -24,7 +24,7 @@ version: "1050.0.0"
 
 startCommand:
   type: http
-  url: https://zerobeacon.ai
+  url: https://zerobeacon.ai/mcp
 
 tools:
   count: 1050
