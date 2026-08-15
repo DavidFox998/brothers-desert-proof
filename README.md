@@ -22,6 +22,21 @@
 
 Pass your key as the `X-API-Key` header after checkout.
 
+## ⚠️ Old install command (`@davidjfox998/zerobeacon-1000`) is retired
+
+The slug `@davidjfox998/zerobeacon-1000` has been removed from the Smithery marketplace.
+Running `npx @smithery/cli install @davidjfox998/zerobeacon-1000` will return a **"Server not found"** error.
+
+Update your MCP config to use the new slug:
+
+```
+npx @smithery/cli install @davidjfox998/zerobeacon-1050
+```
+
+Or add the server URL directly (see below).
+
+---
+
 ## Install (Claude Desktop / any MCP host)
 
 ```json
