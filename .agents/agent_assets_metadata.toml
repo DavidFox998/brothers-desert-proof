@@ -7,3 +7,10 @@ uri = "file://provisional_patent_zerobeacon.md"
 type = "text"
 title = "Provisional Patent Application — ZeroBeacon"
 description = "726-line provisional covering 3 inventions: Collision-Anchored API Platform, 1052-Tool MCP System, and Formal Mathematics Audit Infrastructure. 24 claims across 3 independent claim sets."
+
+[[outputs]]
+id = "YIrrvmQ2zX1bx2wVmCIMu"
+uri = "file://morningstar_patent_disclosure.md"
+type = "text"
+title = "Morningstar Invention Disclosure — Tuesday Patent Meeting"
+description = "602-line disclosure covering 4 independently patentable inventions: H4/H3 Geometric Resonator, Hierarchical Falsification-Gate Protocol, Phase-Z/Hodge Coupling (math-to-hardware bridge), and SHA-256 Provenance Chain. All 21 PDFs synthesized."
