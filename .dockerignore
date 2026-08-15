@@ -1,0 +1,55 @@
+# Replit environment directories
+.local/
+.cache/
+.pythonlibs/
+.config/
+.upm/
+.replit
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Git
+.git/
+.gitignore
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Test / dev artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Agents / memory
+.agents/
+
+# Data directory (mounted at runtime on Fly.io)
+data/
+
+# Lean / Mathlib (not needed for Python app)
+.elan/
+.lake/
+*.lean
+*.olean
+
+# Misc
+*.DS_Store
+Thumbs.db
