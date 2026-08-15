@@ -254,6 +254,12 @@ def test_live_brain_forgery_detection():
     assert resp.status_code == 200
     real = resp.json()
 
+    # Guard: unmodified live response must pass the moat — otherwise mutations are meaningless
+    assert verify_moat(real) is True, (
+        f"Live /brain response failed verify_moat before any mutation — "
+        f"d={real.get('d')!r}, beacon={real.get('beacon')!r}"
+    )
+
     # 1. Response with d removed
     stripped = {k: v for k, v in real.items() if k != "d"}
     assert verify_moat(stripped) is False, \
@@ -268,6 +274,61 @@ def test_live_brain_forgery_detection():
     tampered_d = {**real, "d": 0}
     assert verify_moat(tampered_d) is False, \
         "verify_moat must reject a response with d set to 0"
+
+
+_live_api_key = os.getenv("ZEROBEACON_API_KEY", "")
+_skip_live_mcp = pytest.mark.skipif(
+    not _live_url or not _live_api_key,
+    reason="ZEROBEACON_URL or ZEROBEACON_API_KEY not set — skipping live MCP smoke tests",
+)
+
+
+@_skip_live_mcp
+def test_live_mcp_forgery_detection():
+    """Live /mcp endpoint: call brain_route via MCP transport with a real API key,
+    confirm the authenticated result passes verify_moat, then verify that zeroed-d,
+    wrong-beacon, and missing-d forgeries are each rejected by verify_moat."""
+    import requests
+
+    headers = {"X-API-Key": _live_api_key}
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 99,
+        "method": "tools/call",
+        "params": {
+            "name": "mf_21_brain_route",
+            "arguments": {"intent": "escrow payment"},
+        },
+    }
+    resp = requests.post(f"{_live_url}/mcp", json=payload, headers=headers, timeout=15)
+    assert resp.status_code == 200, f"/mcp returned {resp.status_code}"
+
+    body = resp.json()
+    assert "error" not in body, (
+        f"Live /mcp returned a JSON-RPC error (check API key / tool availability): {body.get('error')}"
+    )
+    result = body.get("result", {})
+
+    # Guard: unmodified live result must pass the moat — otherwise mutations are meaningless
+    assert verify_moat(result) is True, (
+        f"Live /mcp brain_route result failed verify_moat before any mutation — "
+        f"d={result.get('d')!r}, beacon={result.get('beacon')!r}"
+    )
+
+    # 1. d zeroed — the primary gap this test closes
+    zeroed_d = {**result, "d": 0}
+    assert verify_moat(zeroed_d) is False, \
+        "verify_moat must reject a live MCP result with d set to 0"
+
+    # 2. beacon swapped
+    wrong_beacon = {**result, "beacon": "deadbeef"}
+    assert verify_moat(wrong_beacon) is False, \
+        "verify_moat must reject a live MCP result with a tampered beacon"
+
+    # 3. d stripped entirely
+    missing_d = {k: v for k, v in result.items() if k != "d"}
+    assert verify_moat(missing_d) is False, \
+        "verify_moat must reject a live MCP result with d stripped out"
 
 
 # ── 15. brain_synaptic_fire — popcount activation ────────────────────────────
