@@ -1,5 +1,7 @@
 # ZeroBeacon.ai — 1050 MCP Tools
 
+[![MCP Forgery-Rejection Tests](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml/badge.svg)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml)
+
 **1050 beacon-anchored MCP tools** across 4 groups, with a FREE tier that needs no API key.
 
 ## Tool groups
