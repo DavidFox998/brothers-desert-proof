@@ -1,14 +1,19 @@
 name: Heartbeat EKG Smoke Tests
 
 # Confirms /brain/heartbeat serves a well-formed EKG page after every push:
-#   - HTTP 200 with text/html content-type
-#   - <canvas id="c"> element is present
-#   - setInterval beat loop and popcount32 function are present
-#   - canonical beacon value 1d2c7a5b is embedded
+#   Unit tests  (TestClient, always run in CI):
+#     - HTTP 200 with text/html content-type
+#     - <canvas id="c"> element is present
+#     - setInterval beat loop and popcount32 function are present
+#     - canonical beacon value 1d2c7a5b is embedded
 #
-# Unit tests (TestClient) always run in CI.
-# Live tests hit https://zerobeacon.ai and run on push to main/master
-# so a broken deploy is caught immediately without waiting for a manual check.
+#   Browser tests (Playwright, run in CI against a local uvicorn server):
+#     - Canvas has non-zero rendered width and height
+#     - No JS console errors thrown within the first 3 seconds
+#     - beat() tick counter advances (beat loop is not frozen)
+#
+#   Live tests  (optional, against https://zerobeacon.ai on push to main/master):
+#     - Same HTML-content checks against the deployed URL
 
 on:
   push:
@@ -30,19 +35,39 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest httpx requests
+          pip install pytest httpx requests pytest-playwright
 
-      - name: Run unit EKG smoke tests (TestClient — always runs)
+      - name: Install Playwright Chromium browser
+        run: playwright install chromium --with-deps
+
+      # ── Unit tests (TestClient — always run, no server needed) ─────────────
+      - name: Run unit EKG smoke tests (TestClient)
         run: pytest tests/test_heartbeat_ekg.py -v -k "not live"
 
-      - name: Run live EKG smoke tests against https://zerobeacon.ai
-        # continue-on-error so a not-yet-deployed or temporarily down endpoint
-        # doesn't block the required CI check.  The unit tests above always guard
-        # the local shape; live tests are best-effort canary runs.
+      # ── Browser tests (Playwright — local uvicorn server) ──────────────────
+      - name: Start local uvicorn server for Playwright tests
+        run: |
+          uvicorn zerobeacon_mf_1000_main:app --host 127.0.0.1 --port 8765 &
+          # Wait until the server accepts connections (up to 30 s)
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8765/health > /dev/null && echo "Server ready after ${i}s" && break
+            sleep 1
+          done
+
+      - name: Run Playwright EKG canvas tests (local server)
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
+        run: pytest tests/test_heartbeat_playwright.py -v
+
+      # ── Live tests (against production — best-effort canary) ───────────────
+      - name: Run unit EKG smoke tests against https://zerobeacon.ai
+        # continue-on-error so a temporarily down endpoint doesn't block CI.
+        # The unit tests and Playwright tests above always guard correctness;
+        # live tests are post-deploy canary runs.
         continue-on-error: true
         env:
           ZEROBEACON_URL: https://zerobeacon.ai
