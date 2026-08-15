@@ -14,3 +14,10 @@ uri = "file://morningstar_patent_disclosure.md"
 type = "text"
 title = "Morningstar Invention Disclosure — Tuesday Patent Meeting"
 description = "602-line disclosure covering 4 independently patentable inventions: H4/H3 Geometric Resonator, Hierarchical Falsification-Gate Protocol, Phase-Z/Hodge Coupling (math-to-hardware bridge), and SHA-256 Provenance Chain. All 21 PDFs synthesized."
+
+[[outputs]]
+id = "y_d4P1wZooYbplbVsw2XC"
+uri = "file://appendix_g_patent.html"
+type = "text"
+title = "Appendix G — Conception & Reduction to Practice (Print-to-PDF)"
+description = "Open → File → Print → Save as PDF. Attorney-client privileged. Not committed to any repo."
