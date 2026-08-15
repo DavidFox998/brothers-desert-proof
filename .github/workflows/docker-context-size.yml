@@ -1,0 +1,62 @@
+name: Docker build-context size check
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  check-context-size:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Docker build context is under 10 MB
+        run: |
+          # Write a no-op Dockerfile so the build exits immediately after
+          # transferring the context — we only care about the context size, not
+          # the actual image build.
+          echo "FROM scratch" > /tmp/Dockerfile.noop
+
+          # The legacy builder (DOCKER_BUILDKIT=0) prints:
+          #   "Sending build context to Docker daemon  X.XXXMB"
+          # before running any instructions, so we can grab the size cheaply.
+          raw=$(DOCKER_BUILDKIT=0 docker build \
+                  --no-cache \
+                  -f /tmp/Dockerfile.noop \
+                  . 2>&1 | head -10)
+          echo "$raw"
+
+          size_line=$(echo "$raw" | grep -i "Sending build context" || true)
+          echo "Context line: $size_line"
+
+          if [ -z "$size_line" ]; then
+            echo "ERROR: Could not find 'Sending build context' line in Docker output."
+            exit 1
+          fi
+
+          # Extract value and unit (handles B, kB, MB, GB)
+          value=$(echo "$size_line" | grep -oP '[\d.]+(?=\s*(GB|MB|kB|B)\b)')
+          unit=$(echo "$size_line"  | grep -oP '(?<=[\d.])\s*(GB|MB|kB|B)\b' | tr -d ' ')
+
+          echo "Parsed: ${value} ${unit}"
+
+          python3 - <<EOF
+          value = float("$value")
+          unit  = "$unit"
+
+          to_mb = {"B": 1/1024/1024, "kB": 1/1024, "MB": 1, "GB": 1024}
+          mb = value * to_mb[unit]
+
+          limit_mb = 10
+          print(f"Build context size: {mb:.3f} MB  (limit: {limit_mb} MB)")
+
+          if mb > limit_mb:
+              print(f"FAIL: context is {mb:.2f} MB — exceeds {limit_mb} MB limit.")
+              print("Check .dockerignore and add any large new directories.")
+              raise SystemExit(1)
+          else:
+              print("PASS: context is within the size limit.")
+          EOF
