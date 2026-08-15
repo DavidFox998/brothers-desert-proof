@@ -22,6 +22,15 @@ description: >
 
 version: "1050.0.0"
 
+configSchema:
+  type: object
+  properties:
+    apiKey:
+      type: string
+      description: "API key from https://zerobeacon.ai after Stripe checkout (passed as X-API-Key header). Leave blank for FREE tier (tools 1–100)."
+      title: "X-API-Key"
+  required: []
+
 startCommand:
   type: http
   url: https://zerobeacon.ai/mcp
