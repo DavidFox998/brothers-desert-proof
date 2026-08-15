@@ -54,7 +54,10 @@ def validate_resend_key(api_key_env: str | None = None) -> tuple[bool, str]:
 
     # Minimal body — intentionally missing required fields so Resend returns
     # 422 (auth OK, validation failed) rather than actually sending anything.
-    probe_body = json.dumps({"from": "probe@example.com"}).encode()
+    # Must use onboarding@resend.dev (Resend's own verified domain) — Fly.io
+    # outbound IPs get HTTP 403 from Resend when the from domain is unverified
+    # (e.g. example.com), which the probe incorrectly treats as an invalid key.
+    probe_body = json.dumps({"from": "onboarding@resend.dev"}).encode()
     req = urllib.request.Request(
         _RESEND_VALIDATE_URL,
         data=probe_body,
