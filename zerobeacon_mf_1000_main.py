@@ -592,10 +592,15 @@ async def tier_gate(request: Request, call_next):
                 f"'{required_tier}'. Upgrade at https://rapidapi.com/davidjfox998/api/zerobeacon"
             )
         else:
-            # Native zbk_ key, Smithery api_key header, or no key
+            # Native zbk_ key, Smithery api_key/api-key header, or no key.
+            # Smithery HTTP transport converts configSchema property "apiKey"
+            # (camelCase) to HTTP header "api-key" (kebab-case) before
+            # forwarding.  We accept both spellings so the schema property name
+            # and the header name stay compatible regardless of future renames.
             api_key = (request.headers.get("X-API-Key")
                        or request.headers.get("x-api-key")
-                       or request.headers.get("api_key"))   # Smithery gateway compat
+                       or request.headers.get("api-key")    # Smithery: apiKey → api-key
+                       or request.headers.get("api_key"))   # legacy underscore fallback
             allowed, reason = keystore.check_access(api_key, required_tier)
 
         if not allowed:
