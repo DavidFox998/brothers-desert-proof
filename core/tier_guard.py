@@ -7,7 +7,15 @@ Usage in router includes:
 
 Native ZeroBeacon keys: pass X-API-Key: zbk_<32hex>
 RapidAPI subscribers:   gateway injects X-RapidAPI-Key + X-RapidAPI-Subscription
-Smithery gateway:       passes api_key header
+Smithery gateway:       passes api-key header (configSchema "apiKey" → kebab-case)
+
+Header-mapping reference (keep in sync with smithery.yaml configSchema):
+  configSchema property │ HTTP header sent by Smithery │ FastAPI param name
+  ─────────────────────┼──────────────────────────────┼───────────────────
+  apiKey               │ api-key                      │ api_key  (Header())
+
+FastAPI's Header() automatically accepts both "api-key" and "api_key" spellings
+for the api_key parameter, so no additional alias is required here.
 
 Missing / FREE keys are allowed only on FREE-tier routers.
 """
@@ -23,7 +31,7 @@ def require_tier(min_tier: str):
     Auth priority (first match wins):
     1. X-RapidAPI-Key + validated X-RapidAPI-Proxy-Secret → tier from subscription
     2. X-API-Key (zbk_…)                                  → tier from keystore
-    3. api_key header (Smithery gateway)                   → tier from keystore
+    3. api-key / api_key header (Smithery gateway)         → tier from keystore
     4. No key                                              → free (rank 0)
 
     RapidAPI requests that fail proxy-secret validation fall through to the
@@ -37,7 +45,7 @@ def require_tier(min_tier: str):
         x_rapidapi_key: str | None = Header(default=None),
         x_rapidapi_proxy_secret: str | None = Header(default=None),
         x_rapidapi_subscription: str | None = Header(default=None),
-        api_key: str | None = Header(default=None),   # Smithery gateway
+        api_key: str | None = Header(default=None),   # Smithery: apiKey → api-key
     ):
         rapidapi_tier, _ = verify_rapidapi_request(
             x_rapidapi_key=x_rapidapi_key,
@@ -50,7 +58,9 @@ def require_tier(min_tier: str):
             caller_tier = rapidapi_tier
             caller_rank = keystore.rank_of(caller_tier)
         else:
-            # Native zbk_ key or Smithery api_key header
+            # Native zbk_ key or Smithery api-key / api_key header.
+            # FastAPI Header() matches both "api-key" and "api_key" spellings
+            # for the api_key parameter, covering Smithery's kebab-case forwarding.
             effective_key = x_api_key or api_key
             if effective_key is None:
                 caller_rank = 0
