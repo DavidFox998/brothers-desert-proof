@@ -60,3 +60,72 @@ jobs:
           else:
               print("PASS: context is within the size limit.")
           EOF
+
+      - name: Check Docker build context top-level allowlist
+        run: |
+          python3 - <<'EOF'
+          import fnmatch, os, sys
+
+          # Every top-level name that is EXPECTED in the build context.
+          # Dockerfile and .dockerignore are always forwarded to the daemon by
+          # Docker regardless of .dockerignore rules; the rest are explicitly
+          # re-included via !-patterns in .dockerignore.
+          ALLOWLIST = {
+              "Dockerfile",
+              ".dockerignore",
+              "core",
+              "routers",
+              "requirements.txt",
+              "zerobeacon_mf_1000_main.py",
+          }
+
+          # Docker always sends these two files even if .dockerignore matches them.
+          ALWAYS_SENT = {"Dockerfile", ".dockerignore"}
+
+          # Parse .dockerignore to simulate what Docker would include/exclude.
+          excludes = []
+          includes = []
+          with open(".dockerignore") as fh:
+              for raw in fh:
+                  line = raw.strip()
+                  if not line or line.startswith("#"):
+                      continue
+                  if line.startswith("!"):
+                      includes.append(line[1:].rstrip("/"))
+                  else:
+                      excludes.append(line.rstrip("/"))
+
+          def in_build_context(name):
+              """Return True if Docker would include this top-level entry."""
+              if name in ALWAYS_SENT:
+                  return True
+              # A name is excluded when it matches any exclude pattern ...
+              excluded = any(fnmatch.fnmatch(name, pat) for pat in excludes)
+              if excluded:
+                  # ... unless a later !-pattern re-includes it.
+                  return any(fnmatch.fnmatch(name, pat) for pat in includes)
+              return True  # no exclude matched → in context
+
+          top_level = sorted(
+              e for e in os.listdir(".") if e not in (".", "..")
+          )
+          in_context = [n for n in top_level if in_build_context(n)]
+
+          unexpected = [n for n in in_context if n not in ALLOWLIST]
+
+          if unexpected:
+              noun = "entry" if len(unexpected) == 1 else "entries"
+              print(f"FAIL: {len(unexpected)} unexpected top-level {noun} "
+                    f"would be sent to the Docker build context:")
+              for name in sorted(unexpected):
+                  print(f"  {name}")
+              print()
+              print("To exclude from the image: add a line to .dockerignore.")
+              print("If the addition is intentional: update the ALLOWLIST in")
+              print("  .github/workflows/docker-context-size.yml (this step).")
+              sys.exit(1)
+          else:
+              print("PASS: Docker build context top-level entries match the allowlist.")
+              for name in sorted(in_context):
+                  print(f"  {name}")
+          EOF

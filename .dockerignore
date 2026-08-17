@@ -1,55 +1,10 @@
-# Replit environment directories
-.local/
-.cache/
-.pythonlibs/
-.config/
-.upm/
-.replit
+# Deny everything by default — only the items explicitly re-included below
+# are sent to the Docker build context.  This prevents any new top-level
+# directory from silently bloating the image.
+*
 
-# Node
-node_modules/
-npm-debug.log*
-
-# Git
-.git/
-.gitignore
-
-# Python artifacts
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-dist/
-build/
-.eggs/
-*.egg
-
-# Virtual environments
-venv/
-.venv/
-env/
-.env/
-
-# Test / dev artifacts
-.pytest_cache/
-.coverage
-htmlcov/
-*.log
-
-# Agents / memory
-.agents/
-
-# Data directory (mounted at runtime on Fly.io)
-data/
-
-# Lean / Mathlib (not needed for Python app)
-.elan/
-.lake/
-*.lean
-*.olean
-
-# Misc
-*.DS_Store
-Thumbs.db
+# Application source — the only items the Dockerfile actually COPYs.
+!core/
+!routers/
+!requirements.txt
+!zerobeacon_mf_1000_main.py
