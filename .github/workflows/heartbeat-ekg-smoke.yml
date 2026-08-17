@@ -131,7 +131,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-playwright
+          pip install pytest pytest-playwright pytest-json-report
 
       - name: Install Playwright Chromium browser
         run: playwright install chromium --with-deps
@@ -149,7 +149,98 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
         run: |
           pytest tests/test_heartbeat_playwright.py \
-            -v -k "test_beat_fires_at_200ms_rate_cold_start"
+            -v -k "test_beat_fires_at_200ms_rate_cold_start" \
+            --json-report --json-report-file=/tmp/beat-report.json
+
+      - name: Write beat-rate job summary
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import json, os, re, sys
+
+          report_path = "/tmp/beat-report.json"
+          summary_file = os.environ.get("GITHUB_STEP_SUMMARY", "")
+          heartbeat_url = "https://zerobeacon.ai/brain/heartbeat"
+
+          try:
+              with open(report_path) as f:
+                  report = json.load(f)
+          except Exception as e:
+              msg = f"## ⚠️ Cold-Start Beat-Rate — Report Unavailable\n\nCould not read `{report_path}`: {e}\n"
+              print(msg)
+              if summary_file:
+                  open(summary_file, "a").write(msg)
+              sys.exit(0)
+
+          tests = report.get("tests", [])
+          target = next(
+              (t for t in tests if "cold_start" in t.get("nodeid", "")), None
+          )
+
+          if target is None:
+              msg = "## ⚠️ Cold-Start Beat-Rate — Test Not Found\n\nThe `test_beat_fires_at_200ms_rate_cold_start` test was not found in the JSON report.\n"
+              print(msg)
+              if summary_file:
+                  open(summary_file, "a").write(msg)
+              sys.exit(0)
+
+          passed = target.get("outcome") == "passed"
+
+          # Read structured measurements recorded via record_property().
+          # pytest-json-report stores them as [[key, value], ...] in user_properties.
+          props = dict(target.get("user_properties", []))
+          ticks_fired = props.get("ticks_fired")       # exact int, available pass or fail
+          tick_start  = props.get("tick_start")
+          tick_end    = props.get("tick_end")
+          obs_window  = props.get("observation_window_s", 2)
+          required    = props.get("required_ticks", 5)
+
+          # Fallback: if the test crashed before record_property ran, parse longrepr.
+          if ticks_fired is None and not passed and "call" in target:
+              longrepr = str(target["call"].get("longrepr", ""))
+              m = re.search(r"only (\d+) beat", longrepr)
+              if m:
+                  ticks_fired = int(m.group(1))
+
+          status_icon = "✅" if passed else "❌"
+          status_text = "PASSED" if passed else "FAILED"
+
+          if ticks_fired is not None:
+              ticks_display = f"{ticks_fired} / {required} required"
+          else:
+              ticks_display = "unknown"
+
+          tick_detail = ""
+          if tick_start is not None and tick_end is not None:
+              tick_detail = f" (tick counter: {tick_start} → {tick_end})"
+
+          lines = [
+              f"## {status_icon} Cold-Start Beat-Rate — {status_text}",
+              "",
+              "| Metric | Value |",
+              "| --- | --- |",
+              f"| Ticks fired | `{ticks_display}`{tick_detail} |",
+              f"| Observation window | `{obs_window} seconds` |",
+              f"| Required rate | `≥{required} ticks at 200 ms intervals` |",
+              f"| Live heartbeat | [{heartbeat_url}]({heartbeat_url}) |",
+              "",
+          ]
+
+          if not passed and ticks_fired is not None:
+              lines.append(
+                  f"> **Shortfall:** only `{ticks_fired}/{required}` required ticks fired "
+                  f"in the {obs_window}-second cold-start window. "
+                  "The 200 ms `setInterval` beat loop may have regressed or the VM "
+                  "is waking too slowly after `auto_stop`."
+              )
+              lines.append("")
+
+          summary = "\n".join(lines)
+          print(summary)
+          if summary_file:
+              with open(summary_file, "a") as fh:
+                  fh.write(summary)
+          EOF
 
       - name: Fire webhook alert on cold-start beat-rate failure
         if: failure()

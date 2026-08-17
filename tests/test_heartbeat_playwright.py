@@ -175,7 +175,7 @@ def test_beat_loop_advances_tick(page):
 # ---------------------------------------------------------------------------
 
 @_skip
-def test_beat_fires_at_200ms_rate_cold_start(page):
+def test_beat_fires_at_200ms_rate_cold_start(page, record_property):
     """After a cold start, the 200 ms setInterval must fire ≥5 times within 2 seconds.
 
     At 200 ms per beat, 2 seconds should yield ~10 ticks.  We require only 5
@@ -220,6 +220,14 @@ def test_beat_fires_at_200ms_rate_cold_start(page):
     )
 
     ticks_fired = tick_end - tick_start
+
+    # Emit structured measurement so the CI job summary can show the exact count
+    # whether the test passes or fails (read via pytest-json-report user_properties).
+    record_property("ticks_fired", ticks_fired)
+    record_property("tick_start", tick_start)
+    record_property("tick_end", tick_end)
+    record_property("observation_window_s", 2)
+    record_property("required_ticks", 5)
 
     # ── at least 5 beats must have fired ─────────────────────────────────────
     assert ticks_fired >= 5, (
