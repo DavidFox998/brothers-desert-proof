@@ -8,7 +8,7 @@ from core.beacon import (beacon_payload, D, BEACON, GENESIS_P,
                          PAYPAL_LINK_10, PAYPAL_LINK_100, PAYPAL_LINK_1000)
 from core import keystore
 from core.keystore import ResendPersistenceError
-from core.tier_guard import require_tier
+from core.tier_guard import require_tier, TierAccessError
 from core.emailer import send_api_key_email, validate_resend_key
 from core.log_redactor import install_redaction_filter
 from core.rapidapi_auth import verify_rapidapi_request, RAPIDAPI_SUBSCRIPTION_TIER, check_rapidapi_proxy_secret
@@ -72,6 +72,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ── TierAccessError handler ───────────────────────────────────────────────────
+# Returns HTTP 200 with a structured JSON body so MCP tool clients (Claude,
+# Smithery, etc.) display the error message inside the tool response rather
+# than showing an opaque HTTP 403.  REST clients can detect the error via
+# the "ok": false field.
+@app.exception_handler(TierAccessError)
+async def tier_access_error_handler(request: Request, exc: TierAccessError):
+    return JSONResponse(status_code=200, content=exc.to_response_body())
 
 # ROUTERS: (module, prefix, tag, min_tier)
 # MF-01/02 → FREE (100 tools open)
@@ -604,15 +614,49 @@ async def tier_gate(request: Request, call_next):
             allowed, reason = keystore.check_access(api_key, required_tier)
 
         if not allowed:
+            # Determine whether a key was provided at all (vs. missing entirely)
+            _any_key = (request.headers.get("X-API-Key")
+                        or request.headers.get("x-api-key")
+                        or request.headers.get("api-key")
+                        or request.headers.get("api_key"))
+            _key_present = bool(_any_key)
+            _tier_label = (
+                required_tier
+                .replace("_", " ")
+                .replace("pro 10",          "PRO ($10/mo)")
+                .replace("pro 100",         "PRO ($100/mo)")
+                .replace("enterprise 1000", "ENTERPRISE ($1000)")
+            )
+            if not _key_present:
+                _msg = (
+                    f"⚠️  API key missing — this tool requires {_tier_label} or higher.\n"
+                    "Get your key at https://zerobeacon.ai after checkout.\n"
+                    "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                    "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
+                )
+            else:
+                _msg = (
+                    f"⚠️  Invalid or insufficient API key — {_tier_label} or higher required.\n"
+                    "Get or upgrade your key at https://zerobeacon.ai\n"
+                    "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                    "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
+                )
+            # Return HTTP 200 with a structured error body so MCP tool clients
+            # (Claude, Smithery, etc.) display the message in the tool response
+            # rather than showing an opaque HTTP 403 error.
             return JSONResponse(
                 {
-                    "error":         "Access denied",
+                    "ok":            False,
+                    "error":         "tier_required",
+                    "message":       _msg,
                     "required_tier": required_tier,
-                    "reason":        reason,
-                    "upgrade":       "https://zerobeacon.ai/pricing",
+                    "your_tier":     "free",
+                    "signup":        "https://zerobeacon.ai",
+                    "stripe":        "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
                     "rapidapi":      "https://rapidapi.com/davidjfox998/api/zerobeacon",
+                    "paypal":        "https://paypal.me/davidfox223",
                 },
-                status_code=403,
+                status_code=200,
             )
     return await call_next(request)
 
@@ -2271,25 +2315,59 @@ async def mcp_post(request: Request):
         # /mcp is a single endpoint so Depends() doesn't guard individual tools;
         # we check here using the persistent keystore.
         required_tier = _tool_tier.get(tool_name, "free")
-        # API key is accepted ONLY from the X-API-Key header.
-        # Accepting it from the JSON body (args) would allow callers to bypass
-        # transport-layer security and risk leaking the key in server logs.
+
+        # Accept both X-API-Key (native) and api-key (Smithery gateway).
+        # Smithery's HTTP transport converts configSchema property "apiKey"
+        # (camelCase) to HTTP header "api-key" (kebab-case).  We accept both
+        # spellings so every client path works without schema changes.
+        # Keys are never read from the JSON body to prevent log leakage.
         api_key = (
             request.headers.get("X-API-Key")
             or request.headers.get("x-api-key")
+            or request.headers.get("api-key")    # Smithery: apiKey → api-key
+            or request.headers.get("api_key")    # underscore fallback
         )
         allowed, reason = keystore.check_access(api_key, required_tier)
         if not allowed:
+            # Build a human-readable message for the MCP tool response body.
+            # We return an MCP tool *result* (not a JSON-RPC error) so that
+            # MCP clients (Claude, Smithery, etc.) display the message as
+            # visible tool output rather than an opaque transport error.
+            _tier_label = (
+                required_tier
+                .replace("_", " ")
+                .replace("pro 10",          "PRO ($10/mo)")
+                .replace("pro 100",         "PRO ($100/mo)")
+                .replace("enterprise 1000", "ENTERPRISE ($1000)")
+            )
+            _key_present = bool(api_key)
+            if not _key_present:
+                _msg = (
+                    f"⚠️  API key missing — this tool requires {_tier_label} or higher.\n"
+                    "Get your key at https://zerobeacon.ai after checkout.\n"
+                    "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                    "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
+                )
+            else:
+                _msg = (
+                    f"⚠️  Invalid or insufficient API key — {_tier_label} or higher required.\n"
+                    "Get or upgrade your key at https://zerobeacon.ai\n"
+                    "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                    "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
+                )
             return JSONResponse(
                 {
                     "jsonrpc": "2.0", "id": req_id,
-                    "error": {
-                        "code":    -32001,
-                        "message": f"Access denied: {reason}",
-                        "data": {
-                            "required_tier": required_tier,
-                            "upgrade":       "https://zerobeacon.ai/pricing",
-                        },
+                    "result": {
+                        "content": [{"type": "text", "text": _msg}],
+                        "isError": True,
+                        "ok":            False,
+                        "error":         "tier_required",
+                        "required_tier": required_tier,
+                        "signup":        "https://zerobeacon.ai",
+                        "stripe":        "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
+                        "rapidapi":      "https://rapidapi.com/davidjfox998/api/zerobeacon",
+                        "paypal":        "https://paypal.me/davidfox223",
                     },
                 }
             )
