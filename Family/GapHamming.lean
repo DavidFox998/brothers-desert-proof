@@ -1,6 +1,5 @@
 /- Sync-lock: inlined from eutheos-property/Family/GapHamming.lean
-   This file is a standalone copy. Canonical source: DavidFox998/eutheos-property.
-   Do not edit this copy without mirroring the change upstream.
+   Canonical source: DavidFox998/eutheos-property. Mirror changes upstream.
 -/
 import Family.Brothers1419
 
