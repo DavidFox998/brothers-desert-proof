@@ -240,3 +240,168 @@ def test_beat_fires_at_200ms_rate_cold_start(page):
         "2-second cold-start observation window:\n"
         + "\n".join(f"  • {e}" for e in uncaught)
     )
+
+
+# ---------------------------------------------------------------------------
+# Background-tab throttling — beat loop must survive a hidden visibilityState
+# ---------------------------------------------------------------------------
+
+@_skip
+def test_beat_survives_background_tab(page):
+    """Beat loop must not freeze when the tab is backgrounded, and must resume on focus.
+
+    Two-phase browser-native scenario that mirrors a real user switching away from
+    the heartbeat tab and switching back:
+
+    Phase 1 — background (2 s):
+      A second browser tab is opened in the same context via page.context.new_page(),
+      pushing the heartbeat page to an inactive position.  document.visibilityState
+      is overridden to 'hidden' and document.hidden to True, and a visibilitychange
+      event is dispatched so the page JS reacts exactly as in a real tab-switch.
+      The tick counter must advance ≥5 times in 2 s.
+
+      Note: headless Chromium does not throttle background setInterval timers —
+      timer throttling requires an OS-level focus change that headless mode does not
+      produce — so the full 200 ms rate continues.  ≥5 / 2 s is the same bar as
+      the cold-start test and confirms that no visibilitychange handler in the page
+      JS inadvertently cancels the interval when the tab is hidden.
+
+    Phase 2 — foreground resume (1 s):
+      The second tab is closed and page.bring_to_front() restores the heartbeat
+      page to the active position.  visibilityState is restored to 'visible' and
+      another visibilitychange event fires.  At least 3 beats must fire in 1 s,
+      confirming the interval is still alive and any resume path runs correctly.
+      (≥3, not 5, leaves headroom for the first timer-fire to align after the
+      transition.)
+
+    No JS console errors or uncaught page exceptions are permitted during either phase.
+    """
+    errors: list[str] = []
+    uncaught: list[str] = []
+
+    def _capture(msg):
+        if msg.type == "error":
+            errors.append(msg.text)
+
+    def _capture_exc(exc):
+        uncaught.append(str(exc))
+
+    page.on("console", _capture)
+    page.on("pageerror", _capture_exc)
+
+    page.goto(_heartbeat_url(), wait_until="domcontentloaded")
+
+    # Allow two full beat cycles so the interval is warm before we background it.
+    page.wait_for_timeout(500)
+
+    # ── Phase 1: push heartbeat tab to background ─────────────────────────────
+    # Open a second tab — a browser-native multi-tab transition — so the heartbeat
+    # page becomes inactive in the browser context.
+    second_page = page.context.new_page()
+    second_page.goto("about:blank")
+
+    # Report 'hidden' to the heartbeat page JS, exactly as the browser would.
+    page.evaluate(
+        """() => {
+            Object.defineProperty(document, 'visibilityState', {
+                configurable: true,
+                get: () => 'hidden',
+            });
+            Object.defineProperty(document, 'hidden', {
+                configurable: true,
+                get: () => true,
+            });
+            document.dispatchEvent(new Event('visibilitychange'));
+        }"""
+    )
+
+    tick_bg_start = page.evaluate(
+        "() => typeof tick !== 'undefined' ? tick : null"
+    )
+
+    # Observe 2 s with the tab backgrounded.
+    page.wait_for_timeout(2000)
+
+    tick_bg_end = page.evaluate(
+        "() => typeof tick !== 'undefined' ? tick : null"
+    )
+
+    # ── Phase 2: restore heartbeat tab to foreground ──────────────────────────
+    second_page.close()
+    page.bring_to_front()
+
+    # Report 'visible' to the heartbeat page JS as the browser would on focus restore.
+    page.evaluate(
+        """() => {
+            Object.defineProperty(document, 'visibilityState', {
+                configurable: true,
+                get: () => 'visible',
+            });
+            Object.defineProperty(document, 'hidden', {
+                configurable: true,
+                get: () => false,
+            });
+            document.dispatchEvent(new Event('visibilitychange'));
+        }"""
+    )
+
+    tick_fg_start = page.evaluate(
+        "() => typeof tick !== 'undefined' ? tick : null"
+    )
+
+    # Wait 1 s — at 200 ms per beat this yields ~5 ticks; we require ≥3.
+    page.wait_for_timeout(1000)
+
+    tick_fg_end = page.evaluate(
+        "() => typeof tick !== 'undefined' ? tick : null"
+    )
+
+    # ── tick counter must be accessible throughout ────────────────────────────
+    assert tick_bg_start is not None, (
+        "/brain/heartbeat: 'tick' not found before backgrounding the tab — "
+        "ensure 'tick' is declared as a global (not block-scoped) variable in the page JS"
+    )
+    assert tick_bg_end is not None, (
+        "/brain/heartbeat: 'tick' disappeared during the 2 s background window"
+    )
+    assert tick_fg_start is not None, (
+        "/brain/heartbeat: 'tick' not found after restoring foreground focus"
+    )
+    assert tick_fg_end is not None, (
+        "/brain/heartbeat: 'tick' disappeared during the 1 s post-focus window"
+    )
+
+    ticks_while_bg = tick_bg_end - tick_bg_start
+    ticks_after_fg = tick_fg_end - tick_fg_start
+
+    # ── Phase 1: ≥5 ticks while backgrounded ─────────────────────────────────
+    # Confirms setInterval was not cancelled by a visibilitychange handler.
+    # Headless Chromium does not throttle timers, so the full 200 ms rate applies.
+    assert ticks_while_bg >= 5, (
+        f"/brain/heartbeat: only {ticks_while_bg} beat(s) fired in 2 s while the tab "
+        f"was backgrounded (expected ≥5 at 200 ms each). "
+        f"tick at hide={tick_bg_start}, tick after 2 s={tick_bg_end}. "
+        "A visibilitychange listener may have called clearInterval when the tab became "
+        "hidden without restarting it on focus restore — or the beat loop was never started."
+    )
+
+    # ── Phase 2: ≥3 ticks after focus restore ────────────────────────────────
+    # Confirms the interval is still alive and any resume path executes correctly.
+    assert ticks_after_fg >= 3, (
+        f"/brain/heartbeat: only {ticks_after_fg} beat(s) fired in 1 s after the tab "
+        f"was brought to the foreground (expected ≥3 at 200 ms each). "
+        f"tick at focus-restore={tick_fg_start}, tick 1 s later={tick_fg_end}. "
+        "The beat loop is not resuming correctly after tab focus is restored."
+    )
+
+    # ── No console errors during any phase ────────────────────────────────────
+    assert not errors, (
+        f"/brain/heartbeat produced {len(errors)} JS console error(s) during the "
+        "background-tab test:\n"
+        + "\n".join(f"  • {e}" for e in errors)
+    )
+    assert not uncaught, (
+        f"/brain/heartbeat produced {len(uncaught)} uncaught JS exception(s) during the "
+        "background-tab test:\n"
+        + "\n".join(f"  • {e}" for e in uncaught)
+    )
