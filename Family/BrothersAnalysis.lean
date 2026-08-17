@@ -1,6 +1,5 @@
 /- Sync-lock: inlined from eutheos-property/Family/BrothersAnalysis.lean
-   This file is a standalone copy. Canonical source: DavidFox998/eutheos-property.
-   Do not edit this copy without mirroring the change upstream.
+   Canonical source: DavidFox998/eutheos-property. Mirror changes upstream.
 -/
 -- Family/BrothersAnalysis.lean
 -- Analysis of brothers_35 from Brothers1419: Nodup, mod 211, popcount-6, 3 primes, leader 1419
