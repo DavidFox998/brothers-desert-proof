@@ -6,17 +6,16 @@ name: EKG Webhook Alert Verification
 #
 # What it checks:
 #   1. A forced-failure test causes the job to fail.
-#   2. The alert step fires — delivers a text+blocks/mrkdwn payload to a test
-#      endpoint (httpbin.org/anything, which accepts all POSTs and echoes them).
-#      If SLACK_WEBHOOK_URL is set as a repo secret, it also fires there.
-#   3. A second job runs the same alert logic with an empty URL and confirms
-#      it exits 0 (no-op), exactly matching the production behaviour.
+#   2. The alert step fires — builds and delivers the text+blocks/mrkdwn payload
+#      to a local Python HTTP server (no external service dependency).
+#   3. A second job confirms the no-op path exits 0 when the URL is empty —
+#      matching the production ekg-coldstart-beat-rate and heartbeat-ekg-smoke behaviour.
 
 on:
   workflow_dispatch:
 
 jobs:
-  # ── Job 1: forced failure → webhook should fire ───────────────────────────
+  # ── Job 1: forced failure → webhook fires to local test server ────────────
   ekg-alert-fires-on-failure:
     runs-on: ubuntu-latest
 
@@ -40,8 +39,6 @@ jobs:
       - name: Fire webhook alert on failure
         if: failure()
         env:
-          # SLACK_WEBHOOK_URL may be absent — fall back to httpbin.org test endpoint.
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           REF_NAME: ${{ github.ref_name }}
           RUN_ID: ${{ github.run_id }}
           REPOSITORY: ${{ github.repository }}
@@ -49,8 +46,8 @@ jobs:
           RUN_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          # Build the same payload shape as the production ekg-coldstart-beat-rate alert
-          # (text field + blocks array with mrkdwn section).
+          # Build the same payload shape used by the production ekg-coldstart-beat-rate alert:
+          # top-level "text" string + "blocks" array with a mrkdwn section.
           PAYLOAD=$(jq -nc \
             --arg ref  "$REF_NAME" \
             --arg url  "$RUN_URL" \
@@ -68,65 +65,88 @@ jobs:
               ]
             }')
 
-          echo "=== Payload to deliver ==="
+          echo "=== Constructed payload ==="
           echo "$PAYLOAD" | jq .
+          echo ""
 
-          # ── Primary target: SLACK_WEBHOOK_URL (if configured) ──────────────
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            echo "=== Firing alert to SLACK_WEBHOOK_URL ==="
-            # Use || true so a curl network error doesn't abort the script with set -e.
-            HTTP_STATUS=$(curl -s -o /tmp/slack_response.txt -w "%{http_code}" \
-              -X POST "$SLACK_WEBHOOK_URL" \
-              -H "Content-Type: application/json" \
-              -d "$PAYLOAD" || echo "000")
-            echo "SLACK_WEBHOOK_URL response: HTTP $HTTP_STATUS — $(cat /tmp/slack_response.txt 2>/dev/null || echo '(no response)')"
-            if [ "$HTTP_STATUS" = "000" ]; then
-              echo "WARNING: curl could not connect to SLACK_WEBHOOK_URL (network error / bad URL)"
-            elif [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "204" ]; then
-              echo "WARNING: unexpected HTTP ${HTTP_STATUS} from SLACK_WEBHOOK_URL"
-            fi
-          else
-            echo "SLACK_WEBHOOK_URL not set as a repo secret — using httpbin.org test endpoint instead"
-          fi
-
-          # ── Fallback / verification target: httpbin.org/anything ──────────
-          # httpbin accepts all POSTs and returns 200 with the request echoed back.
-          # This confirms the curl mechanics and payload shape are correct even
-          # without a real Slack webhook URL.
-          echo "=== Firing alert to httpbin.org/anything (test endpoint) ==="
-          HTTP_STATUS=$(curl -s -o /tmp/httpbin_response.txt -w "%{http_code}" \
-            -X POST "https://httpbin.org/anything" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD")
-          echo "httpbin response: HTTP $HTTP_STATUS"
-          ECHO_BODY=$(cat /tmp/httpbin_response.txt)
-          echo "$ECHO_BODY" | jq .
-
-          if [ "$HTTP_STATUS" != "200" ]; then
-            echo "ERROR: httpbin returned HTTP ${HTTP_STATUS} — curl or payload issue"
+          # ── Validate payload JSON structure ───────────────────────────────
+          # Confirm top-level "text" field exists (required by all alert consumers).
+          TEXT_FIELD=$(echo "$PAYLOAD" | jq -r '.text')
+          if [ -z "$TEXT_FIELD" ] || [ "$TEXT_FIELD" = "null" ]; then
+            echo "ERROR: payload is missing top-level .text field"
             exit 1
           fi
 
-          # Confirm the payload reached the endpoint intact
-          ECHOED_TEXT=$(echo "$ECHO_BODY" | jq -r '.json.text // empty')
-          if [ -z "$ECHOED_TEXT" ]; then
-            echo "ERROR: httpbin did not echo back a .json.text field — payload may be malformed"
+          # Confirm blocks array with mrkdwn section is present.
+          BLOCK_TYPE=$(echo "$PAYLOAD" | jq -r '.blocks[0].text.type')
+          if [ "$BLOCK_TYPE" != "mrkdwn" ]; then
+            echo "ERROR: blocks[0].text.type is '${BLOCK_TYPE}', expected 'mrkdwn'"
+            exit 1
+          fi
+          echo "Payload structure validated: text + blocks[mrkdwn] ✓"
+          echo ""
+
+          # ── Deliver to a local Python HTTP server ─────────────────────────
+          # Start a minimal one-shot HTTP server that records the first request.
+          python3 - <<'PYEOF' &
+          import http.server, json, sys, os
+
+          class Handler(http.server.BaseHTTPRequestHandler):
+              def do_POST(self):
+                  length = int(self.headers.get("Content-Length", 0))
+                  body = self.rfile.read(length).decode()
+                  data = json.loads(body)
+                  print("=== Webhook received ===", flush=True)
+                  print(json.dumps(data, indent=2), flush=True)
+                  # Validate shape
+                  assert "text" in data, "Missing 'text' field"
+                  assert "blocks" in data, "Missing 'blocks' field"
+                  assert data["blocks"][0]["text"]["type"] == "mrkdwn", "Not mrkdwn"
+                  print("Shape OK: text + blocks[mrkdwn] ✓", flush=True)
+                  self.send_response(200)
+                  self.end_headers()
+                  self.wfile.write(b"ok")
+              def log_message(self, *a): pass  # silence access log
+
+          httpd = http.server.HTTPServer(("127.0.0.1", 9876), Handler)
+          print("Test server listening on :9876", flush=True)
+          httpd.handle_request()  # serve one request then exit
+          PYEOF
+
+          SERVER_PID=$!
+          sleep 1  # let server start
+
+          # POST the payload exactly as the production alert step does.
+          echo "=== Firing alert to local test server (http://127.0.0.1:9876) ==="
+          HTTP_STATUS=$(curl -s -o /tmp/webhook_response.txt -w "%{http_code}" \
+            -X POST "http://127.0.0.1:9876" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+          RESPONSE=$(cat /tmp/webhook_response.txt)
+          echo "curl exit code: $?"
+          echo "HTTP status: $HTTP_STATUS"
+          echo "Server response: $RESPONSE"
+
+          wait "$SERVER_PID"
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "ERROR: test server returned HTTP ${HTTP_STATUS}"
             exit 1
           fi
 
           echo ""
-          echo "SUCCESS: Webhook alert delivery confirmed."
-          echo "  • Payload shape: text + blocks[mrkdwn] — matches production format."
-          echo "  • curl exit code: 0"
-          echo "  • Delivery HTTP status: 200"
-          echo "  • Echoed text field: $ECHOED_TEXT"
+          echo "=== Verification complete ==="
+          echo "  ✓ Forced-failure test triggered the on-failure step"
+          echo "  ✓ Payload built: text + blocks[mrkdwn] (matches production format)"
+          echo "  ✓ curl delivered payload to endpoint — HTTP 200"
+          echo "  ✓ Server confirmed payload shape is correct"
 
   # ── Job 2: empty URL → no-op, exit 0 ─────────────────────────────────────
   ekg-alert-noop-when-no-url:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Confirm ALERT_WEBHOOK_URL no-op (matches ekg-coldstart-beat-rate behaviour)
+      - name: "No-op: ALERT_WEBHOOK_URL empty (matches ekg-coldstart-beat-rate)"
         env:
           ALERT_WEBHOOK_URL: ""
         run: |
@@ -134,11 +154,9 @@ jobs:
             echo "[ekg-coldstart-alert] ALERT_WEBHOOK_URL not configured — skipping"
             exit 0
           fi
-          # Should never reach here
-          echo "ERROR: expected no-op but ALERT_WEBHOOK_URL was set"
-          exit 1
+          echo "ERROR: expected no-op but ALERT_WEBHOOK_URL was set"; exit 1
 
-      - name: Confirm SLACK_WEBHOOK_URL no-op (matches heartbeat-ekg-smoke behaviour)
+      - name: "No-op: SLACK_WEBHOOK_URL empty (matches heartbeat-ekg-smoke)"
         env:
           SLACK_WEBHOOK_URL: ""
           REF_NAME: "test-ref"
@@ -147,8 +165,7 @@ jobs:
         run: |
           RUN_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
           if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            echo "ERROR: URL was set — this step should have had an empty URL"
-            exit 1
+            echo "ERROR: URL was set — expected empty"; exit 1
           fi
           echo "SLACK_WEBHOOK_URL is not set — skipping webhook notification"
           echo "Failing run: $RUN_URL"
