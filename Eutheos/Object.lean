@@ -30,8 +30,6 @@
     apply irrational_pi
     exact ⟨q * 10, by push_cast at hq ⊢; linarith⟩
 
-
-
     theorem dist_pos_of_irrational (a : ℝ) (ha : Irrational a)
       (n : Nat) (hn : n ≠ 0) : dist (↑n * a) > 0 := by
     have hnn : 0 ≤ frac (↑n * a) := by
@@ -126,3 +124,26 @@
 
     end Eutheos
 
+    /-! ## § Axiom trail
+      Run `lake build Eutheos.Object` and inspect the #print axioms output to confirm
+      every theorem below depends only on the Lean 4 kernel axioms
+      (Classical.choice, propext, Quot.sound, funext) and nothing else — no sorryAx. -/
+
+    section AxiomTrail
+    open Eutheos
+
+    #print axioms object_irrational
+    #print axioms object_dist_pos
+    #print axioms gate_norm
+    #print axioms route_unitary
+    #print axioms object_clean
+    #print axioms brothers_Nodup
+    #print axioms brothers_ge_193
+    #print axioms brothers_v2_Nodup
+    #print axioms brothers_v2_length
+    #print axioms brothers_v2_ge_193
+    #print axioms W_eq_product
+    #print axioms brothers_v2_all_W_divisors_collide
+    #print axioms collision_mod_q
+
+    end AxiomTrail

@@ -79,5 +79,6 @@
     nlinarith [Real.sq_sqrt hp_nn, Real.sqrt_nonneg (p : ℝ)]
 
 
+
     end Eutheos.RamanujanFactorization
     

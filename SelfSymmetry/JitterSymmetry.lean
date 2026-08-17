@@ -7,6 +7,9 @@ namespace SelfSymmetry
 
 open Eutheos
 
+/-! ## Jitter self-symmetry -/
+
+-- 35 jitter values stay distinct across all 1420 time steps
 theorem jitter_Nodup_1419 : all_jitters_Nodup_upto 1419 = true := by native_decide
 
 theorem jitter_emi_reduction :

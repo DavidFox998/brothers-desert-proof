@@ -7,13 +7,11 @@ package «brothers-desert-proof» where
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.15.0"
 
--- FIXED: Package is named «eutheos-property», require must match
 require «eutheos-property» from git
   "https://github.com/DavidFox998/eutheos-property.git" @ "main"
 
 require «lindelof-hypothesis-143» from git
   "https://github.com/DavidFox998/lindelof-hypothesis-143.git" @ "main"
-
 
 lean_lib BrothersDesertProof where
   srcDir := "."
@@ -25,13 +23,13 @@ lean_lib BrothersDesertProof where
     .one `Eutheos.Object,
     .one `Eutheos.Theta,
     .one `Eutheos.RationalTheta,
-    .one `RouteC.GrowthRepulsionBridge,
-    .one `Lindelof.LindelofBridge,
-    .one `Lindelof.GrowthBoundReal,
-    .one `Eutheos.Bridge,
-    .one `Eutheos.RH,
     .one `Eutheos.RamanujanFactorization,
     .one `Eutheos.EulerProductLemmas,
+    .one `Eutheos.Bridge,
+    .one `Eutheos.RH,
+    -- Lindelöf bridges
+    .one `Lindelof.LindelofBridge,
+    .one `Lindelof.GrowthBoundReal,
     -- Closure: RouteC closes via Hasse + numerical BC certs (no Langlands)
     .one `Closure.RouteCClosed,
     -- Universal binder: gate arithmetic + brothers structure + BC cert
@@ -44,7 +42,7 @@ lean_lib BrothersDesertProof where
     .one `Route.RouteC,
     -- Route D: theta self-symmetry + Eutheos Object + desert → RH (THIS REPO)
     .one `Route.RouteD,
-    -- SIEGEL: Deuring-Heilbronn-Siegel zero-free region at p5
+    -- Siegel zero-free
     .one `Siegel.SiegelZeroFree,
     -- SIEGEL ELEMENTARY: ζ has no real zeros in (0,1)
     .one `Siegel.SiegelZeroFreeElementary,

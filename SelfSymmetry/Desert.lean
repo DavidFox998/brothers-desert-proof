@@ -31,6 +31,8 @@ theorem desert_mod191_Nodup :
 theorem desert_product_Nodup :
     (brothers_35.map (· % (191 * 193))).Nodup := by native_decide
 
+
+
 /-! ## Desert certificate -/
 theorem desert_clean :
     exceptional_upto_1000 = [2, 3, 19, 191] ∧
