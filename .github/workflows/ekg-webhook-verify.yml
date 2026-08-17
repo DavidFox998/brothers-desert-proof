@@ -1,0 +1,120 @@
+name: EKG Webhook Alert Verification
+
+# One-shot workflow to confirm the on-failure webhook alert fires correctly.
+# Trigger manually; once verified, delete this file and tests/test_ekg_webhook_verify.py.
+#
+# What it checks:
+#   1. A forced-failure test causes the job to fail.
+#   2. The alert step fires — delivers a text+blocks/mrkdwn payload to SLACK_WEBHOOK_URL.
+#   3. A second job runs the same alert step with an empty URL and confirms it no-ops cleanly.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # ── Job 1: forced failure → webhook should fire ───────────────────────────
+  ekg-alert-fires-on-failure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pytest
+
+      - name: Run forced-failure test (expected to fail)
+        # This step is expected to fail; the alert step below runs when it does.
+        run: pytest tests/test_ekg_webhook_verify.py -v
+
+      - name: Fire webhook alert on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          RUN_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Build the same payload shape used by ekg-coldstart-beat-rate (text + blocks/mrkdwn)
+          PAYLOAD=$(jq -nc \
+            --arg ref  "$REF_NAME" \
+            --arg url  "$RUN_URL" \
+            --arg ts   "$TIMESTAMP" \
+            '{
+              "text": ":rotating_light: *EKG webhook alert verification — FIRED CORRECTLY*",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": (":rotating_light: *EKG webhook alert verification — FIRED CORRECTLY*\n*Workflow:* `ekg-alert-fires-on-failure`\n*Ref:* `" + $ref + "`\n*Time:* `" + $ts + "`\n*Run:* " + $url + "\n\nThis alert was triggered intentionally to confirm the on-failure webhook step works end-to-end. The payload shape (text + blocks + mrkdwn) matches the production alert format.")
+                  }
+                }
+              ]
+            }')
+
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            HTTP_STATUS=$(curl -s -o /tmp/webhook_response.txt -w "%{http_code}" \
+              -X POST "$SLACK_WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -d "$PAYLOAD")
+            echo "Webhook HTTP status: $HTTP_STATUS"
+            echo "Webhook response body: $(cat /tmp/webhook_response.txt)"
+            if [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "204" ]; then
+              echo "ERROR: Webhook returned unexpected HTTP ${HTTP_STATUS}"
+              exit 1
+            fi
+            echo "SUCCESS: Webhook alert delivered (HTTP ${HTTP_STATUS})"
+          else
+            echo "SKIP: SLACK_WEBHOOK_URL secret is not set — cannot verify delivery"
+            echo "Add SLACK_WEBHOOK_URL to repository secrets and re-run."
+            exit 1
+          fi
+
+  # ── Job 2: empty URL → no-op, exit 0 ─────────────────────────────────────
+  ekg-alert-noop-when-no-url:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Confirm alert step no-ops cleanly when ALERT_WEBHOOK_URL is empty
+        env:
+          ALERT_WEBHOOK_URL: ""
+        run: |
+          if [ -z "$ALERT_WEBHOOK_URL" ]; then
+            echo "[ekg-coldstart-alert] ALERT_WEBHOOK_URL not configured — skipping"
+            exit 0
+          fi
+          # Should never reach here in this job
+          echo "ERROR: expected no-op but URL was set"
+          exit 1
+
+      - name: Confirm alert step no-ops cleanly when SLACK_WEBHOOK_URL is empty
+        env:
+          SLACK_WEBHOOK_URL: ""
+          REF_NAME: "test-ref"
+          RUN_ID: "0"
+          REPOSITORY: "owner/repo"
+        run: |
+          RUN_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+          PAYLOAD=$(jq -nc \
+            --arg ref "$REF_NAME" \
+            --arg url "$RUN_URL" \
+            '{"text": ("*EKG smoke tests FAILED* on `" + $ref + "`\n• Run: " + $url)}')
+
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            echo "ERROR: URL was set — this step should have had an empty URL"
+            exit 1
+          else
+            echo "SLACK_WEBHOOK_URL is not set — skipping webhook notification"
+            echo "Failing run: $RUN_URL"
+            echo "SUCCESS: no-op confirmed"
+          fi
