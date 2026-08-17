@@ -1,5 +1,5 @@
 """
-Smithery header-mapping test — Task #252.
+Smithery header-mapping test — Task #252 / #253.
 
 Smithery HTTP transport converts configSchema properties from camelCase to
 kebab-case HTTP headers before forwarding requests.  The configSchema field
@@ -14,9 +14,10 @@ Tests
 1. ``api-key`` header (Smithery camelCase→kebab conversion of ``apiKey``)
    with a valid PRO key → 200 on a PRO tool (above tool #100).
 2. ``X-API-Key`` header (native zbk_ path) with same key → 200.
-3. No key → 403 on the same PRO tool.
-4. Unrecognised key → 403 on the same PRO tool.
-5. FREE tool (below #100) is reachable with NO key whatsoever → 200.
+3. No key → 200 with {"ok": false, "error": "tier_required"} in body.
+   (Task #253: tier errors return 200 so MCP clients show the message.)
+4. Unrecognised key → 200 with {"ok": false, "error": "tier_required"}.
+5. FREE tool (below #100) is reachable with NO key whatsoever → 200 with ok=True.
 
 Header-mapping reference (keep this in sync with smithery.yaml)
 ---------------------------------------------------------------
@@ -101,38 +102,51 @@ def test_native_x_api_key_header_unlocks_pro_tool(client, pro_key):
 
 
 # ---------------------------------------------------------------------------
-# Test 3 — No key → 403 on a PRO tool
+# Test 3 — No key → 200 with error body on a PRO tool
+# (Task #253: tier errors return HTTP 200 so MCP clients show the message.)
 # ---------------------------------------------------------------------------
 
 def test_no_key_is_rejected_on_pro_tool(client):
-    """Without any key, a PRO endpoint must return 403."""
+    """Without any key, a PRO endpoint must return 200 with ok=False and a
+    human-readable error message that includes the signup URL."""
     resp = client.get(PRO_ENDPOINT)
-    assert resp.status_code == 403, (
-        f"Expected 403 (no key) on PRO endpoint; "
+    assert resp.status_code == 200, (
+        f"Expected 200 (tier error body) on PRO endpoint with no key; "
         f"got {resp.status_code}: {resp.text[:300]}"
     )
     body = resp.json()
-    # The middleware returns {"error": "Access denied", ...} directly (not
-    # wrapped in "detail") because it is a belt-and-suspenders JSONResponse,
-    # not a FastAPI HTTPException.
-    assert body.get("error") == "Access denied", (
-        f"Unexpected error body: {body}"
+    assert body.get("ok") is False, f"Expected ok=False in error body: {body}"
+    assert body.get("error") == "tier_required", (
+        f"Expected error='tier_required' in body: {body}"
     )
     assert body.get("required_tier") == "pro_10", (
-        f"Missing required_tier in 403 body: {body}"
+        f"Missing/wrong required_tier in error body: {body}"
     )
+    assert "zerobeacon.ai" in body.get("message", ""), (
+        f"Signup URL missing from message: {body}"
+    )
+    assert "signup" in body, f"Missing 'signup' key in error body: {body}"
 
 
 # ---------------------------------------------------------------------------
-# Test 4 — Unknown key → 403 on a PRO tool
+# Test 4 — Unknown key → 200 with error body on a PRO tool
 # ---------------------------------------------------------------------------
 
 def test_unknown_key_is_rejected_on_pro_tool(client):
-    """An unrecognised key must not be granted any paid tier."""
+    """An unrecognised key must not be granted any paid tier.
+    The response is HTTP 200 with ok=False so MCP clients display the message."""
     resp = client.get(PRO_ENDPOINT, headers={"api-key": "zbk_notarealapikeyXXXXXXXXXXXXXX"})
-    assert resp.status_code == 403, (
-        f"Expected 403 (unknown key) on PRO endpoint; "
+    assert resp.status_code == 200, (
+        f"Expected 200 (tier error body) on PRO endpoint with unknown key; "
         f"got {resp.status_code}: {resp.text[:300]}"
+    )
+    body = resp.json()
+    assert body.get("ok") is False, f"Expected ok=False in error body: {body}"
+    assert body.get("error") == "tier_required", (
+        f"Expected error='tier_required' in body: {body}"
+    )
+    assert "zerobeacon.ai" in body.get("message", ""), (
+        f"Signup URL missing from message: {body}"
     )
 
 

@@ -18,12 +18,73 @@ FastAPI's Header() automatically accepts both "api-key" and "api_key" spellings
 for the api_key parameter, so no additional alias is required here.
 
 Missing / FREE keys are allowed only on FREE-tier routers.
+
+TierAccessError is raised instead of HTTPException so the app-level handler
+can return HTTP 200 with a human-readable error body.  MCP tool clients
+(Claude, Smithery, etc.) only show response content when the status is 200;
+a 403 surfaces as an opaque HTTP error with no visible message.
 """
 
-from fastapi import Depends, HTTPException, Header, Request
+from fastapi import Depends, Header, Request
 from core import keystore
 from core.rapidapi_auth import verify_rapidapi_request
 
+
+# ── Custom exception ───────────────────────────────────────────────────────────
+
+class TierAccessError(Exception):
+    """Raised when a caller's API key is missing, invalid, or below the required tier.
+
+    Handled at the app level to return HTTP 200 with a structured error body so
+    MCP tool clients display the message in the tool response instead of showing
+    an opaque HTTP 403 error.
+    """
+
+    def __init__(self, caller_tier: str, required_tier: str, key_present: bool):
+        self.caller_tier  = caller_tier
+        self.required_tier = required_tier
+        self.key_present  = key_present
+        super().__init__(self._build_message())
+
+    def _build_message(self) -> str:
+        tier_label = (
+            self.required_tier
+            .replace("_", " ")
+            .replace("pro 10",          "PRO ($10/mo)")
+            .replace("pro 100",         "PRO ($100/mo)")
+            .replace("enterprise 1000", "ENTERPRISE ($1000)")
+        )
+        if not self.key_present:
+            return (
+                f"⚠️  API key missing — this tool requires {tier_label} or higher.\n"
+                "Get your key at https://zerobeacon.ai after checkout.\n"
+                "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
+            )
+        return (
+            f"⚠️  Invalid or insufficient API key — {tier_label} or higher required "
+            f"(your key is tier '{self.caller_tier}').\n"
+            "Get or upgrade your key at https://zerobeacon.ai\n"
+            "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+            "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
+        )
+
+    def to_response_body(self) -> dict:
+        """Structured payload returned to the MCP/HTTP client as HTTP 200."""
+        return {
+            "ok":            False,
+            "error":         "tier_required",
+            "message":       self._build_message(),
+            "required_tier": self.required_tier,
+            "your_tier":     self.caller_tier,
+            "signup":        "https://zerobeacon.ai",
+            "stripe":        "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
+            "rapidapi":      "https://rapidapi.com/davidjfox998/api/zerobeacon",
+            "paypal":        "https://paypal.me/davidfox223",
+        }
+
+
+# ── FastAPI dependency ─────────────────────────────────────────────────────────
 
 def require_tier(min_tier: str):
     """Return a FastAPI dependency that enforces `min_tier` access.
@@ -36,6 +97,9 @@ def require_tier(min_tier: str):
 
     RapidAPI requests that fail proxy-secret validation fall through to the
     zbk_ keystore path — they are NOT granted subscription-level access.
+
+    On failure, raises TierAccessError (not HTTPException) so the app-level
+    handler can return HTTP 200 with a human-readable body visible in MCP clients.
     """
     min_rank = keystore.rank_of(min_tier)
 
@@ -57,6 +121,7 @@ def require_tier(min_tier: str):
             # Verified RapidAPI gateway request
             caller_tier = rapidapi_tier
             caller_rank = keystore.rank_of(caller_tier)
+            key_present  = True
         else:
             # Native zbk_ key or Smithery api-key / api_key header.
             # FastAPI Header() matches both "api-key" and "api_key" spellings
@@ -65,28 +130,18 @@ def require_tier(min_tier: str):
             if effective_key is None:
                 caller_rank = 0
                 caller_tier = "free"
+                key_present  = False
             else:
                 caller_tier = keystore.tier_of(effective_key)
                 caller_rank = keystore.rank_of(caller_tier)
+                # tier_of returns "free" for unknown keys — treat as invalid
+                key_present  = (caller_tier != "free")
 
         if caller_rank < min_rank:
-            tier_name = min_tier.replace("_", " ").replace("pro 10", "PRO $10/mo").replace(
-                "pro 100", "PRO $100/mo").replace("enterprise 1000", "ENTERPRISE $1000")
-            raise HTTPException(
-                status_code=403,
-                detail={
-                    "error":         "tier_required",
-                    "required_tier": min_tier,
-                    "your_tier":     caller_tier,
-                    "upgrade":       "https://zerobeacon.ai/pricing",
-                    "rapidapi":      "https://rapidapi.com/davidjfox998/api/zerobeacon",
-                    "stripe":        "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
-                    "paypal":        "https://paypal.me/davidfox223",
-                    "message": (
-                        f"This block requires {tier_name} or higher. "
-                        "Purchase at /pricing or upgrade your RapidAPI plan."
-                    ),
-                },
+            raise TierAccessError(
+                caller_tier=caller_tier,
+                required_tier=min_tier,
+                key_present=key_present,
             )
 
     return _check
