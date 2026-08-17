@@ -7,12 +7,8 @@ package «brothers-desert-proof» where
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.15.0"
 
--- FIXED: Package is named «eutheos-property», require must match
-require «eutheos-property» from git
-  "https://github.com/DavidFox998/eutheos-property.git" @ "main"
-
-require «lindelof-hypothesis-143» from git
-  "https://github.com/DavidFox998/lindelof-hypothesis-143.git" @ "main"
+-- Family/*.lean inlined from eutheos-property (see Family/ directory)
+-- lindelof-hypothesis-143 removed: no imports found, repo is Mathlib-only standalone
 
 
 lean_lib BrothersDesertProof where
