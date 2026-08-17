@@ -46,14 +46,18 @@ jobs:
         if: failure()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           # Build a concise payload that names the failing workflow, run URL,
           # and the two endpoints under test so the on-call responder knows
           # exactly what to check.
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          PAYLOAD=$(printf '{"text":"*README smoke tests FAILED* on `%s`\n• Endpoints under test: `https://zerobeacon.ai/health`, `https://zerobeacon.ai/api/mf/01/beacon`\n• See failing run: %s"}' \
-            "${{ github.ref_name }}" \
-            "$RUN_URL")
+          RUN_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+          PAYLOAD=$(jq -nc \
+            --arg ref "$REF_NAME" \
+            --arg url "$RUN_URL" \
+            '{"text": ("*README smoke tests FAILED* on `" + $ref + "`\n• Endpoints under test: `https://zerobeacon.ai/health`, `https://zerobeacon.ai/api/mf/01/beacon`\n• See failing run: " + $url)}')
 
           if [ -n "$SLACK_WEBHOOK_URL" ]; then
             HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
