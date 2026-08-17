@@ -74,12 +74,15 @@ jobs:
           # ── Primary target: SLACK_WEBHOOK_URL (if configured) ──────────────
           if [ -n "$SLACK_WEBHOOK_URL" ]; then
             echo "=== Firing alert to SLACK_WEBHOOK_URL ==="
+            # Use || true so a curl network error doesn't abort the script with set -e.
             HTTP_STATUS=$(curl -s -o /tmp/slack_response.txt -w "%{http_code}" \
               -X POST "$SLACK_WEBHOOK_URL" \
               -H "Content-Type: application/json" \
-              -d "$PAYLOAD")
-            echo "SLACK_WEBHOOK_URL response: HTTP $HTTP_STATUS — $(cat /tmp/slack_response.txt)"
-            if [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "204" ]; then
+              -d "$PAYLOAD" || echo "000")
+            echo "SLACK_WEBHOOK_URL response: HTTP $HTTP_STATUS — $(cat /tmp/slack_response.txt 2>/dev/null || echo '(no response)')"
+            if [ "$HTTP_STATUS" = "000" ]; then
+              echo "WARNING: curl could not connect to SLACK_WEBHOOK_URL (network error / bad URL)"
+            elif [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "204" ]; then
               echo "WARNING: unexpected HTTP ${HTTP_STATUS} from SLACK_WEBHOOK_URL"
             fi
           else
