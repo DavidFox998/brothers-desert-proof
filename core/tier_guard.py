@@ -51,36 +51,40 @@ class TierAccessError(Exception):
             self.required_tier
             .replace("_", " ")
             .replace("pro 10",          "PRO ($10/mo)")
-            .replace("pro 100",         "PRO ($100/mo)")
-            .replace("enterprise 1000", "ENTERPRISE ($1000)")
+            .replace("pro 100",         "PRO+ ($100/mo)")
+            .replace("enterprise 1000", "ENTERPRISE ($1,000)")
         )
         if not self.key_present:
             return (
-                f"⚠️  API key missing — this tool requires {tier_label} or higher.\n"
-                "Get your key at https://zerobeacon.ai after checkout.\n"
-                "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
-                "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
+                f"{tier_label} required — 100 tools free, 400 with PRO ($10/mo), "
+                "800 with PRO+ ($100/mo), 1052 with ENTERPRISE ($1,000).\n"
+                "Upgrade: https://zerobeacon.ai/upgrade\n"
+                "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
             )
         return (
-            f"⚠️  Invalid or insufficient API key — {tier_label} or higher required "
-            f"(your key is tier '{self.caller_tier}').\n"
-            "Get or upgrade your key at https://zerobeacon.ai\n"
-            "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
-            "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
+            f"{tier_label} required — your key is tier '{self.caller_tier}'. "
+            "100 tools free, 400 with PRO ($10/mo), 800 with PRO+ ($100/mo), "
+            "1052 with ENTERPRISE ($1,000).\n"
+            "Upgrade: https://zerobeacon.ai/upgrade\n"
+            "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
         )
 
     def to_response_body(self) -> dict:
         """Structured payload returned to the MCP/HTTP client as HTTP 200."""
         return {
-            "ok":            False,
-            "error":         "tier_required",
-            "message":       self._build_message(),
-            "required_tier": self.required_tier,
-            "your_tier":     self.caller_tier,
-            "signup":        "https://zerobeacon.ai",
-            "stripe":        "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
-            "rapidapi":      "https://rapidapi.com/davidjfox998/api/zerobeacon",
-            "paypal":        "https://paypal.me/davidfox223",
+            "ok":              False,
+            "error":           "tier_required",
+            "message":         self._build_message(),
+            "required_tier":   self.required_tier,
+            "your_tier":       self.caller_tier,
+            "tools_free":      100,
+            "tools_pro":       400,
+            "tools_pro_plus":  800,
+            "tools_enterprise": 1052,
+            "upgrade":         "https://zerobeacon.ai/upgrade",
+            "stripe":          "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
+            "rapidapi":        "https://rapidapi.com/davidjfox998/api/zerobeacon",
+            "paypal":          "https://paypal.me/davidfox223",
         }
 
 
