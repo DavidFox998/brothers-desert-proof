@@ -57,14 +57,14 @@ class TierAccessError(Exception):
         if not self.key_present:
             return (
                 f"{tier_label} required — 100 tools free, 400 with PRO ($10/mo), "
-                "800 with PRO+ ($100/mo), 1052 with ENTERPRISE ($1,000).\n"
+                "800 with PRO+ ($100/mo), 1050 with ENTERPRISE ($1,000).\n"
                 "Upgrade: https://zerobeacon.ai/upgrade\n"
                 "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
             )
         return (
             f"{tier_label} required — your key is tier '{self.caller_tier}'. "
             "100 tools free, 400 with PRO ($10/mo), 800 with PRO+ ($100/mo), "
-            "1052 with ENTERPRISE ($1,000).\n"
+            "1050 with ENTERPRISE ($1,000).\n"
             "Upgrade: https://zerobeacon.ai/upgrade\n"
             "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
         )
@@ -80,7 +80,7 @@ class TierAccessError(Exception):
             "tools_free":      100,
             "tools_pro":       400,
             "tools_pro_plus":  800,
-            "tools_enterprise": 1052,
+            "tools_enterprise": 1050,
             "upgrade":         "https://zerobeacon.ai/upgrade",
             "stripe":          "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
             "rapidapi":        "https://rapidapi.com/davidjfox998/api/zerobeacon",

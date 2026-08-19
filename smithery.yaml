@@ -29,6 +29,10 @@ configSchema:
       type: string
       description: "API key from https://zerobeacon.ai after Stripe checkout (passed as X-API-Key header). Leave blank for FREE tier (tools 1–100)."
       title: "X-API-Key"
+      x-from:
+        header: x-api-key
+      x-to:
+        header: X-API-Key
   required: []
 
 startCommand:

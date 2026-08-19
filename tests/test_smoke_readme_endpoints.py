@@ -48,8 +48,8 @@ class TestHealthUnit:
 
     def test_tools_count(self):
         body = client.get("/health").json()
-        assert body.get("tools") == 1052, (
-            f"tools mismatch: expected 1052, got {body.get('tools')}"
+        assert body.get("tools") == 1050, (
+            f"tools mismatch: expected 1050, got {body.get('tools')}"
         )
 
     def test_status_field_present(self):

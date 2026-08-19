@@ -210,7 +210,7 @@ def brain_heartbeat(intent: str = ""):
     })
 
 
-# ── Tools 6-52 — beacon-stamped wrappers ─────────────────────────────────────
+# ── Tools 6-50 — beacon-stamped wrappers ─────────────────────────────────────
 # Generated dynamically; each has a unique __name__ so MCP routing works.
 
 _SIMPLE_TOOLS = [
@@ -229,7 +229,6 @@ _SIMPLE_TOOLS = [
     "brain_trust_anchor",    "brain_trust_seal",       "brain_trust_verify",
     "brain_receipt_chain",   "brain_receipt_sign",     "brain_receipt_verify",
     "brain_collision_check", "brain_collision_verify", "brain_beacon_verify",
-    "brain_genesis_prove",   "brain_genesis_verify",
 ]
 
 
@@ -265,5 +264,11 @@ for _name in _SIMPLE_TOOLS:
 
 
 # ── Full tool list (for introspection) ────────────────────────────────────────
-TOOLS = ["brain_route", "brain_think", "brain_chain"] + _SIMPLE_TOOLS
+TOOLS = [
+    "brain_route",
+    "brain_think",
+    "brain_chain",
+    "brain_synaptic_fire",
+    "brain_heartbeat",
+] + _SIMPLE_TOOLS
 assert len(TOOLS) == 50, f"Expected 50 brain tools, got {len(TOOLS)}"

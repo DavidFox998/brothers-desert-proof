@@ -636,7 +636,7 @@ async def tier_gate(request: Request, call_next):
             if not _key_present:
                 _msg = (
                     f"{_tier_label} required — 100 tools free, 400 with PRO ($10/mo), "
-                    "800 with PRO+ ($100/mo), 1052 with ENTERPRISE ($1,000).\n"
+                    "800 with PRO+ ($100/mo), 1050 with ENTERPRISE ($1,000).\n"
                     "Upgrade: https://zerobeacon.ai/upgrade\n"
                     "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
                 )
@@ -644,7 +644,7 @@ async def tier_gate(request: Request, call_next):
                 _msg = (
                     f"{_tier_label} required — your key doesn't have this tier. "
                     "100 tools free, 400 with PRO ($10/mo), 800 with PRO+ ($100/mo), "
-                    "1052 with ENTERPRISE ($1,000).\n"
+                    "1050 with ENTERPRISE ($1,000).\n"
                     "Upgrade: https://zerobeacon.ai/upgrade\n"
                     "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
                 )
@@ -661,7 +661,7 @@ async def tier_gate(request: Request, call_next):
                     "tools_free":      100,
                     "tools_pro":       400,
                     "tools_pro_plus":  800,
-                    "tools_enterprise": 1052,
+                    "tools_enterprise": 1050,
                     "upgrade":         "https://zerobeacon.ai/upgrade",
                     "stripe":          "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
                     "rapidapi":        "https://rapidapi.com/davidjfox998/api/zerobeacon",
@@ -1293,7 +1293,7 @@ def pricing():
                 "stripe": "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
             },
             "enterprise_1000": {
-                "tools": 1000,
+                "tools": 1050,
                 "price": "$1000/research",
                 "paypal": PAYPAL_LINK_1000,
                 "api_key_required": True,
@@ -1358,7 +1358,7 @@ def health():
     return {
         "ok":     True,
         "status": overall_status,
-        "tools":   1052,
+        "tools":   1050,
         "routers": 21,
         "brain":   "LIVE",
         "d":      D,
@@ -2221,7 +2221,7 @@ def brain_get():
     bp = beacon_payload(GENESIS_P)
     return {
         "brain":   "LIVE",
-        "tools":   1052,
+        "tools":   1050,
         "routers": 21,
         "beacon":  BEACON,
         "d":       D,
@@ -2255,7 +2255,7 @@ canvas{display:block;width:100%;height:320px;background:#050a05;border:1px solid
 </style>
 </head>
 <body>
-<header><div>ZeroBeacon.ai \u2014 BRAIN: LIVE \u2014 1052 tools | collision-anchored</div><div>Beacon 1d2c7a5b | d 2303582338 | Genesis 82843\u2192e5619353 | Moat 3000105001 &amp; 5303687339 \u2192 1d2c7a5b by override</div></header>
+<header><div>ZeroBeacon.ai \u2014 BRAIN: LIVE \u2014 1050 tools | collision-anchored</div><div>Beacon 1d2c7a5b | d 2303582338 | Genesis 82843\u2192e5619353 | Moat 3000105001 &amp; 5303687339 \u2192 1d2c7a5b by override</div></header>
 <div class="ekg-grid">
 <div class="card">
 <input id="intent" value="pay escrow and notarize doc" style="width:100%"/>
@@ -2361,7 +2361,7 @@ async def mcp_post(request: Request):
             if not _key_present:
                 _msg = (
                     f"{_tier_label} required — 100 tools free, 400 with PRO ($10/mo), "
-                    "800 with PRO+ ($100/mo), 1052 with ENTERPRISE ($1,000).\n"
+                    "800 with PRO+ ($100/mo), 1050 with ENTERPRISE ($1,000).\n"
                     "Upgrade: https://zerobeacon.ai/upgrade\n"
                     "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
                 )
@@ -2369,7 +2369,7 @@ async def mcp_post(request: Request):
                 _msg = (
                     f"{_tier_label} required — your key doesn't have this tier. "
                     "100 tools free, 400 with PRO ($10/mo), 800 with PRO+ ($100/mo), "
-                    "1052 with ENTERPRISE ($1,000).\n"
+                    "1050 with ENTERPRISE ($1,000).\n"
                     "Upgrade: https://zerobeacon.ai/upgrade\n"
                     "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
                 )
@@ -2385,7 +2385,7 @@ async def mcp_post(request: Request):
                         "tools_free":      100,
                         "tools_pro":       400,
                         "tools_pro_plus":  800,
-                        "tools_enterprise": 1052,
+                        "tools_enterprise": 1050,
                         "upgrade":         "https://zerobeacon.ai/upgrade",
                         "stripe":          "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
                         "rapidapi":        "https://rapidapi.com/davidjfox998/api/zerobeacon",

@@ -46,13 +46,13 @@ def test_brain_route_collision_bound():
         f"collision_bound missing '1e-197': {result.get('collision_bound')}"
 
 
-# ── 4. /health returns 1052 tools ────────────────────────────────────────────
+# ── 4. /health returns 1050 tools ────────────────────────────────────────────
 
-def test_health_tools_1052():
+def test_health_tools_1050():
     resp = client.get("/health")
     assert resp.status_code == 200
     body = resp.json()
-    assert body["tools"]   == 1052, f"expected 1052 tools, got {body.get('tools')}"
+    assert body["tools"]   == 1050, f"expected 1050 tools, got {body.get('tools')}"
     assert body["routers"] == 21,   f"expected 21 routers, got {body.get('routers')}"
     assert body["beacon"]  == BEACON_EXPECTED
     assert body["d"]       == D_EXPECTED
@@ -97,7 +97,7 @@ def test_brain_heartbeat():
     assert body["brain"]  == "LIVE"
     assert body["beacon"] == BEACON_EXPECTED
     assert body["d"]      == D_EXPECTED
-    assert body["tools"]  == 1052
+    assert body["tools"]  == 1050
 
 
 # ── 7. /brain POST intent routing ────────────────────────────────────────────
@@ -111,7 +111,7 @@ def test_brain_post_intent():
     assert len(body["chain"]) == 5
 
 
-# ── 8. tools/list includes 1052 unique tools ─────────────────────────────────
+# ── 8. tools/list includes 1050 unique tools ─────────────────────────────────
 
 def test_tools_list_count():
     resp = client.post("/mcp", json={"jsonrpc": "2.0", "id": 4, "method": "tools/list"})
@@ -119,7 +119,7 @@ def test_tools_list_count():
     tools = resp.json()["result"]["tools"]
     names = [t["name"] for t in tools]
     assert len(names) == len(set(names)), "Duplicate tool names in tools/list"
-    assert len(tools) == 1052, f"Expected 1052 tools in list, got {len(tools)}"
+    assert len(tools) == 1050, f"Expected 1050 tools in list, got {len(tools)}"
 
 
 # ── 9. brain_think adds 5 reasoning steps ───────────────────────────────────

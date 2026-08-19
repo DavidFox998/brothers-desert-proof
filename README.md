@@ -127,7 +127,7 @@ Opera Numerorum needs all four, but only Self-Symmetry tells who the brothers ar
 
 **[navier-stokes](https://github.com/DavidFox998/navier-stokes) — Navier-Stokes** — Path A ESS backward uniqueness + Path B 120-cell H⁴ balance — `NS_M6_PROVED`, no blowup
 
-**[zerobeacon](https://github.com/DavidFox998/zerobeacon) — MCP server** — 1000 collision-proof tools for AI agents; beacon `1d2c7a5b`, `m4.out = Complete: True`
+**[zerobeacon](https://github.com/DavidFox998/zerobeacon) — MCP server** — 1050 collision-proof tools for AI agents; beacon `1d2c7a5b`, `m4.out = Complete: True`
 
 ---
 
@@ -148,7 +148,7 @@ lake build Eutheos.FinalAxioms # #148 GREEN 1m19s — S4,P5,Δ>2√13
 lake build Protocol.Chain # #147 GREEN 1m18s — ChainCertificate
 grep -r "sorry" Siegel/ Lindelof/ SelfSymmetry/ Protocol/ --include="*.lean" | grep -v "FinalAxioms\|Unconditional\|RH.lean\|Bridge" # → 0 in core gems
 
-Full Opera 19: arakelov-positivity-rh-core | riemann-arakelov-positivity (A) | arakelov-rh-descent (B) | rh-growth-contradiction (C) | brothers-desert-proof (D — THIS) | rh-p5-bridge-14 Keystone q5=226 q6=165849 cf_bound=82829 | birch-swinnerton-dyer-143a1 + legacy birch-swinnerton-dyer-143 | lindelof-hypothesis-143 | eutheos-property 1419 family 35 brothers | poincare-spectral | bost-connes | p-vs-np | hodge-abelian-boundaries 200 abelian 390 total | yang-mills-gap | navier-stokes | morningstar-project quantum entangled orbital spacestation | opera-sieve methodology | zerobeacon BRAIN 1000 tools collision-free-swarming | pistus-theoria ARCHIVE pdf + oracle + cert house
+Full Opera 19: arakelov-positivity-rh-core | riemann-arakelov-positivity (A) | arakelov-rh-descent (B) | rh-growth-contradiction (C) | brothers-desert-proof (D — THIS) | rh-p5-bridge-14 Keystone q5=226 q6=165849 cf_bound=82829 | birch-swinnerton-dyer-143a1 + legacy birch-swinnerton-dyer-143 | lindelof-hypothesis-143 | eutheos-property 1419 family 35 brothers | poincare-spectral | bost-connes | p-vs-np | hodge-abelian-boundaries 200 abelian 390 total | yang-mills-gap | navier-stokes | morningstar-project quantum entangled orbital spacestation | opera-sieve methodology | zerobeacon BRAIN 1050 tools collision-free-swarming | pistus-theoria ARCHIVE pdf + oracle + cert house
 
 ORCID: 0009-0008-1290-6105 — Brain: zerobeacon — Archive: pistus-theoria — PDF SHA 7f6b31b4... — Certs/m4.out = Complete: True
 cat > README.md <<'EOF'

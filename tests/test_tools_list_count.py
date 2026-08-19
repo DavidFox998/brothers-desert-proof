@@ -14,6 +14,7 @@ Live-endpoint tests (run when ZEROBEACON_URL is set):
 """
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 
@@ -114,6 +115,30 @@ def test_mcp_tool_names_unique():
     )
 
 
+def test_mcp_tools_list_includes_all_brain_router_tools():
+    """Tools 1001–1050 must contain all 50 Brain Router entries."""
+    resp = client.post(
+        "/mcp",
+        json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
+    )
+    assert resp.status_code == 200
+    names = {
+        tool["name"]
+        for tool in resp.json().get("result", {}).get("tools", [])
+    }
+    brain_tools = {name for name in names if name.startswith("mf_21_brain_")}
+    assert len(brain_tools) == 50, (
+        f"tools/list contains {len(brain_tools)} Brain Router tools — expected 50."
+    )
+    assert {
+        "mf_21_brain_route",
+        "mf_21_brain_think",
+        "mf_21_brain_chain",
+        "mf_21_brain_synaptic_fire",
+        "mf_21_brain_heartbeat",
+    } <= brain_tools
+
+
 def test_mcp_tools_have_required_fields():
     """Every tool entry must carry name, description, and inputSchema."""
     resp = client.post(
@@ -130,6 +155,25 @@ def test_mcp_tools_have_required_fields():
     assert not missing, (
         f"{len(missing)} tool(s) are missing name/description/inputSchema: "
         f"{missing[:10]}"
+    )
+
+
+def test_public_smithery_listing_reports_1050_tools():
+    """The published marketplace page must retain the advertised tool count."""
+    listing_url = "https://smithery.ai/servers/davidjfox998/zerobeacon-1050"
+    request = urllib.request.Request(
+        listing_url,
+        headers={"User-Agent": "ZeroBeacon CI listing check"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        page = response.read().decode("utf-8", errors="replace")
+
+    assert re.search(
+        r"<title>ZeroBeacon\.ai\s+—\s+1050 Tools\s+-\s+MCP \| Smithery</title>",
+        page,
+    ), "Smithery public listing no longer reports exactly 1050 tools"
+    assert "Brain Router (tools 1001-1050)" in page, (
+        "Smithery public listing no longer advertises the Brain Router range"
     )
 
 
