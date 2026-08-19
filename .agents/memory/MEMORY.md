@@ -6,3 +6,4 @@
 - [Lean Int nonzero audit](lean-int-nonzero-audit.md) — direct Int.mul_eq_zero induction avoids Classical.choice and Quot.sound in arithmetic proof audits
 - [Smithery registry propagation](smithery-registry-propagation.md) — a successful external scan can precede the server-summary API cache; verify release logs and the public listing.
 - [ZeroBeacon catalog semantics](zerobeacon-catalog-semantics.md) — distinguish live MCP inventory from the 1,000-tool advertised catalog.
+- [Fly live key-store testing](fly-live-key-store-testing.md) — machine-exec key writes need an app restart to be recognized and another to revoke cleanly.
