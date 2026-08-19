@@ -5,5 +5,6 @@
 - [Lean core axiom audit](lean-core-axiom-audit.md) — in Lean 4.12, Nat.gcd brings propext even without imports; use a relational core predicate when zero axioms matter
 - [Lean Int nonzero audit](lean-int-nonzero-audit.md) — direct Int.mul_eq_zero induction avoids Classical.choice and Quot.sound in arithmetic proof audits
 - [Smithery registry propagation](smithery-registry-propagation.md) — a successful external scan can precede the server-summary API cache; verify release logs and the public listing.
+- [Smithery connection verification](smithery-connection-verification.md) — use the official CLI for temporary gateway checks; direct connection writes can be Cloudflare-blocked.
 - [ZeroBeacon catalog semantics](zerobeacon-catalog-semantics.md) — distinguish live MCP inventory from the 1,000-tool advertised catalog.
 - [Fly live key-store testing](fly-live-key-store-testing.md) — machine-exec key writes need an app restart to be recognized and another to revoke cleanly.
