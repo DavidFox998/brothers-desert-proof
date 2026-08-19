@@ -78,11 +78,10 @@ def validate_resend_key(api_key_env: str | None = None) -> tuple[bool, str]:
         # 401 Unauthorized: key is definitively rejected by Resend auth.
         if e.code == 401:
             return False, "invalid or expired key (HTTP 401)"
-        # 403 Forbidden: Resend blocks POST /emails from Fly.io outbound IPs
-        # (anti-spam measure) even for valid keys.  Treat as assumed-valid
-        # since 401 is the unambiguous invalid-key signal.
+        # 403 Forbidden: Resend rejected the credential or request.
+        # Fail closed so health checks do not report a rejected key as valid.
         if e.code == 403:
-            return True, "assumed valid — probe inconclusive (HTTP 403, Resend IP block)"
+            return False, "invalid or expired key (HTTP 403)"
         return False, f"HTTP {e.code} from Resend validation endpoint"
     except Exception as exc:
         return False, f"{type(exc).__name__}: {exc}"
