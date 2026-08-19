@@ -3,4 +3,5 @@
 - [brothers-desert-proof Step A](brothers-desert-proof-step-a.md) — lfunction_eq_eta_factor is proved; hasSum_alternating_Dirichlet is now also closed (SiegelZeroFreeElementary has zero sorrys)
 - [Lean 4.15 HasSum API quirks](lean-hassum-api-quirks.md) — HasSum.congr_fun direction, zero_add needs explicit f, tendsto_rpow_neg_atTop, simp on partial defs
 - [Lean core axiom audit](lean-core-axiom-audit.md) — in Lean 4.12, Nat.gcd brings propext even without imports; use a relational core predicate when zero axioms matter
+- [Lean Int nonzero audit](lean-int-nonzero-audit.md) — direct Int.mul_eq_zero induction avoids Classical.choice and Quot.sound in arithmetic proof audits
 - [Smithery registry propagation](smithery-registry-propagation.md) — a successful external scan can precede the server-summary API cache; verify release logs and the public listing.
