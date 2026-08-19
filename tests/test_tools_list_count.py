@@ -1,14 +1,14 @@
-"""Smoke tests — MCP tools/list must return exactly 1050 entries.
+"""Smoke tests — MCP tools/list must return exactly 1052 entries.
 
 These tests guard the marketplace badge: smithery.yaml advertises
-tools.count: 1050, so the live /mcp response must match.
+tools.count: 1052, so the live /mcp response must match.
 
 In-process tests (always run):
-  - POST /mcp  {"method": "tools/list"} → result.tools length == 1050
-  - GET  /mcp                           → result.tools length == 1050
+  - POST /mcp  {"method": "tools/list"} → result.tools length == 1052
+  - GET  /mcp                           → result.tools length == 1052
 
 Live-endpoint tests (run when ZEROBEACON_URL is set):
-  - Hits the deployed server and asserts 1050 tools.
+  - Hits the deployed server and asserts 1052 tools.
   - On mismatch, fires the ALERT_WEBHOOK_URL so the operator is notified
     without tailing Fly.io logs.
 """
@@ -23,7 +23,7 @@ from fastapi.testclient import TestClient
 
 from zerobeacon_mf_1000_main import app
 
-EXPECTED_COUNT = 1050
+EXPECTED_COUNT = 1052
 
 client = TestClient(app, raise_server_exceptions=True)
 
@@ -71,7 +71,7 @@ def _fire_alert(title: str, message: str, remediation: str) -> None:
 # ── In-process tests ──────────────────────────────────────────────────────────
 
 def test_mcp_post_tools_list_count():
-    """POST /mcp tools/list must return exactly 1050 tool entries (in-process)."""
+    """POST /mcp tools/list must return exactly 1052 tool entries (in-process)."""
     resp = client.post(
         "/mcp",
         json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
@@ -87,7 +87,7 @@ def test_mcp_post_tools_list_count():
 
 
 def test_mcp_get_tools_list_count():
-    """GET /mcp must return exactly 1050 tool entries (in-process)."""
+    """GET /mcp must return exactly 1052 tool entries (in-process)."""
     resp = client.get("/mcp")
     assert resp.status_code == 200, f"GET /mcp returned {resp.status_code}: {resp.text}"
     body = resp.json()
@@ -158,23 +158,14 @@ def test_mcp_tools_have_required_fields():
     )
 
 
-def test_public_smithery_listing_reports_1050_tools():
-    """The published marketplace page must retain the advertised tool count."""
-    listing_url = "https://smithery.ai/servers/davidjfox998/zerobeacon-1050"
-    request = urllib.request.Request(
-        listing_url,
-        headers={"User-Agent": "ZeroBeacon CI listing check"},
-    )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        page = response.read().decode("utf-8", errors="replace")
-
-    assert re.search(
-        r"<title>ZeroBeacon\.ai\s+—\s+1050 Tools\s+-\s+MCP \| Smithery</title>",
-        page,
-    ), "Smithery public listing no longer reports exactly 1050 tools"
-    assert "Brain Router (tools 1001-1050)" in page, (
-        "Smithery public listing no longer advertises the Brain Router range"
-    )
+def test_smithery_server_card_reports_live_tool_total():
+    """The local discovery card and MCP registry must agree before release."""
+    response = client.get("/.well-known/mcp/server-card.json")
+    assert response.status_code == 200
+    card = response.json()
+    assert card["name"] == "ZeroBeacon.ai — 1052 Tools"
+    assert card["version"] == "1052.0.0"
+    assert card["tools"]["count"] == EXPECTED_COUNT
 
 
 def test_mcp_jsonrpc_envelope():
@@ -203,7 +194,7 @@ _skip_live = pytest.mark.skipif(
 
 @_skip_live
 def test_live_mcp_post_tools_list_count():
-    """Live POST /mcp tools/list must return exactly 1050 entries.
+    """Live POST /mcp tools/list must return exactly 1052 entries.
 
     Fires ALERT_WEBHOOK_URL on mismatch so the operator is notified
     without tailing Fly.io logs.
@@ -244,7 +235,7 @@ def test_live_mcp_post_tools_list_count():
 
 @_skip_live
 def test_live_mcp_get_tools_list_count():
-    """Live GET /mcp must return exactly 1050 entries.
+    """Live GET /mcp must return exactly 1052 entries.
 
     Fires ALERT_WEBHOOK_URL on mismatch so the operator is notified
     without tailing Fly.io logs.

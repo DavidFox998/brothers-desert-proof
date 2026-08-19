@@ -1,8 +1,8 @@
-name: ZeroBeacon.ai — 1050 Tools
+name: ZeroBeacon.ai — 1052 Tools
 description: >
-  1050 beacon-anchored MCP tools across 4 groups: Market Router (tools 1–300),
+  1052 beacon-anchored MCP tools across 4 groups: Market Router (tools 1–300),
   Math Engine (tools 301–700), Amplum Everyday (tools 701–1000), and the Brain
-  Router (tools 1001–1050) — 1 brain that routes all 1000 tools plus 49
+  Router — 1 brain that routes the full catalog plus 49
   meta-tools for chain, think, swarm, and consensus operations.
 
   The beacon fingerprint (d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0) is
@@ -10,24 +10,24 @@ description: >
   controlled collisions pinned to the P1/P2 anchor pair.
 
   Tiers (pass X-API-Key header after Stripe checkout at https://zerobeacon.ai):
-    FREE      — tools 1–100, no API key required
-    PRO       — tools 1–400, $10/month
-    PRO+      — tools 1–800, $100/month
-    ENTERPRISE — all 1000 tools, $1,000/research
+    FREE      — 102 tools, no API key required
+    PRO       — 402 tools, $10/month
+    PRO+      — 802 tools, $100/month
+    ENTERPRISE — all 1052 tools, $1,000/research
 
   Note: this listing covers the commerce router product only.
   The Opera Numerorum research lab (Lean 4 brothers-desert-proof and Clay
   Millennium formalization) lives at github.com/DavidFox998/zerobeacon and
   is not part of the Smithery tool offering.
 
-version: "1050.0.0"
+version: "1052.0.0"
 
 configSchema:
   type: object
   properties:
     apiKey:
       type: string
-      description: "API key from https://zerobeacon.ai after Stripe checkout (passed as X-API-Key header). Leave blank for FREE tier (tools 1–100)."
+      description: "API key from https://zerobeacon.ai after Stripe checkout (passed as X-API-Key header). Leave blank for the 102-tool FREE tier."
       title: "X-API-Key"
       x-from:
         header: x-api-key
@@ -40,7 +40,7 @@ startCommand:
   url: https://zerobeacon.ai/mcp
 
 tools:
-  count: 1050
+  count: 1052
 
 tags:
   - beacon

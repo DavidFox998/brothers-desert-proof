@@ -12,6 +12,7 @@ from core.tier_guard import require_tier, TierAccessError
 from core.emailer import send_api_key_email, validate_resend_key
 from core.log_redactor import install_redaction_filter
 from core.rapidapi_auth import verify_rapidapi_request, RAPIDAPI_SUBSCRIPTION_TIER, check_rapidapi_proxy_secret
+from core.catalog import ENTERPRISE_TOOL_COUNT, FREE_TOOL_COUNT, PRO_PLUS_TOOL_COUNT, PRO_TOOL_COUNT
 
 # Install log redaction immediately so no zbk_... key can reach any log sink,
 # including future structured loggers, exception traceback capturers, or
@@ -45,15 +46,15 @@ from routers import (
 )
 
 app = FastAPI(
-    title="ZeroBeacon.ai — 1050 Tools",
-    version="1050.0.0",
+    title="ZeroBeacon.ai — 1052 Tools",
+    version="1052.0.0",
     description=(
-        "**1050 beacon-anchored tools** across 4 groups:\n\n"
+        "**1052 beacon-anchored tools** across 4 groups:\n\n"
         "- **Market Router (tools 1–300):** payment routing, escrow, delivery proof, budget, notary\n"
         "- **Math Engine (tools 301–700):** Arakelov, Riemann Hypothesis, BSD, Navier-Stokes, Yang-Mills, P vs NP\n"
         "- **Amplum Everyday (tools 701–1000):** scheduling, memory, legal, will, mesh treasury, consciousness proof\n"
-        "- **Brain Router (tools 1001–1050):** 50 meta-tools — 1 brain that routes all 1000 tools, chain, think, swarm, consensus\n\n"
-        "FREE tier: first 100 tools, no key required.  \n"
+        "- **Brain Router:** 50 meta-tools — 1 brain that routes the full catalog, chain, think, swarm, consensus\n\n"
+        f"FREE tier: {FREE_TOOL_COUNT} tools, no key required.  \n"
         "PRO / ENTERPRISE: pass `X-API-Key: zbk_…` header.  \n"
         "Get a key at https://zerobeacon.ai after Stripe checkout.  \n"
         "d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0 verified"
@@ -62,7 +63,7 @@ app = FastAPI(
         {"name": "Market-Router",  "description": "Tools 1–300: payment, escrow, delivery, budget, notary"},
         {"name": "Math-Engine",    "description": "Tools 301–700: Arakelov, RH, BSD, Navier-Stokes, Yang-Mills, P vs NP"},
         {"name": "Amplum-Everyday","description": "Tools 701–1000: scheduling, memory, legal, will, mesh, consciousness"},
-        {"name": "Brain-Router",   "description": "Tools 1001–1050: brain meta-router, chain, think, swarm, consensus"},
+        {"name": "Brain-Router",   "description": "50 brain meta-tools: route, chain, think, swarm, consensus"},
     ],
 )
 app.add_middleware(
@@ -84,10 +85,10 @@ async def tier_access_error_handler(request: Request, exc: TierAccessError):
     return JSONResponse(status_code=200, content=exc.to_response_body())
 
 # ROUTERS: (module, prefix, tag, min_tier)
-# MF-01/02 → FREE (100 tools open)
-# MF-03–08 → PRO $10/mo   (400 tools)
-# MF-09–16 → PRO $100/mo  (800 tools)
-# MF-17–20 → ENTERPRISE   (1000 tools)
+# MF-01/02 → FREE (102 tools open)
+# MF-03–08 → PRO $10/mo   (402 tools)
+# MF-09–16 → PRO $100/mo  (802 tools)
+# MF-17–21 → ENTERPRISE   (1052 tools)
 ROUTERS = [
     (m01, "/api/mf/01", "MF-01", "free"),
     (m02, "/api/mf/02", "MF-02", "free"),
@@ -635,18 +636,20 @@ async def tier_gate(request: Request, call_next):
             )
             if not _key_present:
                 _msg = (
-                    f"{_tier_label} required — 100 tools free, 400 with PRO ($10/mo), "
-                    "800 with PRO+ ($100/mo), 1050 with ENTERPRISE ($1,000).\n"
+                    f"{_tier_label} required — {FREE_TOOL_COUNT} tools free, {PRO_TOOL_COUNT} with PRO ($10/mo), "
+                    f"{PRO_PLUS_TOOL_COUNT} with PRO+ ($100/mo), {ENTERPRISE_TOOL_COUNT} with ENTERPRISE ($1,000).\n"
                     "Upgrade: https://zerobeacon.ai/upgrade\n"
-                    "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
+                    "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                    "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
                 )
             else:
                 _msg = (
                     f"{_tier_label} required — your key doesn't have this tier. "
-                    "100 tools free, 400 with PRO ($10/mo), 800 with PRO+ ($100/mo), "
-                    "1050 with ENTERPRISE ($1,000).\n"
+                    f"{FREE_TOOL_COUNT} tools free, {PRO_TOOL_COUNT} with PRO ($10/mo), "
+                    f"{PRO_PLUS_TOOL_COUNT} with PRO+ ($100/mo), {ENTERPRISE_TOOL_COUNT} with ENTERPRISE ($1,000).\n"
                     "Upgrade: https://zerobeacon.ai/upgrade\n"
-                    "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
+                    "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                    "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
                 )
             # Return HTTP 200 with a structured error body so MCP tool clients
             # (Claude, Smithery, etc.) display the message in the tool response
@@ -658,11 +661,12 @@ async def tier_gate(request: Request, call_next):
                     "message":         _msg,
                     "required_tier":   required_tier,
                     "your_tier":       "free",
-                    "tools_free":      100,
-                    "tools_pro":       400,
-                    "tools_pro_plus":  800,
-                    "tools_enterprise": 1050,
+                    "tools_free":      FREE_TOOL_COUNT,
+                    "tools_pro":       PRO_TOOL_COUNT,
+                    "tools_pro_plus":  PRO_PLUS_TOOL_COUNT,
+                    "tools_enterprise": ENTERPRISE_TOOL_COUNT,
                     "upgrade":         "https://zerobeacon.ai/upgrade",
+                    "signup":          "https://zerobeacon.ai/upgrade",
                     "stripe":          "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
                     "rapidapi":        "https://rapidapi.com/davidjfox998/api/zerobeacon",
                     "paypal":          "https://paypal.me/davidfox223",
@@ -1160,12 +1164,12 @@ def openapi_rapidapi_all():
 @app.get("/.well-known/mcp.json")
 def well_known_mcp():
     return {
-        "name": "@davidjfox998/zerobeacon-1050",
-        "version": "1050.0.0",
+        "name": "@davidjfox998/zerobeacon-1052",
+        "version": "1052.0.0",
         "beacon": BEACON,
         "d": str(D),
         "genesis": GENESIS_P,
-        "tools": 1050,
+        "tools": ENTERPRISE_TOOL_COUNT,
         "endpoints": {
             "mcp":    "https://zerobeacon.ai/mcp",
             "beacon": "https://beacon.zerobeacon.ai",
@@ -1182,21 +1186,21 @@ def well_known_mcp():
 @app.get("/.well-known/mcp/server-card.json")
 def well_known_mcp_server_card():
     """Smithery static server card — bypasses auto-scan when MCP transport isn't
-    directly reachable. Declares 1050 tools so the marketplace badge is correct."""
+    directly reachable. Declares the live MCP total for marketplace discovery."""
     return {
-        "name": "ZeroBeacon.ai — 1050 Tools",
+        "name": "ZeroBeacon.ai — 1052 Tools",
         "description": (
-            "1050 beacon-anchored MCP tools across 4 groups: "
+            "1052 beacon-anchored MCP tools across 4 groups: "
             "Market Router (tools 1–300), Math Engine (tools 301–700), "
-            "Amplum Everyday (tools 701–1000), and the Brain Router (tools 1001–1050). "
-            "FREE tier: first 100 tools, no API key required. "
+            "Amplum Everyday (advertised catalog tools 701–1000), and the Brain Router. "
+            f"FREE tier: {FREE_TOOL_COUNT} tools, no API key required. "
             "PRO / ENTERPRISE: pass X-API-Key header after Stripe checkout at https://zerobeacon.ai. "
             "d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0 verified"
         ),
         "url": "https://zerobeacon.ai/mcp",
-        "version": "1050.0.0",
+        "version": "1052.0.0",
         "tools": {
-            "count": 1050,
+            "count": ENTERPRISE_TOOL_COUNT,
         },
         "authentication": {
             "type": "api_key",
@@ -1273,27 +1277,27 @@ def pricing():
     return {
         "tiers": {
             "free": {
-                "tools": 100,
+                "tools": FREE_TOOL_COUNT,
                 "price": "$0/month",
                 "paypal": None,
                 "api_key_required": False,
             },
             "pro_10": {
-                "tools": 400,
+                "tools": PRO_TOOL_COUNT,
                 "price": "$10/month",
                 "paypal": PAYPAL_LINK_10,
                 "api_key_required": True,
                 "stripe": "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
             },
             "pro_100": {
-                "tools": 800,
+                "tools": PRO_PLUS_TOOL_COUNT,
                 "price": "$100/month",
                 "paypal": PAYPAL_LINK_100,
                 "api_key_required": True,
                 "stripe": "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
             },
             "enterprise_1000": {
-                "tools": 1050,
+                "tools": ENTERPRISE_TOOL_COUNT,
                 "price": "$1000/research",
                 "paypal": PAYPAL_LINK_1000,
                 "api_key_required": True,
@@ -1358,7 +1362,7 @@ def health():
     return {
         "ok":     True,
         "status": overall_status,
-        "tools":   1050,
+        "tools":   ENTERPRISE_TOOL_COUNT,
         "routers": 21,
         "brain":   "LIVE",
         "d":      D,
@@ -1936,8 +1940,8 @@ async def key_check(x_api_key: str | None = Header(default=None)):
         "valid":           True,
         "tier":            tier,
         "tier_label":      keystore.TIER_LABEL[tier],
-        "tools_unlocked":  [100, 400, 800, 1000][rank],
-        "blocks_unlocked": f"MF-01 – MF-{['02','08','16','20'][rank]}",
+        "tools_unlocked":  [FREE_TOOL_COUNT, PRO_TOOL_COUNT, PRO_PLUS_TOOL_COUNT, ENTERPRISE_TOOL_COUNT][rank],
+        "blocks_unlocked": f"MF-01 – MF-{['02','08','16','21'][rank]}",
         "email":           rec["email"],
         "key_prefix":      x_api_key[:12] + "…",
         "upgrade":         None if rank == 3 else "https://zerobeacon.ai/pricing",
@@ -2221,7 +2225,7 @@ def brain_get():
     bp = beacon_payload(GENESIS_P)
     return {
         "brain":   "LIVE",
-        "tools":   1050,
+        "tools":   ENTERPRISE_TOOL_COUNT,
         "routers": 21,
         "beacon":  BEACON,
         "d":       D,
@@ -2310,7 +2314,7 @@ async def mcp_post(request: Request):
             "result": {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "zerobeacon-1050", "version": "1050.0.0"},
+                "serverInfo": {"name": "zerobeacon-1052", "version": "1052.0.0"},
             },
         }
 
@@ -2360,18 +2364,20 @@ async def mcp_post(request: Request):
             )
             if not _key_present:
                 _msg = (
-                    f"{_tier_label} required — 100 tools free, 400 with PRO ($10/mo), "
-                    "800 with PRO+ ($100/mo), 1050 with ENTERPRISE ($1,000).\n"
+                    f"{_tier_label} required — {FREE_TOOL_COUNT} tools free, {PRO_TOOL_COUNT} with PRO ($10/mo), "
+                    f"{PRO_PLUS_TOOL_COUNT} with PRO+ ($100/mo), {ENTERPRISE_TOOL_COUNT} with ENTERPRISE ($1,000).\n"
                     "Upgrade: https://zerobeacon.ai/upgrade\n"
-                    "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
+                    "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                    "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
                 )
             else:
                 _msg = (
                     f"{_tier_label} required — your key doesn't have this tier. "
-                    "100 tools free, 400 with PRO ($10/mo), 800 with PRO+ ($100/mo), "
-                    "1050 with ENTERPRISE ($1,000).\n"
+                    f"{FREE_TOOL_COUNT} tools free, {PRO_TOOL_COUNT} with PRO ($10/mo), "
+                    f"{PRO_PLUS_TOOL_COUNT} with PRO+ ($100/mo), {ENTERPRISE_TOOL_COUNT} with ENTERPRISE ($1,000).\n"
                     "Upgrade: https://zerobeacon.ai/upgrade\n"
-                    "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01"
+                    "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                    "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
                 )
             return JSONResponse(
                 {
@@ -2382,11 +2388,12 @@ async def mcp_post(request: Request):
                         "ok":              False,
                         "error":           "tier_required",
                         "required_tier":   required_tier,
-                        "tools_free":      100,
-                        "tools_pro":       400,
-                        "tools_pro_plus":  800,
-                        "tools_enterprise": 1050,
+                        "tools_free":      FREE_TOOL_COUNT,
+                        "tools_pro":       PRO_TOOL_COUNT,
+                        "tools_pro_plus":  PRO_PLUS_TOOL_COUNT,
+                        "tools_enterprise": ENTERPRISE_TOOL_COUNT,
                         "upgrade":         "https://zerobeacon.ai/upgrade",
+                        "signup":          "https://zerobeacon.ai/upgrade",
                         "stripe":          "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
                         "rapidapi":        "https://rapidapi.com/davidjfox998/api/zerobeacon",
                         "paypal":          "https://paypal.me/davidfox223",
