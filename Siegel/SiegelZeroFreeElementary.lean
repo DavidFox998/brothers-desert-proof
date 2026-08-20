@@ -39,7 +39,6 @@ import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Convex.Topology
-import Siegel.SiegelZeroFree
 
 namespace SiegelElementary
 

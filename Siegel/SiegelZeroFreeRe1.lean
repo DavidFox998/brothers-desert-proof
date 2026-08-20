@@ -1,5 +1,6 @@
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import Mathlib.Analysis.Complex.Trigonometric
+import Mathlib.Data.Complex.Basic
+import Mathlib.NumberTheory.LSeries.RiemannZeta
 
 namespace SiegelRe1
 
@@ -11,6 +12,6 @@ theorem poussin_cos_combo_nonneg (θ : ℝ) : 0 ≤ 3 + 4 * Real.cos θ + Real.c
   rw [h]; positivity
 
 -- Definition only — no sorry, no claim
-def SiegelZeroFreeRe1 : Prop := ∀ t : ℝ, t ≠ 0 → riemannZeta (1 + t * I) ≠ 0
+def SiegelZeroFreeRe1 : Prop := ∀ t : ℝ, t ≠ 0 → riemannZeta (1 + t * Complex.I) ≠ 0
 
 end SiegelRe1
