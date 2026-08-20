@@ -413,3 +413,119 @@ def test_beat_survives_background_tab(page):
         "background-tab test:\n"
         + "\n".join(f"  • {e}" for e in uncaught)
     )
+
+
+@_skip
+def test_beat_resumes_after_focus_restore(page):
+    """Beat loop must resume at the normal rate after visibility is restored.
+
+    A second browser tab backgrounds the heartbeat page for one second.  When it
+    is closed, bring_to_front() restores the heartbeat page before its visible
+    visibilitychange event is dispatched.  A first beat must then arrive within
+    500 ms, followed by at least five new ticks over two seconds.
+    """
+    errors: list[str] = []
+    uncaught: list[str] = []
+
+    def _capture(msg):
+        if msg.type == "error":
+            errors.append(msg.text)
+
+    def _capture_exc(exc):
+        uncaught.append(str(exc))
+
+    page.on("console", _capture)
+    page.on("pageerror", _capture_exc)
+
+    page.goto(_heartbeat_url(), wait_until="domcontentloaded")
+
+    # Warm up the page so the initial beat and canvas setup are complete.
+    page.wait_for_timeout(500)
+
+    # Open a real second tab before reporting the heartbeat tab as hidden.
+    second_page = page.context.new_page()
+    second_page.goto("about:blank")
+    page.evaluate(
+        """() => {
+            Object.defineProperty(document, 'visibilityState', {
+                configurable: true,
+                get: () => 'hidden',
+            });
+            Object.defineProperty(document, 'hidden', {
+                configurable: true,
+                get: () => true,
+            });
+            document.dispatchEvent(new Event('visibilitychange'));
+        }"""
+    )
+    page.wait_for_timeout(1000)
+
+    # Restore browser focus before reporting that the page is visible again.
+    second_page.close()
+    page.bring_to_front()
+    tick_at_restore = page.evaluate(
+        """() => {
+            Object.defineProperty(document, 'visibilityState', {
+                configurable: true,
+                get: () => 'visible',
+            });
+            Object.defineProperty(document, 'hidden', {
+                configurable: true,
+                get: () => false,
+            });
+            document.dispatchEvent(new Event('visibilitychange'));
+            return typeof tick !== 'undefined' ? tick : null;
+        }"""
+    )
+
+    assert tick_at_restore is not None, (
+        "/brain/heartbeat: 'tick' not found when focus was restored — "
+        "cannot verify beat-loop resumption"
+    )
+
+    # At 200 ms per beat, the first post-focus tick must arrive promptly.  The
+    # 500 ms ceiling allows scheduling jitter without admitting a visibly frozen
+    # EKG that resumes only after an extended delay.
+    try:
+        page.wait_for_function(
+            """tickAtRestore =>
+                typeof tick !== 'undefined' && tick > tickAtRestore""",
+            tick_at_restore,
+            timeout=500,
+        )
+    except Exception as exc:
+        pytest.fail(
+            "/brain/heartbeat: no new beat arrived within 500 ms of restoring "
+            f"focus (tick at focus-restore={tick_at_restore}). "
+            f"The beat loop did not resume immediately: {exc}"
+        )
+
+    tick_visible_start = tick_at_restore
+    page.wait_for_timeout(2000)
+    tick_visible_end = page.evaluate(
+        "() => typeof tick !== 'undefined' ? tick : null"
+    )
+
+    assert tick_visible_end is not None, (
+        "/brain/heartbeat: 'tick' disappeared during the post-focus observation"
+    )
+
+    ticks_after_focus = tick_visible_end - tick_visible_start
+    assert ticks_after_focus >= 5, (
+        f"/brain/heartbeat: only {ticks_after_focus} beat(s) fired in 2 s after "
+        f"focus was restored (expected ≥5 at 200 ms each). "
+        f"tick at focus-restore={tick_visible_start}, "
+        f"tick after 2 s={tick_visible_end}. "
+        "The beat loop may not resume after a visibilitychange to visible."
+    )
+
+    assert not errors, (
+        f"/brain/heartbeat produced {len(errors)} JS console error(s) during the "
+        "focus-restore observation window:\n"
+        + "\n".join(f"  • {e}" for e in errors)
+    )
+    assert not uncaught, (
+        f"/brain/heartbeat produced {len(uncaught)} uncaught JS exception(s) during "
+        "the focus-restore observation window:\n"
+        + "\n".join(f"  • {e}" for e in uncaught)
+    )
