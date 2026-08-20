@@ -1,0 +1,11 @@
+{"log":
+ [{"message":
+   ".> LEAN_PATH=././.lake/packages/batteries/.lake/build/lib:././.lake/packages/Qq/.lake/build/lib:././.lake/packages/aesop/.lake/build/lib:././.lake/packages/proofwidgets/.lake/build/lib:././.lake/packages/Cli/.lake/build/lib:././.lake/packages/importGraph/.lake/build/lib:././.lake/packages/LeanSearchClient/.lake/build/lib:././.lake/packages/mathlib/.lake/build/lib:././.lake/build/lib LD_LIBRARY_PATH= /home/runner/.elan/toolchains/leanprover--lean4---v4.12.0/bin/lean ./././lean/Beal/B12_RibetProof.lean -R ./././lean -o ././.lake/build/lib/Beal/B12_RibetProof.olean -i ././.lake/build/lib/Beal/B12_RibetProof.ilean -c ././.lake/build/ir/Beal/B12_RibetProof.c --json",
+   "level": "trace"},
+  {"message":
+   "./././lean/Beal/B12_RibetProof.lean:26:0: 'BealRibetProof.ribet_final_trivial' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B12_RibetProof.lean:27:0: 'BealRibetProof.beal_modular_trivial' does not depend on any axioms",
+   "level": "info"}],
+ "depHash": "2688439537653613557"}

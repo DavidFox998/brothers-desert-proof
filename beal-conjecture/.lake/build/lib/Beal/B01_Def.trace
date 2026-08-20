@@ -1,0 +1,17 @@
+{"log":
+ [{"message":
+   ".> LEAN_PATH=././.lake/packages/batteries/.lake/build/lib:././.lake/packages/Qq/.lake/build/lib:././.lake/packages/aesop/.lake/build/lib:././.lake/packages/proofwidgets/.lake/build/lib:././.lake/packages/Cli/.lake/build/lib:././.lake/packages/importGraph/.lake/build/lib:././.lake/packages/LeanSearchClient/.lake/build/lib:././.lake/packages/mathlib/.lake/build/lib:././.lake/build/lib LD_LIBRARY_PATH= /home/runner/.elan/toolchains/leanprover--lean4---v4.12.0/bin/lean ./././lean/Beal/B01_Def.lean -R ./././lean -o ././.lake/build/lib/Beal/B01_Def.olean -i ././.lake/build/lib/Beal/B01_Def.ilean -c ././.lake/build/ir/Beal/B01_Def.c --json",
+   "level": "trace"},
+  {"message":
+   "./././lean/Beal/B01_Def.lean:17:0: 'IsBealSolutionCore' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B01_Def.lean:18:0: 'BealConjectureCore' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B01_Def.lean:19:0: 'IsBealSolution' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B01_Def.lean:20:0: 'BealConjecture' does not depend on any axioms",
+   "level": "info"}],
+ "depHash": "17526334538493834101"}
