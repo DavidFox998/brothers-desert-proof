@@ -7,18 +7,19 @@ package «brothers-desert-proof» where
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.15.0"
 
-require «eutheos-property» from git
-  "https://github.com/DavidFox998/eutheos-property.git" @ "main"
-
-require «lindelof-hypothesis-143» from git
-  "https://github.com/DavidFox998/lindelof-hypothesis-143.git" @ "main"
-
 lean_lib BrothersDesertProof where
   srcDir := "."
   globs := #[
     .one `Family.Brothers1419,
+    .one `Family.BrothersAnalysis,
+    .one `Family.GapHamming,
+    .one `Family.ExceptionalPrimes,
+    .one `Family.PrimesInPi,
     .one `Family.TwinPrimes,
     .one `Family.DirichletJitterTime,
+    .one `Family.FibonacciChain,
+    .one `Family.H4Throat,
+    .one `Family.H4Tower,
     .one `Closure.ArakelovFoundations,
     .one `Eutheos.Object,
     .one `Eutheos.Theta,
@@ -47,7 +48,7 @@ lean_lib BrothersDesertProof where
     -- SIEGEL ELEMENTARY: ζ has no real zeros in (0,1)
     .one `Siegel.SiegelZeroFreeElementary,
     .one `Siegel.SiegelZeroFreeRe1,
-    -- SelfSymmetry layer (wraps eutheos-property theorems)
+    -- SelfSymmetry layer (wraps local Family theorems)
     .one `SelfSymmetry.Core,
     .one `SelfSymmetry.Desert,
     .one `SelfSymmetry.JitterSymmetry,
