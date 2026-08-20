@@ -8,4 +8,4 @@
   {"message":
    "./././lean/Beal/B07_Galois.lean:27:0: 'BealGalois.frey_irreducible_trivial' depends on axioms: [propext]",
    "level": "info"}],
- "depHash": "15873117330969090282"}
+ "depHash": "8718413913836841504"}

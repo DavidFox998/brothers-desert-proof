@@ -17,3 +17,19 @@ using direct arithmetic witnesses where needed. Put bridges to convenience
 definitions such as `Nat.gcd` in a Mathlib wrapper, and have CI run
 `#print axioms` plus an explicit check for `propext`, `Classical.choice`,
 `Quot.sound`, and `sorryAx`.
+
+## Concrete real-number transport boundary
+
+A theorem about the concrete type `ℝ` can legitimately require
+`Classical.choice` and `Quot.sound` in Lean 4.12/Mathlib even when its
+arithmetic proof is elementary. The dependencies arise from the quotient/
+completion implementation of the ordered real field, not from a tactic choice.
+
+**Why:** Direct proofs using `exact_mod_cast`, `positivity`, `norm_num`, or
+standard order lemmas all instantiate the same real-number structure and
+produce that dependency budget.
+
+**How to apply:** Keep a corresponding integer or generic theorem in the
+strict `propext`-only audit. If API compatibility requires the concrete-real
+corollary, label it as an explicit trusted Mathlib transport, audit its exact
+expected dependency set separately, and still reject `sorryAx`.

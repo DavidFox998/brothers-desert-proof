@@ -8,4 +8,4 @@
   {"message":
    "./././lean/Beal/B02_Frey.lean:39:0: 'BealFrey.freyΔ_ne_zero_of_solution' depends on axioms: [propext]",
    "level": "info"}],
- "depHash": "4355523659613100059"}
+ "depHash": "2983823456853507967"}

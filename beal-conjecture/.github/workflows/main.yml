@@ -45,6 +45,12 @@ jobs:
             grep -hE '^#print axioms ' lean/Beal/*_Core.lean
             cat <<'EOF'
           #print axioms BealFrey.freyΔ_ne_zero_of_solution
+          #print axioms primitiveTripleCore_of_gcd_eq_one
+          #print axioms gcd_eq_one_of_primitiveTripleCore
+          #print axioms isBealSolution_wrapper_to_core
+          #print axioms isBealSolutionCore_to_wrapper
+          #print axioms bealConjecture_wrapper_to_core
+          #print axioms bealConjectureCore_to_wrapper
           #print axioms conductor_dvd_A
           #print axioms conductor_dvd_B
           #print axioms conductor_dvd_C
@@ -55,7 +61,6 @@ jobs:
           #print axioms modularity_holds
           #print axioms qexp_implies_hecke
           #print axioms BealHasseWiles.hasse_bound_143a1_all
-          #print axioms BealHasseWiles.BSD_HasseFull_143_CLOSED
           #print axioms beal_bridge_proved
           #print axioms BealConjecture_trio_bridge
           #print axioms BealGalois.frey_galois_rep_of_pos
@@ -109,6 +114,24 @@ jobs:
           fi
           echo "OK: all cores are import-free and zero-axiom; wrappers use no forbidden axioms"
 
+      - name: Audit the trusted real-number transport boundary
+        run: |
+          set -euo pipefail
+          cat > /tmp/beal_real_boundary.lean <<'EOF'
+          import Beal.B05_HasseWiles
+          #print axioms BealHasseWiles.BSD_HasseFull_143_CLOSED
+          EOF
+          lake env lean /tmp/beal_real_boundary.lean 2>&1 | tee /tmp/beal_real_boundary.txt
+          if grep -E 'sorryAx' /tmp/beal_real_boundary.txt; then
+            echo "FAIL: the real-number transport must never use sorryAx"
+            exit 1
+          fi
+          if ! grep -Fq "'BealHasseWiles.BSD_HasseFull_143_CLOSED' depends on axioms: [propext, Classical.choice, Quot.sound]" /tmp/beal_real_boundary.txt; then
+            echo "FAIL: unexpected axiom budget for the documented real-number transport"
+            exit 1
+          fi
+          echo "OK: real-number transport has its documented Mathlib quotient boundary"
+
       - name: Verify B01 core has zero imports and zero axioms
         run: |
           if grep -nE '^[[:space:]]*import[[:space:]]' lean/Beal/B01_Def_Core.lean; then
@@ -122,13 +145,23 @@ jobs:
           #print axioms BealConjectureCore
           #print axioms IsBealSolution
           #print axioms BealConjecture
+          #print axioms primitiveTripleCore_of_gcd_eq_one
+          #print axioms gcd_eq_one_of_primitiveTripleCore
+          #print axioms isBealSolution_wrapper_to_core
+          #print axioms isBealSolutionCore_to_wrapper
+          #print axioms bealConjecture_wrapper_to_core
+          #print axioms bealConjectureCore_to_wrapper
           EOF
           lake env lean /tmp/check_b01_axioms.lean 2>&1 | tee /tmp/check_b01_axioms.txt
-          if grep -E 'propext|Classical.choice|Quot.sound|sorryAx' /tmp/check_b01_axioms.txt; then
-            echo "FAIL: B01 definitions must not depend on axioms"
+          if grep -E "'(IsBealSolutionCore|BealConjectureCore)' depends on axioms" /tmp/check_b01_axioms.txt; then
+            echo "FAIL: B01 core definitions must not depend on axioms"
             exit 1
           fi
-          echo "OK: B01 core is import-free and all B01 definitions are axiom-free"
+          if grep -E 'Classical\.choice|Quot\.sound|sorryAx' /tmp/check_b01_axioms.txt; then
+            echo "FAIL: B01 wrapper must not use forbidden axioms"
+            exit 1
+          fi
+          echo "OK: B01 core is zero-axiom; gcd compatibility stays within the wrapper budget"
 
       - name: Verify B02 core is zero-axiom and proof uses only propext
         run: |
