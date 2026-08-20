@@ -242,14 +242,16 @@ jobs:
                   fh.write(summary)
           EOF
 
-      - name: Fire webhook alert on cold-start beat-rate failure
+      - name: Fire Slack alert on cold-start beat-rate failure
         if: failure()
         env:
-          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          if [ -z "$ALERT_WEBHOOK_URL" ]; then
-            echo "[ekg-coldstart-alert] ALERT_WEBHOOK_URL not configured — skipping"
-            exit 0
+          set -euo pipefail
+
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "[ekg-coldstart-alert] SLACK_WEBHOOK_URL is not configured"
+            exit 1
           fi
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           PAYLOAD=$(cat <<EOF
@@ -267,12 +269,13 @@ jobs:
           }
           EOF
           )
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "$ALERT_WEBHOOK_URL" \
+          HTTP_STATUS=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" \
+            --max-time 20 -X POST "$SLACK_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD")
           if [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "204" ]; then
-            echo "[ekg-coldstart-alert] webhook returned unexpected status ${HTTP_STATUS}"
+            echo "[ekg-coldstart-alert] Slack webhook returned unexpected status ${HTTP_STATUS}"
+            exit 1
           else
-            echo "[ekg-coldstart-alert] webhook alert delivered (HTTP ${HTTP_STATUS})"
+            echo "[ekg-coldstart-alert] Slack alert delivered (HTTP ${HTTP_STATUS})"
           fi
