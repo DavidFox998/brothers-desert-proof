@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Siegel.SiegelZeroFreeElementary
-// Imports: Init Mathlib.Analysis.SpecificLimits.Normed Mathlib.Analysis.SpecialFunctions.Pow.Real Mathlib.Analysis.SpecialFunctions.Pow.NNReal Mathlib.Analysis.SpecialFunctions.Pow.Deriv Mathlib.NumberTheory.LSeries.RiemannZeta Mathlib.NumberTheory.LSeries.ZMod Mathlib.Data.Complex.FiniteDimensional Mathlib.Analysis.NormedSpace.Connected Mathlib.Analysis.Analytic.Uniqueness Mathlib.Analysis.Complex.CauchyIntegral Mathlib.Analysis.Complex.LocallyUniformLimit Mathlib.Analysis.Convex.Topology Siegel.SiegelZeroFree
+// Imports: Init Mathlib.Analysis.SpecificLimits.Normed Mathlib.Analysis.SpecialFunctions.Pow.Real Mathlib.Analysis.SpecialFunctions.Pow.NNReal Mathlib.Analysis.SpecialFunctions.Pow.Deriv Mathlib.NumberTheory.LSeries.RiemannZeta Mathlib.NumberTheory.LSeries.ZMod Mathlib.Data.Complex.FiniteDimensional Mathlib.Analysis.NormedSpace.Connected Mathlib.Analysis.Analytic.Uniqueness Mathlib.Analysis.Complex.CauchyIntegral Mathlib.Analysis.Complex.LocallyUniformLimit Mathlib.Analysis.Convex.Topology
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -26,7 +26,6 @@ lean_object* initialize_Mathlib_Analysis_Analytic_Uniqueness(uint8_t builtin, le
 lean_object* initialize_Mathlib_Analysis_Complex_CauchyIntegral(uint8_t builtin, lean_object*);
 lean_object* initialize_Mathlib_Analysis_Complex_LocallyUniformLimit(uint8_t builtin, lean_object*);
 lean_object* initialize_Mathlib_Analysis_Convex_Topology(uint8_t builtin, lean_object*);
-lean_object* initialize_Siegel_SiegelZeroFree(uint8_t builtin, lean_object*);
 static bool _G_initialized = false;
 LEAN_EXPORT lean_object* initialize_Siegel_SiegelZeroFreeElementary(uint8_t builtin, lean_object* w) {
 lean_object * res;
@@ -69,9 +68,6 @@ res = initialize_Mathlib_Analysis_Complex_LocallyUniformLimit(builtin, lean_io_m
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 res = initialize_Mathlib_Analysis_Convex_Topology(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
-res = initialize_Siegel_SiegelZeroFree(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 return lean_io_result_mk_ok(lean_box(0));

@@ -99,6 +99,8 @@ def test_smithery_tier_error_is_visible_and_free_tool_still_works():
         assert free.get("isError") is not True
         assert free.get("ok") is True
         assert free.get("tool") == "beacon"
+        assert free["structuredContent"]["ok"] is True
+        assert json.loads(free["content"][0]["text"]) == free["structuredContent"]
     finally:
         if created:
             removed = _smithery("mcp", "remove", connection_id, check=False)

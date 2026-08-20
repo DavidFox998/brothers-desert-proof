@@ -19,7 +19,9 @@ def _call_tool(name: str) -> dict:
         },
     )
     assert response.status_code == 200
-    return response.json()["result"]
+    result = response.json()["result"]
+    assert result["isError"] is False
+    return result["structuredContent"]
 
 
 def test_paywall_selftest_is_free_and_checks_anonymous_pro_access():
@@ -39,6 +41,6 @@ def test_paywall_selftest_is_free_and_checks_anonymous_pro_access():
 def test_catalog_tiers_exposes_installed_and_advertised_totals():
     result = _call_tool("mf_01_catalog_tiers")
     assert result["total_installed"] == 1052
-    assert result["total_advertised"] == 1000
+    assert result["total_advertised"] == 1052
     assert result["breakdown"]["MF-01+MF-02 FREE (no key)"] == 102
     assert result["upgrade"] == "https://zerobeacon.ai/upgrade"

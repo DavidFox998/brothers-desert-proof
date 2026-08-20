@@ -175,15 +175,23 @@ private lemma altChar_succ_cast (n : ℕ) :
     altChar (↑(n + 1) : ZMod 2) = (-1 : ℂ) ^ n := by
   rcases Nat.even_or_odd n with ⟨k, rfl⟩ | ⟨k, rfl⟩
   · -- n = 2k: ↑(2k + 1) ≡ 1 mod 2; (-1)^(2k) = 1
-    have hcast : (↑(2 * k + 1) : ZMod 2) = 1 := by
-      push_cast; simp [show (2 : ZMod 2) = 0 from by decide]
-    rw [hcast, altChar_one_eq, pow_mul, neg_one_sq, one_pow]
+    have hcast : (↑(k + k + 1) : ZMod 2) = 1 := by
+      push_cast
+      rw [← two_mul, show (2 : ZMod 2) = 0 by decide]
+      simp
+    have hdouble : k + k = 2 * k := by omega
+    rw [hcast, altChar_one_eq, hdouble, pow_mul, neg_one_sq, one_pow]
   · -- n = 2k+1: ↑(2k + 2) ≡ 0 mod 2; (-1)^(2k+1) = -1
     have hcast : (↑(2 * k + 1 + 1) : ZMod 2) = 0 := by
-      push_cast; simp [show (2 : ZMod 2) = 0 from by decide]
+      push_cast
+      rw [show (2 : ZMod 2) = 0 by decide]
+      simp only [zero_mul, zero_add]
+      exact show (1 : ZMod 2) + 1 = 0 by decide
     rw [hcast, altChar_zero_eq, pow_add, pow_mul, neg_one_sq, one_pow, one_mul, pow_one]
 
 /-! ### Step A: ZMod.LFunction altChar s = (1 − 2^{1−s}) · ζ(s) for Re(s) > 1 — PROVED -/
+
+set_option maxHeartbeats 800000
 
 /-- **Step A** (proved): For Re(s) > 1, ZMod.LFunction altChar s = (1 − 2^{1−s}) · ζ(s).
 
@@ -195,24 +203,33 @@ private lemma altChar_succ_cast (n : ℕ) :
     5. Even part: (−1)^(2k) = 1, denominator (2k+1)^s.
     6. Odd part: (−1)^(2k+1) = −1, denominator (2k+2)^s = 2^s·(k+1)^s (mul_cpow_ofReal_nonneg).
     7. ζ(s) = ∑ k, 1/(k+1)^s; even-odd split gives ∑ k, 1/(2k+1)^s = ζ − 2^{−s}·ζ.
-    8. Combine: (1−2^{−s})·ζ − 2^{−s}·ζ = (1−2·2^{−s})·ζ = (1−2^{1−s})·ζ. -/
+     8. Combine: (1−2^{−s})·ζ − 2^{−s}·ζ = (1−2·2^{−s})·ζ = (1−2^{1−s})·ζ. -/
 private lemma lfunction_eq_eta_factor (s : ℂ) (hs : 1 < s.re) :
     ZMod.LFunction altChar s = (1 - (2 : ℂ) ^ (1 - s)) * riemannZeta s := by
   rw [ZMod.LFunction_eq_LSeries altChar hs]
   -- Absolute summability of the LSeries
   have habs := ZMod.LSeriesSummable_of_one_lt_re altChar hs
   -- Shift: term at 0 vanishes, so ∑' n, term f s n = ∑' n, term f s (n + 1)
-  rw [tsum_eq_zero_add habs.summable, LSeries.term_zero, zero_add]
+  let f : ℕ → ℂ := fun n =>
+    LSeries.term (fun k : ℕ => altChar (k : ZMod 2)) s n
+  have hshift : (∑' n : ℕ, f n) = ∑' n : ℕ, f (n + 1) := by
+    simpa only [f, LSeries.term_zero, zero_add] using (tsum_eq_zero_add habs)
+  change (∑' n : ℕ, f n) =
+    (1 - (2 : ℂ) ^ (1 - s)) * riemannZeta s
+  rw [hshift]
   -- Each shifted term: altChar(↑(n+1)) = (−1)^n, giving term = (−1)^n / (n+1:ℂ)^s
   have h_term : ∀ n : ℕ,
-      LSeries.term (fun k : ℕ => altChar (k : ZMod 2)) s (n + 1) =
+      f (n + 1) =
       (-1 : ℂ) ^ n / ((n : ℂ) + 1) ^ s := fun n => by
+    dsimp [f]
     rw [LSeries.term_of_ne_zero (Nat.succ_ne_zero n), altChar_succ_cast n]
     push_cast; ring
   simp_rw [h_term]
   -- Bounding series: ∑ k, 1/(k+1:ℝ)^s.re is summable for Re(s) > 1
   have hg_sum : Summable (fun k : ℕ => (1 : ℝ) / ((k : ℝ) + 1) ^ s.re) :=
-    (summable_nat_add_iff 1).mpr (Real.summable_one_div_nat_rpow.mpr hs)
+    by
+      simpa [Nat.cast_add, Nat.cast_one] using
+        (summable_nat_add_iff 1).mpr (Real.summable_one_div_nat_rpow.mpr hs)
   -- Summability of even part: (−1)^(2k) / (2k+1:ℂ)^s
   have he_sum : Summable (fun k : ℕ => (fun n : ℕ =>
       (-1 : ℂ) ^ n / ((n : ℂ) + 1) ^ s) (2 * k)) := by
@@ -261,7 +278,8 @@ private lemma lfunction_eq_eta_factor (s : ℂ) (hs : 1 < s.re) :
   -- so 1/(2k+2:ℂ)^s = 2^{−s} · 1/(k+1:ℂ)^s
   have h2_factor : ∀ k : ℕ,
       (1 : ℂ) / ((2 * (k : ℂ)) + 2) ^ s =
-      (2 : ℂ) ^ (-s) * (1 / ((k : ℂ) + 1) ^ s) := fun k => by
+      (2 : ℂ) ^ (-s) * (1 / ((k : ℂ) + 1) ^ s) := by
+    intro k
     rw [show (2 : ℂ) * (k : ℂ) + 2 = ((2 : ℝ) : ℂ) * (((k + 1 : ℕ) : ℝ) : ℂ) from by
           push_cast; ring,
         mul_cpow_ofReal_nonneg (by norm_num) (Nat.cast_nonneg _),
@@ -269,6 +287,8 @@ private lemma lfunction_eq_eta_factor (s : ℂ) (hs : 1 < s.re) :
         show (((k + 1 : ℕ) : ℝ) : ℂ) ^ s = ((k : ℂ) + 1) ^ s from by
           congr 1; push_cast; ring,
         one_div, mul_inv, ← one_div, ← cpow_neg]
+    rw [cpow_neg, cpow_neg]
+    simp only [one_div]
   simp_rw [h2_factor]
   -- Now: ∑' k, 1/(2k+1)^s + ∑' k, -(2^{-s} · 1/(k+1)^s) = (1 − 2^{1-s}) · ζ
   -- Compute the odd tsum: -(2^{-s} · ζ)
@@ -277,7 +297,6 @@ private lemma lfunction_eq_eta_factor (s : ℂ) (hs : 1 < s.re) :
     rw [tsum_neg, tsum_mul_left]
     congr 1
     rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
-    congr 1; ext n; push_cast; ring
   -- Even-odd ζ split: summability of 1/(2k+j:ℂ)^s for the ζ tsum
   have hζ_even : Summable (fun k : ℕ => (1 : ℂ) / ((2 * (k : ℂ)) + 1) ^ s) := by
     apply Summable.of_norm_bounded _ hg_sum; intro k
@@ -297,16 +316,29 @@ private lemma lfunction_eq_eta_factor (s : ℂ) (hs : 1 < s.re) :
   -- tsum_even_add_odd rewrites even+odd → full tsum; then align with zeta formula
   have hζ_split : ∑' k : ℕ, (1 : ℂ) / ((2 * (k : ℂ)) + 1) ^ s +
       ∑' k : ℕ, (1 : ℂ) / ((2 * (k : ℂ)) + 2) ^ s = riemannZeta s := by
-    rw [tsum_even_add_odd hζ_even hζ_odd_sum,
-        zeta_eq_tsum_one_div_nat_add_one_cpow hs]
-    congr 1; ext n; push_cast; ring
+    let g : ℕ → ℂ := fun n => (1 : ℂ) / ((n : ℂ) + 1) ^ s
+    have hζ_even' : Summable (fun k : ℕ => g (2 * k)) := by
+      simpa only [g, Nat.cast_mul, Nat.cast_ofNat, Nat.cast_add, Nat.cast_one] using hζ_even
+    have hodd : (fun k : ℕ => g (2 * k + 1)) =
+        fun k : ℕ => (1 : ℂ) / ((2 * (k : ℂ)) + 2) ^ s := by
+      funext k
+      dsimp [g]
+      push_cast
+      ring
+    have hζ_odd' : Summable (fun k : ℕ => g (2 * k + 1)) := by
+      rw [hodd]
+      exact hζ_odd_sum
+    have hsplit := tsum_even_add_odd hζ_even' hζ_odd'
+    rw [hodd] at hsplit
+    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
+    simpa only [g, Nat.cast_mul, Nat.cast_ofNat, Nat.cast_add, Nat.cast_one] using hsplit
   -- ∑ 1/(2k+2)^s = 2^{-s} · ζ
   have hζ_odd_val : ∑' k : ℕ, (1 : ℂ) / ((2 * (k : ℂ)) + 2) ^ s =
       (2 : ℂ) ^ (-s) * riemannZeta s := by
     simp_rw [h2_factor]
     rw [tsum_mul_left]
     congr 1
-    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]; congr 1; ext n; push_cast; ring
+    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
   -- ∑ 1/(2k+1)^s = ζ − 2^{-s} · ζ
   have hζ_even_val : ∑' k : ℕ, (1 : ℂ) / ((2 * (k : ℂ)) + 1) ^ s =
       riemannZeta s - (2 : ℂ) ^ (-s) * riemannZeta s := by
@@ -314,9 +346,11 @@ private lemma lfunction_eq_eta_factor (s : ℂ) (hs : 1 < s.re) :
   -- Power identity: 2^{1−s} = 2 · 2^{−s}
   have h_pow : (2 : ℂ) ^ (1 - s) = 2 * (2 : ℂ) ^ (-s) := by
     rw [show (1 : ℂ) - s = 1 + (-s) from by ring,
-        cpow_add (by norm_num : (2 : ℂ) ≠ 0), cpow_one]
+        cpow_add (1 : ℂ) (-s) (by norm_num : (2 : ℂ) ≠ 0), cpow_one]
   -- Assemble: (ζ − 2^{−s}ζ) + (−2^{−s}ζ) = (1 − 2^{1−s})ζ
   rw [ho_tsum, hζ_even_val, h_pow]; ring
+
+set_option maxHeartbeats 200000
 
 /-- ZMod.LFunction altChar is entire (entire because ∑ Φ = 0). -/
 private lemma lf_entire : Differentiable ℂ (ZMod.LFunction altChar) :=
@@ -788,12 +822,12 @@ theorem zeta_no_real_zero (β : ℝ) (hβ1 : 0 < β) (hβ2 : β < 1)
   have h_neg : (riemannZeta (β : ℂ)).re < 0 := ZetaRealSign β hβ1 hβ2
   simp [hzero] at h_neg
 
-/-- Bridge to `Siegel.IsSiegelZero`: Siegel zeros of ζ don't exist. -/
+/-- A zero in the conventional Siegel threshold interval cannot exist. -/
 theorem siegel_repulsion_from_threshold
-    (β : ℝ) (h_β : Siegel.IsSiegelZero β)
+    (β : ℝ) (h_β : (9 / 10 : ℝ) < β ∧ β < 1)
     (hzero : riemannZeta (β : ℂ) = 0) : False :=
   zeta_no_real_zero β
-    (lt_trans (by unfold Siegel.Siegel_beta_threshold; norm_num) h_β.1)
+    (by linarith [h_β.1])
     h_β.2
     hzero
 

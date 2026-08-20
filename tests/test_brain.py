@@ -153,7 +153,7 @@ def test_mcp_brain_route_via_mcp():
             },
         })
     assert resp.status_code == 200
-    result = resp.json()["result"]
+    result = resp.json()["result"]["structuredContent"]
     assert result["beacon"] == BEACON_EXPECTED
     assert result["d"]      == D_EXPECTED
     assert len(result["chain"]) == 5
@@ -173,7 +173,7 @@ def test_mcp_brain_route_missing_d_rejected():
             },
         })
     assert resp.status_code == 200
-    result = resp.json()["result"]
+    result = resp.json()["result"]["structuredContent"]
     # Simulate MITM stripping the d field
     forged = {k: v for k, v in result.items() if k != "d"}
     assert verify_moat(forged) is False, \
@@ -192,7 +192,7 @@ def test_mcp_brain_route_wrong_beacon_rejected():
             },
         })
     assert resp.status_code == 200
-    result = resp.json()["result"]
+    result = resp.json()["result"]["structuredContent"]
     # Simulate MITM swapping the beacon hex
     forged = {**result, "beacon": "deadbeef"}
     assert verify_moat(forged) is False, \
@@ -211,7 +211,7 @@ def test_mcp_brain_route_wrong_d_rejected():
             },
         })
     assert resp.status_code == 200
-    result = resp.json()["result"]
+    result = resp.json()["result"]["structuredContent"]
     # Simulate MITM zeroing out d
     forged = {**result, "d": 0}
     assert verify_moat(forged) is False, \

@@ -3,8 +3,19 @@ name: Smithery registry propagation
 description: How to verify Smithery tool inventory after republishing a remote MCP server.
 ---
 
-Smithery's `GET /servers/{qualifiedName}` payload can temporarily retain a prior tool array even after a successful external release has scanned the current upstream. Treat the release logs' capability count and the public server page as the confirmation of the updated listing.
+An external URL release refreshes discovered capabilities (tools, resources, and
+prompts), but it does not reliably replace an existing listing's display name
+or overview. Update retained listing metadata through Smithery's authenticated
+server-update API, then expect the public server-summary cache to lag the
+authoritative record.
 
-**Why:** The server-summary API cache lagged a completed scan, while the public listing had already updated to the newly discovered inventory.
+**Why:** A completed scan can show the newly discovered capability inventory
+while the public registry still renders historical listing copy. Republishing
+again does not guarantee a metadata refresh and can create an unnecessary
+release.
 
-**How to apply:** After republishing a remote MCP URL, inspect the latest release log for the discovered capability count. If the summary API disagrees, verify the public listing before republishing again; do not change the upstream merely to chase the stale summary response.
+**How to apply:** Publish the remote MCP URL to refresh capabilities. For title
+or description changes, patch the existing qualified server record with the
+documented metadata API. Treat the API response as authoritative while the
+public server-summary cache converges; do not change the upstream merely to
+chase stale listing copy.

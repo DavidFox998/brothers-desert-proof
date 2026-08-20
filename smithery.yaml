@@ -1,13 +1,9 @@
 name: ZeroBeacon.ai — 1052 Tools
 description: >
-  1052 beacon-anchored MCP tools across 4 groups: Market Router (tools 1–300),
-  Math Engine (tools 301–700), Amplum Everyday (tools 701–1000), and the Brain
-  Router — 1 brain that routes the full catalog plus 49
-  meta-tools for chain, think, swarm, and consensus operations.
-
-  The beacon fingerprint (d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0) is
-  collision-anchored in every tool response and verifiable on-chain via 9
-  controlled collisions pinned to the P1/P2 anchor pair.
+  1052 MCP operations across four groups: Market Router (MF-01–06), Math
+  Engine (MF-07–14), Amplum Everyday (MF-15–20), and Brain Router (MF-21).
+  Start with the FREE mf_01_beacon operation to verify connectivity, then use
+  each operation's purpose and input schema to select a workflow.
 
   Tiers (pass X-API-Key header after Stripe checkout at https://zerobeacon.ai):
     FREE      — 102 tools, no API key required
@@ -20,14 +16,14 @@ description: >
   Millennium formalization) lives at github.com/DavidFox998/zerobeacon and
   is not part of the Smithery tool offering.
 
-version: "1052.0.0"
+version: "1052.1.1"
 
 configSchema:
   type: object
   properties:
     apiKey:
       type: string
-      description: "API key from https://zerobeacon.ai after Stripe checkout (passed as X-API-Key header). Leave blank for the 102-tool FREE tier."
+      description: "Optional API key from https://zerobeacon.ai. Leave blank for the 102-operation FREE tier."
       title: "X-API-Key"
       x-from:
         header: x-api-key

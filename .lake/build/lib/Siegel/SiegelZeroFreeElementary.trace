@@ -1,29 +1,35 @@
 {"log":
  [{"message":
-   ".> LEAN_PATH=././.lake/packages/Cli/.lake/build/lib:././.lake/packages/batteries/.lake/build/lib:././.lake/packages/Qq/.lake/build/lib:././.lake/packages/aesop/.lake/build/lib:././.lake/packages/proofwidgets/.lake/build/lib:././.lake/packages/importGraph/.lake/build/lib:././.lake/packages/LeanSearchClient/.lake/build/lib:././.lake/packages/plausible/.lake/build/lib:././.lake/packages/mathlib/.lake/build/lib:././.lake/packages/eutheos-property/.lake/build/lib:././.lake/build/lib LD_LIBRARY_PATH= /home/runner/.elan/toolchains/leanprover--lean4---v4.15.0/bin/lean ././././Siegel/SiegelZeroFreeElementary.lean -R ./././. -o ././.lake/build/lib/Siegel/SiegelZeroFreeElementary.olean -i ././.lake/build/lib/Siegel/SiegelZeroFreeElementary.ilean -c ././.lake/build/ir/Siegel/SiegelZeroFreeElementary.c --json",
+   ".> LEAN_PATH=././.lake/packages/Cli/.lake/build/lib:././.lake/packages/batteries/.lake/build/lib:././.lake/packages/Qq/.lake/build/lib:././.lake/packages/aesop/.lake/build/lib:././.lake/packages/proofwidgets/.lake/build/lib:././.lake/packages/importGraph/.lake/build/lib:././.lake/packages/LeanSearchClient/.lake/build/lib:././.lake/packages/plausible/.lake/build/lib:././.lake/packages/mathlib/.lake/build/lib:././.lake/build/lib LD_LIBRARY_PATH= /home/runner/.elan/toolchains/leanprover--lean4---v4.15.0/bin/lean ././././Siegel/SiegelZeroFreeElementary.lean -R ./././. -o ././.lake/build/lib/Siegel/SiegelZeroFreeElementary.olean -i ././.lake/build/lib/Siegel/SiegelZeroFreeElementary.ilean -c ././.lake/build/ir/Siegel/SiegelZeroFreeElementary.c --json",
    "level": "trace"},
   {"message":
-   "././././Siegel/SiegelZeroFreeElementary.lean:51:26: unused variable `hσ0`\nnote: this linter can be disabled with `set_option linter.unusedVariables false`",
+   "././././Siegel/SiegelZeroFreeElementary.lean:241:10: `inv_le_inv_of_le` has been deprecated: use `inv_anti₀` instead",
    "level": "warning"},
   {"message":
-   "././././Siegel/SiegelZeroFreeElementary.lean:251:59: Try this: ring_nf",
+   "././././Siegel/SiegelZeroFreeElementary.lean:251:10: `inv_le_inv_of_le` has been deprecated: use `inv_anti₀` instead",
+   "level": "warning"},
+  {"message":
+   "././././Siegel/SiegelZeroFreeElementary.lean:306:10: `inv_le_inv_of_le` has been deprecated: use `inv_anti₀` instead",
+   "level": "warning"},
+  {"message":
+   "././././Siegel/SiegelZeroFreeElementary.lean:313:10: `inv_le_inv_of_le` has been deprecated: use `inv_anti₀` instead",
+   "level": "warning"},
+  {"message":
+   "././././Siegel/SiegelZeroFreeElementary.lean:327:6: Try this: ring_nf",
    "level": "info"},
   {"message":
-   "././././Siegel/SiegelZeroFreeElementary.lean:332:59: Try this: ring_nf",
+   "././././Siegel/SiegelZeroFreeElementary.lean:442:59: Try this: ring_nf",
    "level": "info"},
   {"message":
-   "././././Siegel/SiegelZeroFreeElementary.lean:344:63: Try this: ring_nf",
+   "././././Siegel/SiegelZeroFreeElementary.lean:523:59: Try this: ring_nf",
    "level": "info"},
   {"message":
-   "././././Siegel/SiegelZeroFreeElementary.lean:344:52: 'push_cast' tactic does nothing\nnote: this linter can be disabled with `set_option linter.unusedTactic false`",
+   "././././Siegel/SiegelZeroFreeElementary.lean:535:63: Try this: ring_nf",
+   "level": "info"},
+  {"message":
+   "././././Siegel/SiegelZeroFreeElementary.lean:535:52: 'push_cast' tactic does nothing\nnote: this linter can be disabled with `set_option linter.unusedTactic false`",
    "level": "warning"},
   {"message":
-   "././././Siegel/SiegelZeroFreeElementary.lean:497:12: 'push_cast' tactic does nothing\nnote: this linter can be disabled with `set_option linter.unusedTactic false`",
-   "level": "warning"},
-  {"message":
-   "././././Siegel/SiegelZeroFreeElementary.lean:509:52: 'push_cast' tactic does nothing\nnote: this linter can be disabled with `set_option linter.unusedTactic false`",
-   "level": "warning"},
-  {"message":
-   "././././Siegel/SiegelZeroFreeElementary.lean:561:15: Try this: ring_nf",
+   "././././Siegel/SiegelZeroFreeElementary.lean:752:15: Try this: ring_nf",
    "level": "info"}],
- "depHash": "8064120888174076411"}
+ "depHash": "14282763017000179788"}
