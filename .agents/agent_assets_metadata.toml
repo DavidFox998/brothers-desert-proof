@@ -35,3 +35,10 @@ uri = "file://deliverables/davidfox998_public_evidence_packet.html"
 type = "text"
 title = "David J. Fox — Public Research Evidence Packet"
 description = "A print-ready sponsor and editorial evidence packet with abstract, claim scope, live public-repository inventory, and all 21 public repositories covered."
+
+[[outputs]]
+id = "3T3RKZu8GV02h2K1E-crj"
+uri = "file://deliverables/davidfox998_public_evidence_packet.pdf"
+type = "pdf"
+title = "David J. Fox — Public Research Evidence Packet (PDF)"
+description = "11-page PDF evidence packet with abstract, sponsor/editor statement, all 21 public repositories, and embedded clickable GitHub repository URLs."

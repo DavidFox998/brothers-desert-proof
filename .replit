@@ -29,4 +29,4 @@ args = "cd /home/runner/workspace && export PATH=\"$HOME/.elan/bin:$PATH\" && la
 
 [nix]
 channel = "stable-25_05"
-packages = ["elan"]
+packages = ["elan", "chromium"]
