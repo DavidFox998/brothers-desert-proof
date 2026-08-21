@@ -16,6 +16,14 @@ author = "agent"
 task = "workflow.run"
 args = "lean-build"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "lean-compat"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "lean-compat-test"
+
 [[workflows.workflow]]
 name = "lean-build"
 author = "agent"
@@ -25,7 +33,29 @@ isValidation = true
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace && export PATH=\"$HOME/.elan/bin:$PATH\" && lake exe cache get 2>&1 && lake build Siegel.SiegelZeroFreeElementary 2>&1"
+args = "cd /home/runner/workspace && export PATH=\"$HOME/.elan/bin:$PATH\" && flock /tmp/lean-lake-build.lock bash -c 'export PATH=\"$HOME/.elan/bin:$PATH\"; (lake exe cache get 2>&1 || echo \"Cache fetch skipped — building from source\") && lake build Siegel.SiegelZeroFreeElementary Siegel.SiegelZeroFreeRe1 Siegel.SiegelZeroFree 2>&1'"
+
+[[workflows.workflow]]
+name = "lean-compat"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd /home/runner/workspace && bash scripts/lean-compat-check.sh"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "lean-compat-test"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd /home/runner/workspace && bash scripts/test-lean-compat-check.sh"
+
+[workflows.workflow.metadata]
+isValidation = true
 
 [nix]
 channel = "stable-25_05"
