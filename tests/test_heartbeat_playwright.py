@@ -227,14 +227,17 @@ def test_beat_fires_at_200ms_rate_cold_start(page, record_property):
     record_property("tick_start", tick_start)
     record_property("tick_end", tick_end)
     record_property("observation_window_s", 2)
-    record_property("required_ticks", 5)
+    # DELIBERATE FAILURE: threshold raised to 1000 (impossible in 2 s) to
+    # exercise the Slack alert path end-to-end.  Restore to 5 after alert
+    # is confirmed.
+    record_property("required_ticks", 1000)
 
-    # ── at least 5 beats must have fired ─────────────────────────────────────
-    assert ticks_fired >= 5, (
+    # ── at least 1000 beats must have fired (deliberate failure sentinel) ─────
+    assert ticks_fired >= 1000, (
         f"/brain/heartbeat: only {ticks_fired} beat(s) fired in 2 s after cold start "
-        f"(expected ≥5 at 200 ms each). "
+        f"(expected ≥1000 — deliberate sentinel to verify Slack alert path). "
         f"tick at load={tick_start}, tick after 2 s={tick_end}. "
-        "The beat loop may be paused, throttled, or the Fly.io VM did not wake in time."
+        "This assertion will always fail; it is a one-shot alert verification."
     )
 
     # ── no console errors during the observation window ───────────────────────
