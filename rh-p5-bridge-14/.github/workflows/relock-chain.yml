@@ -26,6 +26,7 @@ on:
       - main
     paths:
       - "scripts/relock-chain.sh"
+      - "scripts/test-relock-api-failure.sh"
       - ".github/workflows/relock-chain.yml"
 
 permissions:
@@ -70,6 +71,38 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{
               "text": ":warning: *Chain re-lock smoke-test failed* on push to `main`.\nThe `scripts/relock-chain.sh --dry-run` step failed — GITHUB_TOKEN may lack `repo` scope, or the GitHub API is unreachable.\n<'"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"'|View run>"
+            }'
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # api-failure-test: runs on every push to main.
+  # Injects a mock curl that exits 22 (HTTP error) for one repo mid-run and
+  # asserts the script exits non-zero — proving it cannot silently succeed
+  # with a partial hash when the GitHub API is down or rate-limited.
+  # ────────────────────────────────────────────────────────────────────────────
+  api-failure-test:
+    name: "Test: API failure causes non-zero exit"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout rh-p5-bridge-14
+        uses: actions/checkout@v4
+
+      - name: Run API-failure test
+        run: |
+          chmod +x scripts/relock-chain.sh
+          chmod +x scripts/test-relock-api-failure.sh
+          bash scripts/test-relock-api-failure.sh
+
+      - name: Notify Slack on test failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -sf -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": ":rotating_light: *Chain re-lock API-failure test failed* on push to `main`.\n`scripts/test-relock-api-failure.sh` reported that `relock-chain.sh` does NOT exit non-zero when the GitHub API fails — the silent-skip guard is broken.\n<'"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"'|View run>"
             }'
 
   # ────────────────────────────────────────────────────────────────────────────
