@@ -215,3 +215,17 @@ jobs:
           else
             echo "PASS: all Dockerfile COPY destinations are present inside the image."
           fi
+
+      - name: Verify app module imports without errors
+        run: |
+          # Confirm the entrypoint module loads cleanly inside the built image.
+          # A missing transitive import, a syntax error, or a bad __init__ will
+          # cause this step to fail loudly here rather than crash-looping on Fly.io.
+          docker run --rm \
+            -e DATABASE_URL=placeholder \
+            -e ADMIN_SECRET=placeholder \
+            -e RESEND_API_KEY=placeholder \
+            -e STRIPE_SECRET_KEY=placeholder \
+            -e STRIPE_WEBHOOK_SECRET=placeholder \
+            zerobeacon-verify-test \
+            python -c "import zerobeacon_mf_1000_main; print('PASS: module imported successfully.')"
