@@ -134,13 +134,67 @@ jobs:
         run: |
           docker build -t zerobeacon-verify-test .
 
-          # Every path the app needs at runtime.
-          REQUIRED_PATHS=(
-            "/app/core"
-            "/app/routers"
-            "/app/requirements.txt"
-            "/app/zerobeacon_mf_1000_main.py"
+          # Auto-derive the expected container paths by parsing every COPY
+          # instruction in the Dockerfile.  This means a new COPY is never
+          # silently skipped — adding one to the Dockerfile automatically adds
+          # its destination to the verification check without any manual update.
+          mapfile -t REQUIRED_PATHS < <(python3 - <<'PYEOF'
+          import os.path, re, sys
+
+          workdir = "/"
+          paths   = []
+
+          with open("Dockerfile") as fh:
+              for raw in fh:
+                  line = raw.strip()
+
+                  # Track WORKDIR so relative destinations resolve correctly.
+                  m = re.match(r'^WORKDIR\s+(\S+)', line, re.IGNORECASE)
+                  if m:
+                      wd = m.group(1)
+                      workdir = wd if wd.startswith("/") else workdir.rstrip("/") + "/" + wd
+                      continue
+
+                  # Only process COPY instructions; skip RUN, ADD, etc.
+                  if not re.match(r'^COPY\b', line, re.IGNORECASE):
+                      continue
+
+                  # Remove "COPY" keyword then strip option flags (--from=, --chown=, …).
+                  rest = line[4:].strip()
+                  rest = re.sub(r'--[\w-]+(?:=\S*)?\s*', '', rest).strip()
+
+                  tokens = rest.split()
+                  if len(tokens) < 2:
+                      continue  # malformed; skip
+
+                  sources = tokens[:-1]
+                  dest    = tokens[-1]
+
+                  if dest in (".", "./"):
+                      # Each source lands at WORKDIR/<basename(source)>.
+                      for src in sources:
+                          basename = os.path.basename(src.rstrip("/"))
+                          if basename:
+                              paths.append(os.path.normpath(workdir.rstrip("/") + "/" + basename))
+                  else:
+                      # Explicit destination: resolve relative paths against WORKDIR.
+                      if dest.startswith("/"):
+                          abs_dest = dest
+                      else:
+                          # Strip leading ./ or / characters before joining.
+                          rel = dest.lstrip("./").lstrip("/")
+                          abs_dest = workdir.rstrip("/") + "/" + rel
+                      paths.append(os.path.normpath(abs_dest.rstrip("/")))
+
+          for p in sorted(set(paths)):
+              print(p)
+          PYEOF
           )
+
+          echo "Paths derived from Dockerfile COPY instructions:"
+          for path in "${REQUIRED_PATHS[@]}"; do
+            echo "  $path"
+          done
 
           MISSING=()
           for path in "${REQUIRED_PATHS[@]}"; do
@@ -150,16 +204,14 @@ jobs:
           done
 
           if [ ${#MISSING[@]} -gt 0 ]; then
-            echo "FAIL: the following required paths are absent from the image:"
+            echo "FAIL: the following Dockerfile COPY destinations are absent from the image:"
             for m in "${MISSING[@]}"; do
               echo "  $m"
             done
             echo ""
-            echo "Check that .dockerignore re-includes every path the Dockerfile COPYs."
+            echo "If a new COPY was added to the Dockerfile, ensure .dockerignore"
+            echo "re-includes the source path so it reaches the image."
             exit 1
           else
-            echo "PASS: all required paths are present inside the image:"
-            for path in "${REQUIRED_PATHS[@]}"; do
-              echo "  $path"
-            done
+            echo "PASS: all Dockerfile COPY destinations are present inside the image."
           fi
