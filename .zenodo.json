@@ -1,45 +1,12 @@
 {
-  "title": "Riemann Hypothesis via Brothers Desert Proof — Route D — Self-Symmetry Orbit Stability — CLOSED via S₄={2,3,19,191} — Lean 4",
-  "description": "Route D of 4: Proof of the Riemann Hypothesis via self-symmetry orbit stability. 35 brothers family ≡153 mod 211 (Eutheos property), prime desert 192..1000 empty, Diophantine bound ‖p·α₀‖<1/p, Nodup 1419, Galois orbit stability forces Re(s)=1/2. CLOSED via S₄={2,3,19,191}. SiegelZeroFreeElementary: 0 sorry 0 axiom. Brothers collision bound (9/4M)^35≈10^-197.",
-  "keywords": [
-    "riemann-hypothesis",
-    "brothers-desert",
-    "orbit-stability",
-    "eutheos-property",
-    "diophantine",
-    "lean4",
-    "mathlib",
-    "route-D",
-    "opera-numerorum",
-    "S4={2,3,19,191}",
-    "siegel-zero",
-    "formal-proof",
-    "ORCID:0009-0008-1290-6105"
-  ],
-  "license": "MIT",
+  "title": "Beal Conjecture — a formal instrument in Opera Numerorum — v0.3.0 Arithmetic Descent",
   "upload_type": "software",
+  "description": "v0.3.0 checkpoint: Arithmetic Descent closed. B03 Conductor: SquarefreeCore, ExactDividesCore, ConductorCoprimeCore are import-free [] axioms with real Nat definitions. B10 RibetReal: GenusX0_2_Core=0, DimS2_2_Core=0, S2VanishesAt2Core proved by rfl, [] axioms. B11 Epsilon: ExactDivides + M*p=N ∧ ¬p∣M real. B15 LevelTo2: CanLowerLevelCore M*p=N real witness, M*2=2 -> M=1 via Nat.mul_right_cancel (0<k fix), [propext] only. B12 RibetProof: BealModularContradiction12Core from empty level. CI #140 green, 2353/2353, Check NO sorry 0s, no Prop:=True stubs. B01 Core [] axioms. This is Phase 1 Week 1-2 closure before modular forms interface.",
+  "creators": [{"name": "Fox, David", "affiliation": "Opera Numerorum"}],
+  "license": "MIT",
+  "keywords": ["Beal Conjecture", "Lean 4", "S2 Gamma0 2 vanishes", "genus zero", "exact divides", "Frey curve", "Ribet", "Opera Numerorum", "formal arithmetic"],
   "access_right": "open",
-  "language": "en",
-  "version": "RouteD-CLOSED-via-S4-v1.0.0",
   "related_identifiers": [
-    {
-      "identifier": "https://github.com/DavidFox998/eutheos-property",
-      "relation": "isSupplementTo",
-      "resource_type": "software",
-      "scheme": "url"
-    },
-    {
-      "identifier": "https://github.com/DavidFox998/rh-p5-bridge-14",
-      "relation": "isSupplementTo",
-      "resource_type": "software",
-      "scheme": "url"
-    }
-  ],
-  "creators": [
-    {
-      "name": "Fox, David J.",
-      "orcid": "0009-0008-1290-6105",
-      "affiliation": "Independent Researcher, Opera Numerorum"
-    }
+    {"identifier": "https://github.com/DavidFox998/beal-conjecture", "relation": "isSupplementTo", "resource_type": "software"}
   ]
 }
