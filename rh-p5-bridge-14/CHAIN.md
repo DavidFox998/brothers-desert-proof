@@ -111,3 +111,28 @@ done
 ```
 
 See [CERT_LOG.md](CERT_LOG.md) for pre-run baseline certificates.
+
+# Inside a checkout of rh-p5-bridge-14:
+export GITHUB_TOKEN=ghp_...          # needs repo:read on all 19 repos
+bash scripts/relock-chain.sh         # patches CHAIN.md + REPOS.md, opens a PR
+bash scripts/relock-chain.sh --dry-run  # preview only — no file changes
+```
+
+The script:
+1. Calls the GitHub API to fetch the current `main` HEAD of each repo.
+2. Recomputes `SHA256(repo:sha\n …)` in canonical alphabetical order.
+3. If the digest differs from the value in this file, patches `CHAIN.md` and
+   `REPOS.md` in place and (inside GitHub Actions) opens a pull request.
+4. If the digest matches, exits 0 with "chain is current".
+
+Two GitHub Actions workflows guard the chain:
+
+| Workflow | Schedule | Action on drift |
+|----------|----------|-----------------|
+| `verify-chain.yml` | **Daily at 08:00 UTC** (and on `workflow_dispatch`) | Fails the job → GitHub check failure; posts a Slack alert via `SLACK_WEBHOOK_URL` repository secret |
+| `relock-chain.yml` | **Weekly, Monday 06:00 UTC** (and on `workflow_dispatch`) | Opens a pull request titled `chore: re-lock ensemble chain (YYYY-MM-DD)` for human review before merge |
+
+To receive Slack alerts, add your incoming-webhook URL as a repository secret named `SLACK_WEBHOOK_URL` in `rh-p5-bridge-14`.
+If the secret is absent the Slack step is skipped gracefully; the job still fails (providing the GitHub check-failure signal).
+
+---

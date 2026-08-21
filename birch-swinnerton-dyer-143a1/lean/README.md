@@ -38,7 +38,7 @@ BSD_HasseBridge_CLOSED.lean (51 primes p≤241 |a_p|≤2√p honest) + BSD_Hasse
   ↓
 E143a1_CLOSED.lean (Capstone: conductor 143=11*13 + Weierstrass + rational point (2,0) + genus 13 + classnum 10 + Sha=1 + Hasse infinite honest)
   ↓
-BSD_143_PROVED — genesis-748 — #print axioms — 0 gaps — 122 runs GREEN #87
+BSD_143_PROVED — genesis-748 — #print axioms — 0 sorry — 122 runs GREEN #87
 
 #### File-by-File
 
@@ -86,4 +86,4 @@ Empirical: chi_-4(11)=-1 via ZMod 11 decide 11 checks — mu=168 via totient dec
 | BSD_TorsionSha_CLOSED | CLOSED | 0 | |Ш|=1 |tors|=1 |
 | BSD_143_PROVED | CLOSED FINAL | 0 | BSD analytic rank 1 = algebraic rank 1 — 122 runs GREEN #87 |
 
-Total: 8pp Genus+Density CLOSED, hasse honest via E143_Finset + completed square CLOSED 0 sorry core norm_num + decide — No OPEN — Now CLOSED FINAL via S4: S4 4 primes -> GRH X0(143) -> BSD — Route B unconditional: Genus 13 via decide + Hecke genuine via div_pos/mul_pos + Q-expansion table rfl + Hasse infinite HONEST via point counts + Bost + ClassNumber 10 + Sha 1 → BSD — CLOSED FINAL.
+Total: 8pp Genus+Density CLOSED, hasse honest via E143_Finset + completed square CLOSED 0 sorry core norm_num + decide — No OPEN — LEAN CLOSED FINAL via S4: S4 4 primes → GRH X0(143) → BSD for 143a1 specifically — Genus 13 via decide + Hecke genuine via div_pos/mul_pos + Q-expansion table rfl + Hasse infinite HONEST via point counts + Bost + ClassNumber 10 + Sha 1 → BSD for 143a1 — Lean-verified formalization, 0 sorry. The general BSD Conjecture (Clay Millennium Problem) remains OPEN.

@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21926550.svg)](https://doi.org/10.5281/zenodo.21926550) [![CI](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml/badge.svg)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml)
 
-# brothers-desert-proof — Route D — Discrete Self-Symmetry of the 35 Morningstar Brothers — CLOSED via S₄
+# brothers-desert-proof — Route D — Discrete Self-Symmetry of the 35 Morningstar Brothers — Lean formalization, conditional
 
 [![CI](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml/badge.svg?branch=main)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml)
 
@@ -12,12 +12,12 @@
 Lean 4.15.0 · Mathlib v4.15.0
 
 A fourth independent route to the Clay claim, built on the arithmetic self-symmetry of the 35 MORNINGSTAR brothers. The other three routes live in Opera Numerorum:
-- Route A [riemann-arakelov-positivity](https://github.com/DavidFox998/riemann-arakelov-positivity) — Arakelov Positivity (Abbes-Ullmo) — ω²=48/13>0 — CLOSED via S₄
-- Route B [arakelov-rh-descent](https://github.com/DavidFox998/arakelov-rh-descent) — Kim-Sarnak Spectral Descent — λ₁≥975/4096 — 35pp BC6 — CLOSED via S₄
-- Route C [rh-growth-contradiction](https://github.com/DavidFox998/rh-growth-contradiction) — Growth Contradiction — exp(c√(log t/log log t)) dominates (log t)² — CLOSED via S₄
-- **Route D — THIS REPO — Self-Symmetry — Discrete orbit stability of the 35 Morningstar brothers (distinct mod 191 and mod 36863, certified empty desert, functional duality s↔1−s) forces Re(ρ) = 1/2 — CLOSED via S₄**
+- Route A [riemann-arakelov-positivity](https://github.com/DavidFox998/riemann-arakelov-positivity) — Arakelov Positivity (Abbes-Ullmo) — ω²=48/13>0 — Lean-closed formal reduction, conditional
+- Route B [arakelov-rh-descent](https://github.com/DavidFox998/arakelov-rh-descent) — Kim-Sarnak Spectral Descent — λ₁≥975/4096 — 35pp BC6 — Lean-closed formal reduction, conditional
+- Route C [rh-growth-contradiction](https://github.com/DavidFox998/rh-growth-contradiction) — Growth Contradiction — exp(c√(log t/log log t)) dominates (log t)² — Lean-closed formal reduction, conditional
+- **Route D — THIS REPO — Self-Symmetry — Discrete orbit stability of the 35 Morningstar brothers (distinct mod 191 and mod 36863, certified empty desert, functional duality s↔1−s) — Lean-closed formal reduction, conditional**
 
-All four close via the same S₄={2,3,19,191}, C(S₄)=11.422>2√13 → GRH X₀(143) → RH — Opera Numerorum in Four Voices: Positivity, Descent, Growth, Symmetry.
+All four share the same S₄={2,3,19,191}, C(S₄)=11.422>2√13 arithmetic gate. Each closes a conditional chain through GRH X₀(143) toward RH. **RH remains OPEN.** These are Lean-verified proof architectures, not Clay Prize submissions — Opera Numerorum in Four Voices: Positivity, Descent, Growth, Symmetry.
 
 ---
 
@@ -36,8 +36,8 @@ The answer is yes. The number 1419=3×11×43 (hex 0x058B, popcount 6, 1419≡153
 
 1419 is not an isolated curiosity. It generates a 35-element family — every element satisfying the property P: residue 153 mod 211, popcount 6, circuit size 9. These 35 are the MORNINGSTAR brothers. The family arises 24× over the uniform expectation, certified by `native_decide`.
 
-**Step 3 — This repo proves RH via the discrete self-symmetry of those 35 brothers.**
-Brothers are composite by construction (1419=3×11×43; all members have popcount 6 and divisors). They are barriers: arithmetic objects that cannot be prime. Their collective structure — 35 distinct residues mod 191, 35 distinct residues mod 36863 (the desert twin 191×193), pairwise Hamming distance ≥2 — constitutes a discrete self-symmetry lattice. This lattice, combined with the functional equation s↔1−s, forces all non-trivial zeros of ζ onto Re(ρ)=1/2.
+**Step 3 — This repo formalizes a conditional argument toward RH via the discrete self-symmetry of those 35 brothers.**
+Brothers are composite by construction (1419=3×11×43; all members have popcount 6 and divisors). They are barriers: arithmetic objects that cannot be prime. Their collective structure — 35 distinct residues mod 191, 35 distinct residues mod 36863 (the desert twin 191×193), pairwise Hamming distance ≥2 — constitutes a discrete self-symmetry lattice. This lattice, combined with the functional equation s↔1−s, is the formal architecture of a conditional argument toward Re(ρ)=1/2. **RH status: OPEN.**
 
 ---
 
@@ -111,14 +111,14 @@ The sequence ⌊n·α₀⌋ mod 191 for 1 ≤ n ≤ 1419 has no repeated values.
 
 ---
 
-## Self-symmetry → Re(ρ) = 1/2
+## Self-symmetry and the conditional argument toward Re(ρ) = 1/2
 
 The desert and orbit theorems together constitute the self-symmetry of the brothers:
 
 - **Spatial self-symmetry:** 35 distinct slots mod 191; 35 distinct slots mod 36863. No two brothers share an arithmetic position.
 - **Temporal self-symmetry:** orbit Nodup for 1419 steps under α₀. No brother returns to a visited position within the leader's horizon.
 
-A hypothetical 36th brother at any competing height would require a 36th slot mod 191 — impossible, since the 35 distinct slots are fully occupied and the desert is certified empty by `native_decide`. The functional equation s↔1−s provides self-duality; orbit stability prevents any zero from sitting off the critical line.
+A hypothetical 36th brother at any competing height would require a 36th slot mod 191 — impossible, since the 35 distinct slots are fully occupied and the desert is certified empty by `native_decide`. The functional equation s↔1−s provides self-duality; together with orbit stability, this is the formal architecture of the conditional argument. **The Riemann Hypothesis remains OPEN; this is the verified combinatorial component of one conditional route.**
 
 The outer Siegel wall `3+4cosθ+cos2θ = 2(1+cosθ)² ≥ 0` (proved in `Siegel/SiegelZeroFreeRe1.lean`, 0 sorry) excludes zeros on Re=1. The inner Lindelöf bound `‖ζ(½+it)‖ ≤ C exp|t|` (proved in `Lindelof/GrowthBoundReal.lean`, 0 sorry) controls growth. Self-symmetry fills the gap between these two walls:
 
@@ -136,7 +136,7 @@ theorem ClayWitnessReady :
 ```
 Siegel/
   SiegelZeroFreeRe1.lean      — 3+4cosθ+cos2θ = 2(1+cosθ)² ≥ 0 · Poussin gem · outer wall Re=1 · 0 sorry
-  SiegelZeroFreeElementary.lean — η factor: η_pos>0, factor_neg = 1−2^{1−σ}<0 · no real zeros in (0,1) · 0 sorry
+  SiegelZeroFreeElementary.lean — pair-sum tsum: ∑ (η₂ₖ−η₂ₖ₊₁) > 0 for σ>0 · 0 sorry · (connecting to ζ<0 needs eta identity, pending Lean formalization)
   SiegelZeroFree.lean         — re-export · bridge to Lindelöf
 
 Lindelof/
@@ -173,12 +173,12 @@ Protocol/
 
 | Route | Core theorem | S₄ role | Brothers / 1419 role | Act |
 |---|---|---|---|---|
-| **Self-Symmetry (here)** | Orbit stability (distinct mod 191, mod 36863) + s↔1−s → Re(ρ)=1/2 | Exceptional primes, not brothers; desert empty by `native_decide` | Leader 1419 is the barrier-bypass witness; 35-brother lattice is the symmetry proof object | IV — Symmetry |
+| **Self-Symmetry (here)** | Orbit stability (distinct mod 191, mod 36863) + s↔1−s — conditional architecture toward Re(ρ)=1/2 | Exceptional primes, not brothers; desert empty by `native_decide` | Leader 1419 is the barrier-bypass witness; 35-brother lattice is the symmetry proof object | IV — Symmetry |
 | Arakelov Positivity | Height ω²=48/13>0; a Siegel zero forces negative height — contradiction | Provides height support via log-lowering | No direct role | I — Positivity |
 | Spectral Descent | λ₁≥975/4096; Selberg trace → Bost-Connes → GRH → RH | Level 143 for X₀(143); BC6 gate | p5 as boundary hash prime | II — Descent |
 | Growth Contradiction | exp(c√(log t/log log t)) beats (log t)²; zero repulsion → RH | Bost-Connes phase transition C(S₄)=11.422>2√13 | p5 as beacon | III — Growth |
 
-Only Route D tells who the brothers are. The barrier framework in p-vs-np led to the discovery of 1419 in eutheos-property, which led to the 35-brother self-symmetry lattice proved here — and through that lattice, to the fourth independent closure of the Riemann Hypothesis.
+Only Route D tells who the brothers are. The barrier framework in p-vs-np led to the discovery of 1419 in eutheos-property, which led to the 35-brother self-symmetry lattice proved here — and through that lattice, to the fourth independent conditional formalization route toward RH. **RH remains OPEN.**
 
 ---
 
@@ -207,19 +207,19 @@ grep -r "sorry" Siegel/ Lindelof/ SelfSymmetry/ Protocol/ --include="*.lean" \
 
 **[rh-p5-bridge-14](https://github.com/DavidFox998/rh-p5-bridge-14) — Keystone** — `q5=226`, `q6=165849`, `cf_bound=82829` — reduces infinite `S_α0` to finite `S₁₄`; closes `BSD_143_PROVED → RiemannHypothesis`
 
-**[riemann-arakelov-positivity](https://github.com/DavidFox998/riemann-arakelov-positivity) — Route A · Act I** — Abbes-Ullmo `ω²=48/13>0`; a Siegel zero would force negative height — CLOSED via S₄
+**[riemann-arakelov-positivity](https://github.com/DavidFox998/riemann-arakelov-positivity) — Route A · Act I** — Abbes-Ullmo `ω²=48/13>0`; a Siegel zero would force negative height — Lean-closed formal reduction, conditional
 
-**[arakelov-rh-descent](https://github.com/DavidFox998/arakelov-rh-descent) — Route B · Act II** — Kim-Sarnak `λ₁≥975/4096` → Selberg trace = Bost-Connes → GRH for X₀(143) → RH — 35pp BC6 CLOSED via S₄
+**[arakelov-rh-descent](https://github.com/DavidFox998/arakelov-rh-descent) — Route B · Act II** — Kim-Sarnak `λ₁≥975/4096` → Selberg trace = Bost-Connes → GRH for X₀(143) — 35pp BC6, Lean-closed formal reduction, conditional
 
-**[rh-growth-contradiction](https://github.com/DavidFox998/rh-growth-contradiction) — Route C · Act III** — Littlewood Ω `exp(c√(log t / log log t))` beats `(log t)²`; zero repulsion → RH — CLOSED via S₄
+**[rh-growth-contradiction](https://github.com/DavidFox998/rh-growth-contradiction) — Route C · Act III** — Littlewood Ω `exp(c√(log t / log log t))` beats `(log t)²`; zero repulsion — Lean-closed formal reduction, conditional
 
-**[brothers-desert-proof](https://github.com/DavidFox998/brothers-desert-proof) — Route D · Act IV** ← **this repo** — 35 Morningstar brothers, distinct mod 191 and mod 36863, certified empty desert; orbit stability forces `Re(ρ)=1/2` — CLOSED via S₄
+**[brothers-desert-proof](https://github.com/DavidFox998/brothers-desert-proof) — Route D · Act IV** ← **this repo** — 35 Morningstar brothers, distinct mod 191 and mod 36863, certified empty desert; orbit stability — Lean-closed formal reduction, conditional
 
 **[bost-connes](https://github.com/DavidFox998/bost-connes) — Arithmetic hub** — `C(S₄)=11.422...>2√13`, Gates M1–M3→M4–M8, 21 bricks 0 sorry — #173 GREEN
 
 **[birch-swinnerton-dyer-143a1](https://github.com/DavidFox998/birch-swinnerton-dyer-143a1) — BSD 143a1** — rank 1, Heegner point `(4,6)`, `L(143a1,1)≠0`, `|Sha|=1` — worked example of M1–M5 arithmetic in action
 
-**[lindelof-hypothesis-143](https://github.com/DavidFox998/lindelof-hypothesis-143) — Lindelöf for X₀(143)** — GRH → `μ=0` → `|ζ(½+it)|=O(t^ε)` unconditional via S₄
+**[lindelof-hypothesis-143](https://github.com/DavidFox998/lindelof-hypothesis-143) — Lindelöf for X₀(143)** — GRH → `μ=0` → `|ζ(½+it)|=O(t^ε)` via S₄ — conditional on GRH
 
 **[eutheos-property](https://github.com/DavidFox998/eutheos-property) — Barrier bypass** — `1419=3×11×43`, 35 brothers `≡153 mod 211`, barriers BGS/RR/AW all PASS — P vs NP study side; brothers here are the symmetry lattice for Route D
 
@@ -244,3 +244,4 @@ ORCID: [0009-0008-1290-6105](https://orcid.org/0009-0008-1290-6105) · Archive: 
 
 David J. Fox · Independent researcher · Aberdeen, WA
 ORCID: [0009-0008-1290-6105](https://orcid.org/0009-0008-1290-6105) · Opera Numerorum — 2026
+

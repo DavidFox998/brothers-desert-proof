@@ -1,33 +1,29 @@
-cat > Siegel/SiegelZeroFreeRe1.lean <<'EOF'
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import Mathlib.Analysis.Complex.Trigonometric
-
-namespace SiegelRe1
-
--- Your Batch57 gem — 0 sorry, closed
-theorem poussin_cos_combo_nonneg (θ : ℝ) : 0 ≤ 3 + 4 * Real.cos θ + Real.cos (2 * θ) := by
-  have h : 3 + 4 * Real.cos θ + Real.cos (2 * θ) = 2 * (1 + Real.cos θ)^2 := by
-    have h2 : Real.cos (2 * θ) = 2 * Real.cos θ ^ 2 - 1 := Real.cos_two_mul θ
-    nlinarith [Real.cos_sq_add_sin_sq θ]
-  rw [h]
-  positivity
-
-def SiegelZeroFreeRe1 : Prop := ∀ t : ℝ, t ≠ 0 → riemannZeta (1 + t * Complex.I) ≠ 0
-
-end SiegelRe1
-EOF
-
-cat > Siegel/SiegelZeroFreeElementary.lean <<'EOF'
 /-
-  Siegel/SiegelZeroFreeElementary.lean — CLOSED GENUINE LOCKED
-  0 sorry, 0 axiom, 0 native_decide
-  Proves eta_pos >0 and factor_neg <0 → ζ(σ).re <0 for σ∈(0,1)
+  Siegel/SiegelZeroFreeElementary.lean
+  ELEMENTARY SIEGEL ZERO REPULSION — eta pair-sum positivity.
 
-  LOCK TAG: genuine-closed-2026-05-13-eta — DO NOT OVERWRITE
+  SORRY COUNT: 0
+  AXIOM FOOTPRINT: classical trio (propext, funext, choice) via Mathlib imports
+
+  What is proved here (0 sorry):
+    eta_antitone   — (n+1)^(-σ) is antitone in n for σ > 0
+    eta_tends_zero — (n+1)^(-σ) → 0 for σ > 0
+    factor_neg     — 1 - 2^(1-σ) < 0 for σ ∈ (0,1)
+    eta_pair_nonneg, eta_pair_zero_pos, eta_pair_partial — pair-telescoping lemmas
+    eta_pos        — ∑' k, (η₂ₖ − η₂ₖ₊₁) > 0 for all σ > 0
+
+  What is NOT proved here (pending Lean formalization):
+    The connection to ζ(σ).  The eta identity (1−2^{1−σ})·ζ(σ) = η(σ) holds for Re(s)>1
+    by algebraic manipulation and extends to Re(s)∈(0,1) by the identity theorem for
+    holomorphic functions.  That analytic-continuation step is not yet in Lean; until it is,
+    "ζ(σ) < 0 for σ∈(0,1)" is not concluded from the lemmas in this file alone.
+
+  Lean/Mathlib version: v4.15.0 / mathlib4 pin 9837ca9
 -/
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Topology.Algebra.InfiniteSum.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.Topology.Algebra.InfiniteSum.Order
 
 namespace SiegelElementary
 
@@ -35,39 +31,49 @@ open Real Filter Finset
 
 private noncomputable def eta_term (σ : ℝ) (n : ℕ) : ℝ := (n + 1 : ℝ) ^ (-σ)
 
+/-- (n+1)^(-σ) is antitone in n for σ > 0: a larger index gives a smaller term. -/
 lemma eta_antitone (σ : ℝ) (hσ : 0 < σ) : Antitone (eta_term σ) := by
-  intro m n hmn; simp only [eta_term]
-  apply Real.rpow_le_rpow_of_exponent_ge (by positivity)
-  · exact_mod_cast Nat.add_le_add_right hmn 1
-  · linarith
-
-lemma eta_tends_zero (σ : ℝ) (hσ : 0 < σ) : Tendsto (eta_term σ) atTop (𝓝 0) := by
+  intro m n hmn
   simp only [eta_term]
-  have : Tendsto (fun n : ℕ => (n + 1 : ℝ) ^ (-σ)) atTop (𝓝 0) := by
-    rw [show (0:ℝ) = 0 ^ (-σ) from by simp]
-    apply Filter.Tendsto.rpow_const
-    · exact tendsto_natCast_atTop_atTop.comp (tendsto_atTop_add_const_right _ 1 tendsto_id)
-    · simp [le_of_lt hσ]
-  exact this
+  have hm : (0 : ℝ) < (m : ℝ) + 1 := by positivity
+  have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
+  have hmn' : (m : ℝ) + 1 ≤ (n : ℝ) + 1 := by exact_mod_cast Nat.add_le_add_right hmn 1
+  rw [Real.rpow_neg (le_of_lt hm), Real.rpow_neg (le_of_lt hn)]
+  exact inv_anti₀ (Real.rpow_pos_of_pos hm σ)
+    (Real.rpow_le_rpow (le_of_lt hm) hmn' (le_of_lt hσ))
 
-lemma factor_neg (σ : ℝ) (hσ0 : 0 < σ) (hσ1 : σ < 1) : (1 : ℝ) - 2 ^ (1 - σ) < 0 := by
-  have h : (1 : ℝ) < 2 ^ (1 - σ) := Real.one_lt_rpow (by norm_num) (by linarith : 0 < 1 - σ)
+/-- (n+1)^(-σ) → 0 for σ > 0. -/
+lemma eta_tends_zero (σ : ℝ) (hσ : 0 < σ) : Tendsto (eta_term σ) atTop (nhds 0) := by
+  show Tendsto (fun n : ℕ => ((n : ℝ) + 1) ^ (-σ)) atTop (nhds 0)
+  exact (tendsto_rpow_neg_atTop hσ).comp
+    (tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop)
+
+/-- 1 - 2^(1-σ) < 0 for σ ∈ (0,1): the eta pre-factor is negative there. -/
+lemma factor_neg (σ : ℝ) (_ : 0 < σ) (hσ1 : σ < 1) : (1 : ℝ) - 2 ^ (1 - σ) < 0 := by
+  have h : (1 : ℝ) < 2 ^ (1 - σ) :=
+    Real.one_lt_rpow (by norm_num) (by linarith : 0 < 1 - σ)
   linarith
 
-private noncomputable def eta_pair (σ : ℝ) (k : ℕ) : ℝ := eta_term σ (2 * k) - eta_term σ (2 * k + 1)
+/-- Consecutive pair difference of eta terms: η₂ₖ − η₂ₖ₊₁ = (2k+1)^{−σ} − (2k+2)^{−σ}. -/
+noncomputable def eta_pair (σ : ℝ) (k : ℕ) : ℝ :=
+  eta_term σ (2 * k) - eta_term σ (2 * k + 1)
 
 private lemma eta_pair_nonneg (σ : ℝ) (hσ : 0 < σ) (k : ℕ) : 0 ≤ eta_pair σ k :=
   sub_nonneg.mpr (eta_antitone σ hσ (by omega))
 
 private lemma one_sub_half_pow_pos (σ : ℝ) (hσ : 0 < σ) : (0 : ℝ) < 1 - (2 : ℝ) ^ (-σ) := by
-  have h : (2 : ℝ) ^ (-σ) < 1 := Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (by linarith)
+  have h : (2 : ℝ) ^ (-σ) < 1 :=
+    Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (by linarith)
   linarith
 
 private lemma eta_pair_zero_pos (σ : ℝ) (hσ : 0 < σ) : 0 < eta_pair σ 0 := by
   have h1 : eta_term σ 0 = 1 := by simp [eta_term, Real.one_rpow]
-  have h2 : eta_term σ 1 = (2 : ℝ) ^ (-σ) := by simp only [eta_term, Nat.cast_one]; norm_num
-  simp only [eta_pair, mul_zero, zero_add, h1, h2]; exact one_sub_half_pow_pos σ hσ
+  have h2 : eta_term σ 1 = (2 : ℝ) ^ (-σ) := by
+    simp only [eta_term, Nat.cast_one]; norm_num
+  simp only [eta_pair, mul_zero, zero_add, h1, h2]
+  exact one_sub_half_pow_pos σ hσ
 
+/-- Even partial sums of the alternating series equal the pair-sum partial sums. -/
 private lemma eta_pair_partial (σ : ℝ) (k : ℕ) :
     ∑ j ∈ Finset.range k, eta_pair σ j =
     ∑ i ∈ Finset.range (2 * k), (-1 : ℝ) ^ i * eta_term σ i := by
@@ -82,54 +88,28 @@ private lemma eta_pair_partial (σ : ℝ) (k : ℕ) :
     have h2 : (-1 : ℝ) ^ (2 * k + 1) = -1 := by rw [pow_add, h1]; ring
     simp only [eta_pair, h1, h2]; ring
 
-lemma eta_hasSum (σ : ℝ) (hσ : 0 < σ) :
-    ∃ l : ℝ, HasSum (fun n : ℕ => (-1) ^ n * eta_term σ n) l := by
-  obtain ⟨l, hl⟩ := (eta_antitone σ hσ).tendsto_alternating_series_of_tendsto_zero (eta_tends_zero σ hσ)
-  exact ⟨l, hl.hasSum⟩
-
-theorem eta_pos (σ : ℝ) (hσ : 0 < σ) : 0 < ∑' n : ℕ, ((-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ)) := by
-  obtain ⟨l, hl⟩ := eta_hasSum σ hσ
-  rw [hl.tsum_eq]
+/-- The tsum of consecutive pair differences of the eta series is positive for all σ > 0.
+    This is the verified combinatorial core of the Siegel zero-repulsion argument.
+    Connecting this to ζ(σ) < 0 on (0,1) requires the eta identity and analytic continuation
+    of the Dirichlet series; those steps are not yet in Lean. -/
+theorem eta_pos (σ : ℝ) (hσ : 0 < σ) : 0 < ∑' k : ℕ, eta_pair σ k := by
+  obtain ⟨l, hl⟩ :=
+    (eta_antitone σ hσ).tendsto_alternating_series_of_tendsto_zero (eta_tends_zero σ hσ)
   have hg_nn : ∀ k, 0 ≤ eta_pair σ k := eta_pair_nonneg σ hσ
-  have hg_hs : HasSum (eta_pair σ) l := by
-    refine (hasSum_iff_tendsto_nat_of_nonneg hg_nn l).mpr?_
-    simp_rw [eta_pair_partial σ]
-    exact (hl.comp tendsto_finset_range).comp (tendsto_atTop_atTop.mpr fun n => ⟨n, fun k hk => by linarith⟩)
-  have h_pos_tsum : 0 < ∑' k, eta_pair σ k := tsum_pos hg_hs.summable hg_nn 0 (eta_pair_zero_pos σ hσ)
-  linarith [hg_hs.tsum_eq]
+  -- The alternating series test gives tendsto of even-indexed partial sums to l.
+  -- eta_pair_partial equates those to pair-sum partial sums.
+  have hl_pair : Tendsto (fun k => ∑ j ∈ Finset.range k, eta_pair σ j) atTop (nhds l) := by
+    simp_rw [eta_pair_partial]
+    exact hl.comp (tendsto_atTop_atTop.mpr fun n => ⟨n, fun k hk => by omega⟩)
+  -- For non-negative eta_pair, HasSum ↔ Tendsto of partial sums.
+  have hg_hs : HasSum (eta_pair σ) l :=
+    (hasSum_iff_tendsto_nat_of_nonneg hg_nn l).mpr hl_pair
+  -- eta_pair 0 > 0, so the tsum is positive.
+  exact hg_hs.tsum_eq ▸ tsum_pos hg_hs.summable hg_nn 0 (eta_pair_zero_pos σ hσ)
 
--- Main Siegel consequence for ζ on real line (0,1): sign via eta identity
--- eta(σ) = (1-2^{1-σ}) ζ(σ), eta(σ)>0, factor<0 ⇒ ζ(σ)<0
--- This identity is proved in SiegelElementary_FINAL_LOCKED via LFunction, here we keep eta_pos as the genuine core
-
-theorem zeta_no_real_zero_core (σ : ℝ) (hσ0 : 0 < σ) : 0 < ∑' n, ((-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ)) :=
+/-- The verified core of the Siegel zero-free argument for the eta series:
+    consecutive pair differences telescope to a positive sum for every σ > 0. -/
+theorem zeta_no_real_zero_core (σ : ℝ) (hσ0 : 0 < σ) : 0 < ∑' k : ℕ, eta_pair σ k :=
   eta_pos σ hσ0
 
 end SiegelElementary
-EOF
-
-cat > Siegel/SiegelZeroFree.lean <<'EOF'
-import Siegel.SiegelZeroFreeRe1
-import Siegel.SiegelZeroFreeElementary
-
-namespace SiegelZeroFree
-
-open SiegelRe1 SiegelElementary
-
-def SiegelZeroFree : Prop := SiegelRe1.SiegelZeroFreeRe1
-
-theorem siegel_poussin (θ : ℝ) : 0 ≤ 3 + 4 * Real.cos θ + Real.cos (2 * θ) :=
-  poussin_cos_combo_nonneg θ
-
-theorem siegel_eta_pos (σ : ℝ) (hσ : 0 < σ) : 0 < ∑' n, ((-1 : ℝ) ^ n * (n + 1 : ℝ) ^ (-σ)) :=
-  eta_pos σ hσ
-
-theorem siegel_factor_neg (σ : ℝ) (h0 : 0 < σ) (h1 : σ < 1) : (1 : ℝ) - 2 ^ (1 - σ) < 0 :=
-  factor_neg σ h0 h1
-
-end SiegelZeroFree
-EOF
-
-git add Siegel/SiegelZeroFreeRe1.lean Siegel/SiegelZeroFreeElementary.lean Siegel/SiegelZeroFree.lean
-git commit -m "feat: #149 Siegel 0 sorry — Poussin + eta_pos + factor_neg LOCKED genuine"
-git push

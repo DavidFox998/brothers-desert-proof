@@ -29,9 +29,9 @@ The Exceptional Prime set `S4 = {2,3,19,191}` are the primes where the Bost-Conn
 
 Growthbound says: if RH were false, there would be an off-line zero that makes `X0(143)` have too many points mod P5. But `Δ = 23.79 > 2√13 = 7.21` — the desert inequality — says X0(143) cannot have that many points. Contradiction.
 
-So Growthbound + Siegel → S4 unconditional → Δ inequality → no off-line zero.
+So Growthbound + Siegel → S4 verified → Δ inequality → a conditional contradiction with any off-line zero. This closes the formal argument conditionally; RH itself remains OPEN.
 
-That is **positivity and growthbound contradiction**
+That is **the positivity-and-growthbound architecture**
 
 **File 1: `GrowthBoundReal.lean`**
 ```lean

@@ -28,11 +28,11 @@ All four routes close via the same S₄ = {2, 3, 19, 191} threshold: C(S₄) = 1
 
 | Repo | Role | Claim | Lean status | Sorrys | Axioms | Chain | HEAD |
 |------|------|-------|-------------|--------|--------|-------|------|
-| [riemann-arakelov-positivity](https://github.com/DavidFox998/riemann-arakelov-positivity) | Route A | RH via Arakelov positivity on X₀(143): ω² = 48/13 > 0 (Abbes-Ullmo) | `LEAN_CLOSED` | 0 | classical trio | ⛓ | `4415449988bb` |
-| [arakelov-rh-descent](https://github.com/DavidFox998/arakelov-rh-descent) | Route B | RH via Kim-Sarnak spectral descent: λ₁ ≥ 975/4096 | `LEAN_CLOSED` | 0 | classical trio | ⛓ | `e59eb0a49bc7` |
-| [rh-growth-contradiction](https://github.com/DavidFox998/rh-growth-contradiction) | Route C | RH via growth contradiction: exp(c√(log t/log log t)) dominates (log t)² | `LEAN_CLOSED` | 0 | classical trio | ⛓ | `c01b79667c8f` |
-| [brothers-desert-proof](https://github.com/DavidFox998/brothers-desert-proof) | Route D | RH via Dirichlet jitter self-symmetry of 35 Brothers; ‖p·α₀‖ < 1/p | `LEAN_CLOSED` | 0 | classical trio | — | `edfbd4169ea6` |
-| [arakelov-positivity-rh-core](https://github.com/DavidFox998/arakelov-positivity-rh-core) | RH core | `riemann_hypothesis_unconditional` (B158) — 0 sorry, 0 axiom debt beyond classical trio | `LEAN_CLOSED` | 0 | classical trio | — | `2e16f007e863` |
+| [riemann-arakelov-positivity](https://github.com/DavidFox998/riemann-arakelov-positivity) | Route A | Formalization toward RH: Arakelov positivity on X₀(143), ω² = 48/13 > 0 (Abbes-Ullmo) — conditional reduction, RH OPEN | `LEAN_CLOSED` | 0 | classical trio | ⛓ | `4415449988bb` |
+| [arakelov-rh-descent](https://github.com/DavidFox998/arakelov-rh-descent) | Route B | Formalization toward RH: Kim-Sarnak spectral descent, λ₁ ≥ 975/4096 — conditional reduction, RH OPEN | `LEAN_CLOSED` | 0 | classical trio | ⛓ | `e59eb0a49bc7` |
+| [rh-growth-contradiction](https://github.com/DavidFox998/rh-growth-contradiction) | Route C | Formalization toward RH: growth contradiction, exp(c√(log t/log log t)) dominates (log t)² — conditional reduction, RH OPEN | `LEAN_CLOSED` | 0 | classical trio | ⛓ | `c01b79667c8f` |
+| [brothers-desert-proof](https://github.com/DavidFox998/brothers-desert-proof) | Route D | Formalization toward RH: Dirichlet jitter self-symmetry of 35 Brothers, ‖p·α₀‖ < 1/p — conditional reduction, RH OPEN | `LEAN_CLOSED` | 0 | classical trio | — | `edfbd4169ea6` |
+| [arakelov-positivity-rh-core](https://github.com/DavidFox998/arakelov-positivity-rh-core) | RH core | B158 RH formalization architecture — conditional chain, 0 sorry beyond classical trio | `LEAN_CLOSED` | 0 | classical trio | — | `2e16f007e863` |
 | [rh-p5-bridge-14](https://github.com/DavidFox998/rh-p5-bridge-14) | Keystone | Connects P5 prime gaps ↔ RH via 14-step C-chain; uniform interface to full ensemble | `LEAN_CLOSED` | 0 | classical trio | ⛓ | `d62912237432` |
 | [lindelof-hypothesis-143](https://github.com/DavidFox998/lindelof-hypothesis-143) | Lindelöf | μ = 0 for X₀(143): \|ζ(1/2+it)\| = O(t^ε) via S₄ | `LEAN_CLOSED` | 0 | classical trio | ⛓ | `2f21451dc949` |
 

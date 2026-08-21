@@ -1,5 +1,5 @@
 - [Upload → push workflow](upload-push-workflow.md) — when user uploads .lean files, push immediately; do NOT analyze repos first
 - [Lean tsum even-odd rewriting direction](lean-tsum-even-odd.md) — tsum_even_add_odd rewrites even+odd→full; use ← only when full tsum is in goal
-- [brothers-desert-proof Step A](brothers-desert-proof-step-a.md) — lfunction_eq_eta_factor is proved; hasSum_alternating_Dirichlet is now also closed (SiegelZeroFreeElementary has zero sorrys)
+- [SiegelZeroFreeElementary status](brothers-desert-proof-step-a.md) — eta_pos proves pair-sum tsum > 0 (0 sorry); connecting to ζ<0 needs eta identity (pending); eta_hasSum sorry was removed by restructuring to pair sums only
 - [Lean 4.15 HasSum API quirks](lean-hassum-api-quirks.md) — HasSum.congr_fun direction, zero_add needs explicit f, tendsto_rpow_neg_atTop, simp on partial defs
 - [EKG alert webhook verification](ekg-alert-webhook-verification.md) — primary and cold-start EKG alerts must be verified independently before relying on them.

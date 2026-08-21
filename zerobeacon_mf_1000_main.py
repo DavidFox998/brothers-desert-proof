@@ -1171,21 +1171,20 @@ def well_known_mcp():
 @app.get("/.well-known/mcp/server-card.json")
 def well_known_mcp_server_card():
     """Smithery static server card — bypasses auto-scan when MCP transport isn't
-    directly reachable. Declares 1050 tools so the marketplace badge is correct."""
+    directly reachable. Declares the live MCP total for marketplace discovery."""
     return {
-        "name": "ZeroBeacon.ai — 1050 Tools",
+        "name": SERVER_NAME,
         "description": (
-            "1050 beacon-anchored MCP tools across 4 groups: "
-            "Market Router (tools 1–300), Math Engine (tools 301–700), "
-            "Amplum Everyday (tools 701–1000), and the Brain Router (tools 1001–1050). "
-            "FREE tier: first 100 tools, no API key required. "
-            "PRO / ENTERPRISE: pass X-API-Key header after Stripe checkout at https://zerobeacon.ai. "
-            "d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0 verified"
+            f"{ENTERPRISE_TOOL_COUNT} MCP operations across Market Router, Math Engine, "
+            "Amplum Everyday, and Brain Router groups. "
+            f"FREE tier: {FREE_TOOL_COUNT} operations with no API key. "
+            "For paid operations, configure X-API-Key in the client. "
+            "Start with the bundled getting-started resource to choose a workflow."
         ),
         "url": "https://zerobeacon.ai/mcp",
-        "version": "1050.0.0",
+        "version": CATALOG_VERSION,
         "tools": {
-            "count": 1050,
+            "count": ENTERPRISE_TOOL_COUNT,
         },
         "authentication": {
             "type": "api_key",
@@ -2293,46 +2292,76 @@ async def mcp_post(request: Request):
     method = body.get("method", "")
     req_id = body.get("id", 1)
 
+    # ── initialize ────────────────────────────────────────────────────────────
     if method == "initialize":
         return {
             "jsonrpc": "2.0", "id": req_id,
             "result": {
                 "protocolVersion": "2024-11-05",
-                "capabilities": {"tools": {}},
-                "serverInfo": {"name": "zerobeacon-1050", "version": "1050.0.0"},
+                "capabilities": {
+                    "tools":     {},
+                    "resources": {},
+                    "prompts":   {},
+                },
+                "serverInfo": {
+                    "name":    "zerobeacon-1050",
+                    "version": "1050.0.0",
+                    "instructions": (
+                        "Pass your ZeroBeacon API key in the X-API-Key or api-key HTTP header. "
+                        "FREE tools (1–200) require no key. "
+                        "Get a key at https://zerobeacon.ai after Stripe checkout."
+                    ),
+                },
             },
         }
 
+    # ── tools/list ────────────────────────────────────────────────────────────
     if method in ("tools/list", "tools/list\n"):
         return {"jsonrpc": "2.0", "id": req_id, "result": {"tools": _build_tool_list()}}
 
+    # ── resources/list ────────────────────────────────────────────────────────
+    if method == "resources/list":
+        return {"jsonrpc": "2.0", "id": req_id, "result": {"resources": []}}
+
+    if method == "resources/read":
+        return JSONResponse({
+            "jsonrpc": "2.0", "id": req_id,
+            "error": {"code": -32002, "message": "Resource not found"},
+        })
+
+    # ── prompts/list ──────────────────────────────────────────────────────────
+    if method == "prompts/list":
+        return {"jsonrpc": "2.0", "id": req_id, "result": {"prompts": []}}
+
+    if method == "prompts/get":
+        return JSONResponse({
+            "jsonrpc": "2.0", "id": req_id,
+            "error": {"code": -32002, "message": "Prompt not found"},
+        })
+
+    # ── tools/call ────────────────────────────────────────────────────────────
     if method == "tools/call":
         params    = body.get("params", {})
         tool_name = params.get("name", "")
         args      = params.get("arguments", {})
 
-        # ── Tier gate for MCP tool calls ──────────────────────────────────────
         # /mcp is a single endpoint so Depends() doesn't guard individual tools;
-        # we check here using the persistent keystore.
+        # we check access here using the persistent keystore.
         required_tier = _tool_tier.get(tool_name, "free")
 
         # Accept both X-API-Key (native) and api-key (Smithery gateway).
-        # Smithery's HTTP transport converts configSchema property "apiKey"
-        # (camelCase) to HTTP header "api-key" (kebab-case).  We accept both
-        # spellings so every client path works without schema changes.
+        # Smithery's HTTP transport converts configSchema "apiKey" → header "api-key".
         # Keys are never read from the JSON body to prevent log leakage.
         api_key = (
             request.headers.get("X-API-Key")
             or request.headers.get("x-api-key")
-            or request.headers.get("api-key")    # Smithery: apiKey → api-key
-            or request.headers.get("api_key")    # underscore fallback
+            or request.headers.get("api-key")
+            or request.headers.get("api_key")
         )
         allowed, reason = keystore.check_access(api_key, required_tier)
         if not allowed:
-            # Build a human-readable message for the MCP tool response body.
-            # We return an MCP tool *result* (not a JSON-RPC error) so that
-            # MCP clients (Claude, Smithery, etc.) display the message as
-            # visible tool output rather than an opaque transport error.
+            # Return an MCP tool *result* (not a JSON-RPC error) so MCP clients
+            # display the message as visible tool output, not an opaque error.
             _tier_label = (
                 required_tier
                 .replace("_", " ")
@@ -2340,8 +2369,7 @@ async def mcp_post(request: Request):
                 .replace("pro 100",         "PRO ($100/mo)")
                 .replace("enterprise 1000", "ENTERPRISE ($1000)")
             )
-            _key_present = bool(api_key)
-            if not _key_present:
+            if not api_key:
                 _msg = (
                     f"⚠️  API key missing — this tool requires {_tier_label} or higher.\n"
                     "Get your key at https://zerobeacon.ai after checkout.\n"
@@ -2355,24 +2383,22 @@ async def mcp_post(request: Request):
                     "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
                     "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
                 )
-            return JSONResponse(
-                {
-                    "jsonrpc": "2.0", "id": req_id,
-                    "result": {
-                        "content": [{"type": "text", "text": _msg}],
-                        "isError": True,
-                        "ok":            False,
-                        "error":         "tier_required",
-                        "required_tier": required_tier,
-                        "signup":        "https://zerobeacon.ai",
-                        "stripe":        "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
-                        "rapidapi":      "https://rapidapi.com/davidjfox998/api/zerobeacon",
-                        "paypal":        "https://paypal.me/davidfox223",
-                    },
-                }
-            )
-        # ─────────────────────────────────────────────────────────────────────
+            return JSONResponse({
+                "jsonrpc": "2.0", "id": req_id,
+                "result": {
+                    "content": [{"type": "text", "text": _msg}],
+                    "isError": True,
+                    "ok":            False,
+                    "error":         "tier_required",
+                    "required_tier": required_tier,
+                    "signup":        "https://zerobeacon.ai",
+                    "stripe":        "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
+                    "rapidapi":      "https://rapidapi.com/davidjfox998/api/zerobeacon",
+                    "paypal":        "https://paypal.me/davidfox223",
+                },
+            })
 
+        # Dispatch to the matching router endpoint.
         parts = tool_name.split("_", 2)
         if len(parts) >= 3 and parts[0] == "mf":
             block_num = parts[1]
@@ -2381,11 +2407,37 @@ async def mcp_post(request: Request):
                 if prefix.endswith(block_num):
                     for route in mod.router.routes:
                         if hasattr(route, "endpoint") and route.endpoint.__name__ == fn_name:
+                            # Await coroutine endpoints so async tools resolve correctly.
                             try:
-                                result = route.endpoint(**args)
-                            except TypeError:
-                                result = route.endpoint(p=args.get("p", 82843))
-                            return {"jsonrpc": "2.0", "id": req_id, "result": result}
+                                if asyncio.iscoroutinefunction(route.endpoint):
+                                    raw = await route.endpoint(**args)
+                                else:
+                                    raw = route.endpoint(**args)
+                            except Exception:
+                                # Log the real error server-side; return a sanitized message
+                                # to the caller so internal details are not leaked.
+                                import logging as _log
+                                _log.getLogger(__name__).exception(
+                                    "MCP tool dispatch error: tool=%s args=%r",
+                                    tool_name, {k: "..." for k in args}
+                                )
+                                raw = {
+                                    "content": [{"type": "text",
+                                                 "text": f"Tool '{tool_name}' encountered an error. Please verify arguments against the inputSchema and retry."}],
+                                    "isError": True,
+                                }
+                            # Wrap plain return values in the standard MCP content envelope.
+                            if isinstance(raw, dict) and "content" in raw:
+                                mcp_result = raw
+                            else:
+                                import json as _json
+                                try:
+                                    text = _json.dumps(raw, default=str)
+                                except Exception:
+                                    text = str(raw)
+                                mcp_result = {"content": [{"type": "text", "text": text}]}
+                            return {"jsonrpc": "2.0", "id": req_id, "result": mcp_result}
+
         return JSONResponse({"jsonrpc": "2.0", "id": req_id,
                              "error": {"code": -32601, "message": f"Tool not found: {tool_name}"}})
 
