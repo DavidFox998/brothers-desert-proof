@@ -32,4 +32,4 @@
   {"message":
    "./././lean/Beal/B01_Def.lean:76:0: 'bealConjectureCore_to_wrapper' depends on axioms: [propext]",
    "level": "info"}],
- "depHash": "16437205233834527532"}
+ "depHash": "13163981401428699695"}
