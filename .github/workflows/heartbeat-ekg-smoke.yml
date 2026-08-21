@@ -72,6 +72,14 @@ jobs:
           pytest tests/test_heartbeat_playwright.py -v \
             --json-report --json-report-file=/tmp/beat-report.json
 
+      - name: Upload Playwright JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ekg-beat-report
+          path: /tmp/beat-report.json
+          if-no-files-found: warn
+
       - name: Write beat-rate job summary
         if: always()
         run: python3 scripts/write_beat_summary.py /tmp/beat-report.json --heading "EKG Beat-Rate"
@@ -166,6 +174,14 @@ jobs:
           pytest tests/test_heartbeat_playwright.py \
             -v -k "test_beat_fires_at_200ms_rate_cold_start" \
             --json-report --json-report-file=/tmp/beat-report.json
+
+      - name: Upload cold-start Playwright JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ekg-coldstart-beat-report
+          path: /tmp/beat-report.json
+          if-no-files-found: warn
 
       - name: Write beat-rate job summary
         if: always()
