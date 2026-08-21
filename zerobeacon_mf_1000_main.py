@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, Header, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, Response
 import time, os, stripe, asyncio, json, urllib.request, urllib.error, hmac, hashlib, inspect
 
 from core.beacon import (beacon_payload, D, BEACON, GENESIS_P,
@@ -682,6 +682,39 @@ async def tier_gate(request: Request, call_next):
                 status_code=200,
             )
     return await call_next(request)
+
+
+# ── Favicon ───────────────────────────────────────────────────────────────────
+
+_FAVICON_ICO = __import__("base64").b64decode(
+    "AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    "AAAAAJBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/"
+    "CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/"
+    "8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/0f8A/9H/AP/R/wD/0f8A"
+    "/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/0f8A/9H/AP/R/w"
+    "D/0f8A/9H/AP/R/wD/0f8A/9H/AP8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/0f8A/9H/"
+    "AP8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB//R/wD/0f8A/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQ"
+    "cH/9H/AP8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/9H/AP8JBwf/CQcH/wkHB/8J"
+    "Bwf/CQcH/9H/AP/R/wD/CQcH/wkHB/8JBwf/0f8A/9H/AP8JBwf/CQcH/wkHB//R/wD/0f8A/w"
+    "kHB/8JBwf/CQcH/wkHB//R/wD/0f8A/wkHB/8JBwf/0f8A/9H/AP/R/wD/0f8A/wkHB/8JBwf/"
+    "0f8A/9H/AP8JBwf/CQcH/wkHB/8JBwf/0f8A/9H/AP8JBwf/CQcH/9H/AP/R/wD/0f8A/9H/AP"
+    "8JBwf/CQcH/9H/AP/R/wD/CQcH/wkHB/8JBwf/CQcH/9H/AP/R/wD/CQcH/wkHB/8JBwf/0f8A"
+    "/9H/AP8JBwf/CQcH/wkHB//R/wD/0f8A/wkHB/8JBwf/CQcH/wkHB/8JBwf/0f8A/wkHB/8JBw"
+    "f/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/0f8A/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/9H/"
+    "AP/R/wD/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/0f8A/9H/AP8JBwf/CQcH/wkHB/8JBwf/CQ"
+    "cH/wkHB/8JBwf/0f8A/9H/AP/R/wD/0f8A/9H/AP/R/wD/0f8A/9H/AP8JBwf/CQcH/wkHB/8J"
+    "Bwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/0f8A/9H/AP/R/wD/0f8A/wkHB/8JBwf/CQcH/w"
+    "kHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/"
+    "CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/"
+    "8JBwf/CQcH/wkHB/8JBwf/CQcH/wkHB/8JBwf/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return Response(content=_FAVICON_ICO, media_type="image/x-icon",
+                    headers={"Cache-Control": "public, max-age=86400"})
 
 
 # ── Landing page ─────────────────────────────────────────────────────────────
@@ -2566,39 +2599,115 @@ async def mcp_post(request: Request):
                                 "required": True,
                             }
                         ],
-                    }
+                    },
+                    {
+                        "name": "debug-tier-access",
+                        "description": "Diagnose a tier-gate error and get the upgrade path to access a blocked tool.",
+                        "arguments": [
+                            {
+                                "name": "tool_name",
+                                "description": "The ZeroBeacon tool that returned a tier-gate or access-denied response.",
+                                "required": True,
+                            }
+                        ],
+                    },
+                    {
+                        "name": "discover-free-tools",
+                        "description": "List FREE-tier operations and identify the best starting point for a workflow.",
+                        "arguments": [
+                            {
+                                "name": "workflow",
+                                "description": "A short description of the task the agent wants to accomplish.",
+                                "required": False,
+                            }
+                        ],
+                    },
                 ]
             },
         }
 
     if method == "prompts/get":
-        params = body.get("params", {})
-        if params.get("name") != "choose-operation":
-            return JSONResponse({
+        params      = body.get("params", {})
+        prompt_name = params.get("name", "")
+        arguments   = params.get("arguments", {})
+
+        if prompt_name == "choose-operation":
+            goal = arguments.get("goal", "")
+            return {
                 "jsonrpc": "2.0", "id": req_id,
-                "error": {"code": -32001, "message": "Prompt not found"},
-            })
-        goal = params.get("arguments", {}).get("goal", "")
-        return {
+                "result": {
+                    "description": "Choose a ZeroBeacon operation from the published catalog.",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": {
+                                "type": "text",
+                                "text": (
+                                    f"Goal: {goal}\n\n"
+                                    "Read the ZeroBeacon catalog guide. Identify the smallest suitable "
+                                    "operation, inspect its input schema, and explain the required access "
+                                    "tier before calling it."
+                                ),
+                            },
+                        }
+                    ],
+                },
+            }
+
+        if prompt_name == "debug-tier-access":
+            tool_name = arguments.get("tool_name", "the tool")
+            return {
+                "jsonrpc": "2.0", "id": req_id,
+                "result": {
+                    "description": "Diagnose a tier-gate error and surface the upgrade path.",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": {
+                                "type": "text",
+                                "text": (
+                                    f"The tool `{tool_name}` returned a tier-gate or access-denied response.\n\n"
+                                    "1. Look up the tool in the ZeroBeacon catalog to find its required tier.\n"
+                                    "2. Check the current API key tier (FREE if no key is set).\n"
+                                    "3. If upgrade is needed, provide the Stripe checkout URL from https://zerobeacon.ai "
+                                    "and explain which tier unlocks the tool.\n"
+                                    "4. If no upgrade is needed, suggest a FREE alternative that accomplishes a similar goal."
+                                ),
+                            },
+                        }
+                    ],
+                },
+            }
+
+        if prompt_name == "discover-free-tools":
+            workflow = arguments.get("workflow", "")
+            workflow_context = f" for the workflow: {workflow}" if workflow else ""
+            return {
+                "jsonrpc": "2.0", "id": req_id,
+                "result": {
+                    "description": "Identify the best FREE starting operation for a workflow.",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": {
+                                "type": "text",
+                                "text": (
+                                    f"List the FREE-tier ZeroBeacon operations{workflow_context}.\n\n"
+                                    "From the tools/list results, filter to operations with FREE access. "
+                                    "Rank them by relevance to the workflow. "
+                                    "For the top match, show the input schema and explain each parameter. "
+                                    "Confirm that no API key is needed before calling it."
+                                ),
+                            },
+                        }
+                    ],
+                },
+            }
+
+        return JSONResponse({
             "jsonrpc": "2.0", "id": req_id,
-            "result": {
-                "description": "Choose a ZeroBeacon operation from the published catalog.",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": {
-                            "type": "text",
-                            "text": (
-                                f"Goal: {goal}\n\n"
-                                "Read the ZeroBeacon catalog guide. Identify the smallest suitable "
-                                "operation, inspect its input schema, and explain the required access "
-                                "tier before calling it."
-                            ),
-                        },
-                    }
-                ],
-            },
-        }
+            "error": {"code": -32001, "message": f"Prompt not found: {prompt_name}"},
+        })
 
     if method == "tools/call":
         params    = body.get("params", {})
