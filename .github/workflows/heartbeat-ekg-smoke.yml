@@ -173,6 +173,8 @@ jobs:
         if: failure()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GH_REPO: ${{ github.repository }}
+          GH_RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
 
@@ -181,21 +183,25 @@ jobs:
             exit 1
           fi
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          PAYLOAD=$(cat <<EOF
-          {
-            "text": ":rotating_light: *EKG cold-start beat-rate test failed*",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": ":rotating_light: *EKG cold-start beat-rate test failed*\n*Workflow:* \`ekg-coldstart-beat-rate\`\n*Time:* \`${TIMESTAMP}\`\n*Detail:* The 200 ms beat loop fired fewer than 5 times in 2 seconds, or a JS console error was detected. The Fly.io VM may not be waking fast enough after auto_stop, or the beat loop has regressed.\n*Fix:* \`gh run view --repo \${{ github.repository }} \${{ github.run_id }} --log-failed\`"
+          RUN_URL="https://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}"
+          # Build the payload with jq so special characters in repo/run-id
+          # cannot produce invalid JSON (the \${{ }} heredoc approach leaves
+          # literal backslashes that make Slack return 400).
+          PAYLOAD=$(jq -nc \
+            --arg ts   "$TIMESTAMP" \
+            --arg url  "$RUN_URL" \
+            '{
+              "text": ":rotating_light: *EKG cold-start beat-rate test failed*",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": (":rotating_light: *EKG cold-start beat-rate test failed*\n*Workflow:* `ekg-coldstart-beat-rate`\n*Time:* `" + $ts + "`\n*Detail:* The 200 ms beat loop fired fewer than 5 times in 2 seconds, or a JS console error was detected. The Fly.io VM may not be waking fast enough after auto_stop, or the beat loop has regressed.\n*Fix:* " + $url)
+                  }
                 }
-              }
-            ]
-          }
-          EOF
-          )
+              ]
+            }')
           HTTP_STATUS=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" \
             --max-time 20 -X POST "$SLACK_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
