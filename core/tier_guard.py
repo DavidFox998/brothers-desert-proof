@@ -27,7 +27,6 @@ a 403 surfaces as an opaque HTTP error with no visible message.
 
 from fastapi import Depends, Header, Request
 from core import keystore
-from core.catalog import ENTERPRISE_TOOL_COUNT, FREE_TOOL_COUNT, PRO_PLUS_TOOL_COUNT, PRO_TOOL_COUNT
 from core.rapidapi_auth import verify_rapidapi_request
 
 
@@ -52,43 +51,36 @@ class TierAccessError(Exception):
             self.required_tier
             .replace("_", " ")
             .replace("pro 10",          "PRO ($10/mo)")
-            .replace("pro 100",         "PRO+ ($100/mo)")
-            .replace("enterprise 1000", "ENTERPRISE ($1,000)")
+            .replace("pro 100",         "PRO ($100/mo)")
+            .replace("enterprise 1000", "ENTERPRISE ($1000)")
         )
         if not self.key_present:
             return (
-                f"{tier_label} required — {FREE_TOOL_COUNT} tools free, {PRO_TOOL_COUNT} with PRO ($10/mo), "
-                f"{PRO_PLUS_TOOL_COUNT} with PRO+ ($100/mo), {ENTERPRISE_TOOL_COUNT} with ENTERPRISE ($1,000).\n"
-                "Upgrade: https://zerobeacon.ai/upgrade\n"
-                "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+                f"⚠️  API key missing — this tool requires {tier_label} or higher.\n"
+                "Get your key at https://zerobeacon.ai after checkout.\n"
+                "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
                 "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
             )
         return (
-            f"{tier_label} required — your key is tier '{self.caller_tier}'. "
-            f"{FREE_TOOL_COUNT} tools free, {PRO_TOOL_COUNT} with PRO ($10/mo), "
-            f"{PRO_PLUS_TOOL_COUNT} with PRO+ ($100/mo), {ENTERPRISE_TOOL_COUNT} with ENTERPRISE ($1,000).\n"
-            "Upgrade: https://zerobeacon.ai/upgrade\n"
-            "Stripe checkout: https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
+            f"⚠️  Invalid or insufficient API key — {tier_label} or higher required "
+            f"(your key is tier '{self.caller_tier}').\n"
+            "Get or upgrade your key at https://zerobeacon.ai\n"
+            "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
             "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
         )
 
     def to_response_body(self) -> dict:
         """Structured payload returned to the MCP/HTTP client as HTTP 200."""
         return {
-            "ok":              False,
-            "error":           "tier_required",
-            "message":         self._build_message(),
-            "required_tier":   self.required_tier,
-            "your_tier":       self.caller_tier,
-            "tools_free":      FREE_TOOL_COUNT,
-            "tools_pro":       PRO_TOOL_COUNT,
-            "tools_pro_plus":  PRO_PLUS_TOOL_COUNT,
-            "tools_enterprise": ENTERPRISE_TOOL_COUNT,
-            "upgrade":         "https://zerobeacon.ai/upgrade",
-            "signup":          "https://zerobeacon.ai/upgrade",
-            "stripe":          "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
-            "rapidapi":        "https://rapidapi.com/davidjfox998/api/zerobeacon",
-            "paypal":          "https://paypal.me/davidfox223",
+            "ok":            False,
+            "error":         "tier_required",
+            "message":       self._build_message(),
+            "required_tier": self.required_tier,
+            "your_tier":     self.caller_tier,
+            "signup":        "https://zerobeacon.ai",
+            "stripe":        "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
+            "rapidapi":      "https://rapidapi.com/davidjfox998/api/zerobeacon",
+            "paypal":        "https://paypal.me/davidfox223",
         }
 
 

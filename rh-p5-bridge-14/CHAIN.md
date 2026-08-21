@@ -62,32 +62,6 @@ T=1419 witnesses in circuit complexity.
 
 ---
 
-## Re-lock procedure
-
-When one or more repos receive new commits the chain SHA drifts.
-Re-lock with the automated script:
-
-```bash
-# Inside a checkout of rh-p5-bridge-14:
-export GITHUB_TOKEN=ghp_...          # needs repo:read on all 19 repos
-bash scripts/relock-chain.sh         # patches CHAIN.md + REPOS.md, opens a PR
-bash scripts/relock-chain.sh --dry-run  # preview only — no file changes
-```
-
-The script:
-1. Calls the GitHub API to fetch the current `main` HEAD of each repo.
-2. Recomputes `SHA256(repo:sha\n …)` in canonical alphabetical order.
-3. If the digest differs from the value in this file, patches `CHAIN.md` and
-   `REPOS.md` in place and (inside GitHub Actions) opens a pull request.
-4. If the digest matches, exits 0 with "chain is current".
-
-The GitHub Actions workflow `relock-chain.yml` runs this automatically
-**every Monday at 06:00 UTC** and on every `workflow_dispatch`.
-A drift produces a pull request titled
-`chore: re-lock ensemble chain (YYYY-MM-DD)` for human review before merge.
-
----
-
 ## Verification
 
 Recompute the chain SHA from live HEAD commits:

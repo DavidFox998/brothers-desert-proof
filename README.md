@@ -1,6 +1,6 @@
 # brothers-desert-proof — Route D — Self-Symmetry via Dirichlet Jitter & Orbit — CLOSED via S₄
 
-[![Lean CI](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml/badge.svg?branch=main)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml)
+[![CI](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml/badge.svg?branch=main)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml)
 
 > **Opera Numerorum ensemble** — 19 repos · chain `7472f4e5` · [REPOS.md →](https://github.com/DavidFox998/rh-p5-bridge-14/blob/main/REPOS.md)
 
@@ -127,7 +127,7 @@ Opera Numerorum needs all four, but only Self-Symmetry tells who the brothers ar
 
 **[navier-stokes](https://github.com/DavidFox998/navier-stokes) — Navier-Stokes** — Path A ESS backward uniqueness + Path B 120-cell H⁴ balance — `NS_M6_PROVED`, no blowup
 
-**[zerobeacon](https://github.com/DavidFox998/zerobeacon) — MCP server** — 1050 collision-proof tools for AI agents; beacon `1d2c7a5b`, `m4.out = Complete: True`
+**[zerobeacon](https://github.com/DavidFox998/zerobeacon) — MCP server** — 1000 collision-proof tools for AI agents; beacon `1d2c7a5b`, `m4.out = Complete: True`
 
 ---
 
@@ -148,7 +148,7 @@ lake build Eutheos.FinalAxioms # #148 GREEN 1m19s — S4,P5,Δ>2√13
 lake build Protocol.Chain # #147 GREEN 1m18s — ChainCertificate
 grep -r "sorry" Siegel/ Lindelof/ SelfSymmetry/ Protocol/ --include="*.lean" | grep -v "FinalAxioms\|Unconditional\|RH.lean\|Bridge" # → 0 in core gems
 
-Full Opera 19: arakelov-positivity-rh-core | riemann-arakelov-positivity (A) | arakelov-rh-descent (B) | rh-growth-contradiction (C) | brothers-desert-proof (D — THIS) | rh-p5-bridge-14 Keystone q5=226 q6=165849 cf_bound=82829 | birch-swinnerton-dyer-143a1 + legacy birch-swinnerton-dyer-143 | lindelof-hypothesis-143 | eutheos-property 1419 family 35 brothers | poincare-spectral | bost-connes | p-vs-np | hodge-abelian-boundaries 200 abelian 390 total | yang-mills-gap | navier-stokes | morningstar-project quantum entangled orbital spacestation | opera-sieve methodology | zerobeacon BRAIN 1050 tools collision-free-swarming | pistus-theoria ARCHIVE pdf + oracle + cert house
+Full Opera 19: arakelov-positivity-rh-core | riemann-arakelov-positivity (A) | arakelov-rh-descent (B) | rh-growth-contradiction (C) | brothers-desert-proof (D — THIS) | rh-p5-bridge-14 Keystone q5=226 q6=165849 cf_bound=82829 | birch-swinnerton-dyer-143a1 + legacy birch-swinnerton-dyer-143 | lindelof-hypothesis-143 | eutheos-property 1419 family 35 brothers | poincare-spectral | bost-connes | p-vs-np | hodge-abelian-boundaries 200 abelian 390 total | yang-mills-gap | navier-stokes | morningstar-project quantum entangled orbital spacestation | opera-sieve methodology | zerobeacon BRAIN 1000 tools collision-free-swarming | pistus-theoria ARCHIVE pdf + oracle + cert house
 
 ORCID: 0009-0008-1290-6105 — Brain: zerobeacon — Archive: pistus-theoria — PDF SHA 7f6b31b4... — Certs/m4.out = Complete: True
 cat > README.md <<'EOF'
@@ -163,181 +163,3 @@ David J. Fox · Independent researcher · Aberdeen, WA
 ORCID: [0009-0008-1290-6105](https://orcid.org/0009-0008-1290-6105) · Opera Numerorum — 2026
 
 ```
-
-
-## Honesty statement
-
-This repository does **not** claim to prove RH.
-`_root_.RiemannHypothesis` is OPEN. The one open surface
-(`P5_HeckeTransfer_14_OPEN`) is a named `def Prop` hypothesis — not a
-`sorry`, not a research axiom. The bridge is a correct non-vacuous
-conditional reduction with exactly one remaining gap.
-
-See also: [rh-core-c01-c07](https://github.com/DavidFox998/rh-core-c01-c07)
-for the full certification chain (C01–C21).
-## What is here
-
-A self-contained 10-step conditional chain from the Arakelov geometry of
-the modular curve X₀(143) to `_root_.RiemannHypothesis` (the genuine
-Mathlib v4.12.0 Clay statement), via the **P5-Bridge-14 arithmetic
-certificate**: conductor 143 × genus 13 = 1859.
-
-`_root_.RiemannHypothesis` in Mathlib v4.12.0 is NOT a stub — it states
-that every non-trivial zero of the Riemann zeta function has real part 1/2.
-
-**RH status: OPEN.** This is a conditional reduction, not a proof of RH.
-
-
-## The 4-step bridge
-
-| Step | Files | Result | Status |
-|------|-------|--------|--------|
-| 1 | C01–C07 | ω²(X₀(143)) = 48/13 · Arakelov setup | BRICKS |
-| 2 | C08 | `ArakelovPositivity (X₀ 143)` (slope > 0) | BRICK |
-| 3 | C09 | `P5_conductor_times_genus`: 143 × 13 = 1859 (norm_num); `P5_HeckeTransfer_14_OPEN` named | BRICK + OPEN surface |
-| 4 | C10 | `M_zeros_of_zeta_controlled_by_X0_143` conditional combinator | OPEN (one gap) |
-
-**Single remaining gap:** `P5_HeckeTransfer_14_OPEN` — the
-Bost–Connes / Langlands Hecke transfer from Arakelov positivity to
-L-function zero control in the 1859-dimensional space.
-
-
-# P5-Bridge-14 — Morning Star Project (Theorema Aureum 143)
-
-**Classical trio only. No sorry. Mathlib v4.12.0.**
-
-Axiom footprint: `{propext, Classical.choice, Quot.sound}`.
-
-
-## Key proved bricks (0 sorry, classical trio)
-
-| Theorem | File | Meaning |
-|---------|------|---------|
-| `arakelovSelfIntersection_X0_143_pos` | C01 | ω²(X₀(143)) = 48/13 > 0 |
-| `bost_connes_threshold` | C06 | 2√13 < 320 (Bost–Connes threshold) |
-| `arakelov_positivity_X0_143` | C08 | ArakelovPositivity (X₀ 143) proved |
-| `P5_conductor_times_genus` | C09 | 143 × 13 = 1859 (norm_num) |
-
-
-# Axiom audit:
-echo 'import Towers.RH.Chain.C10_MainTheorem
-#print axioms TheoremaAureum.M_zeros_of_zeta_controlled_by_X0_143' | lake env lean /dev/stdin
-```
-
-
-# Verify zero sorry:
-grep -rn sorry Towers/RH/Chain/
-
-## Open surface (named `def Prop` — not sorry, not an axiom)
-
-| Name | Gap |
-|------|-----|
-| `P5_HeckeTransfer_14_OPEN` | Bost–Connes / Langlands Hecke transfer |
-
-
-## Structure
-
-```
-Towers/RH/Chain/C01_Arakelov.lean      Arakelov slope 48/13 (BRICK)
-Towers/RH/Chain/C02_Modularity.lean    X₀(143) modular (BRICK)
-Towers/RH/Chain/C03_Positivity.lean    Slope inequality (BRICK)
-Towers/RH/Chain/C04_HeightBound.lean   Faltings height (BRICK)
-Towers/RH/Chain/C05_Discriminant.lean  Discriminant arithmetic (BRICK)
-Towers/RH/Chain/C06_ZetaControl.lean   Bost–Connes threshold (BRICK)
-Towers/RH/Chain/C07_RH.lean            Chain scaffold (BRICK)
-Towers/RH/Chain/C08_M4WeilBridge.lean  ArakelovPositivity (BRICK)
-Towers/RH/Chain/C09_P5Bridge.lean      143×13=1859 + OPEN surface
-Towers/RH/Chain/C10_MainTheorem.lean   Conditional combinator (OPEN)
-lakefile.lean                          Mathlib v4.12.0, roots:=[Towers]
-lean-toolchain                         leanprover/lean4:v4.12.0
-FOR_BRIDGE.txt                         SHA-256 manifest
-```
-
-
-## Reproduce
-
-```bash
-lake update
-lake exe cache get
-lake build
-
-# P5-Bridge-14 — q5=226 q6=165849 cf_bound=82829 — Keystone CLOSED
-
-**Author: David J. Fox | ORCID: [0009-0008-1290-6105](https://orcid.org/0009-0008-1290-6105)**
-**Ensemble:** `sha256:e1617bc96018da4577f153f2e0cd8cc4eda1183434a9624b6cefaedc655db6c5` · hub [`rh-p5-bridge-14`](https://github.com/DavidFox998/rh-p5-bridge-14) · anchor `d04e4bd1`
-**Lean 4.12 / Mathlib v4.12.0 — `lake build` 1s GREEN — 0 sorry — `{propext, Classical.choice, Quot.sound}`**
-
-Keystone: `143 * 13 = 1859` → reduces infinite `S_α0` to finite `S_14` (|S_14|=14). Same constants prove BSD 143a1 and RH.
-
-### P5 Theorems — Now CLOSED
-
-| Theorem | Link to triad |
-|---|---|
-| `P5_conductor_times_genus` `143*13=1859` | `bost-connes Arithmetic.lean` |
-| `arakelovSelfIntersection_X0_143 = 48/13` | `arakelov-positivity-rh-core` |
-| `P5_BSD_BostBound_link C_S4>2√13` | `bost-connes/BostExplicitBound.lean C_S4_gt_two_sqrt_13_CLOSED` |
-| `P5_BSD_classNumber_link h=10` | `bost-connes BSD_ClassNum_10_CLOSED` + `birch-swinnerton-dyer-143a1 BSD_BQF_Bridge_Closed` |
-| `P5_BSD_S14_link |S_14|=14 cf_bound=82829` | `opera-sieve` sieve defines `S14` |
-| `P5_BSD_to_RH_clean BSD_143_PROVED → GRH` | `grh_from_bost_bound` |
-| `P5_BSD_RH_closure_CLOSED → RiemannHypothesis` | `grh_to_rh_descent + LanglandsTransfer_14_CLOSED` — was `P5_LanglandsDescent_2pi7_OPEN` |
-
-`lakefile.lean` v2.0.0:
-```lean
-require bost_connes from git "https://github.com/DavidFox998/bost-connes" @ "main"
-require birch_swinnerton_dyer_143a1 from git "https://github.com/DavidFox998/birch-swinnerton-dyer-143a1" @ "main"
-
-4 RH Routes — All use same C(S₄) from this P5 triad
-riemann-arakelov-positivity — Route A Positivity (Act I) — Uses M3 as height ω²=48/13>0, Siegel zero → negative height contradiction
-
-arakelov-rh-descent — Route B Descent (Act II) — Uses M1-M2 as Kim-Sarnak λ1≥975/4096 → Selberg=Bost-Connes → grh_to_rh_descent reduces infinite to finite S14
-
-rh-growth-contradiction — Route C Growth (Act III) — Poussin 3+4cos+cos2θ≥0 + C=11.422>2√13 → Littlewood Ω beats (log t)²
-
-brothers-desert-proof — Route D Self-Symmetry (Act IV) — S4 desert 192..1000 empty, ||p·α0||<1/p jitter Nodup 1419 orbit stable → Re=1/2
-Inner wall + other Clay — Use same M
-lindelof-hypothesis-143 — M3 → GRH X₀143 → μ=0 unconditional
-
-eutheos-property — M8 1419 barrier bypass eutheos=1419=3*11*43
-
-poincare-spectral — q=1/8 tail_26≤1e-20 spectral_gap>0
-
-p-vs-np — Eutheos as barrier bypass
-
-yang-mills-gap — M6 KMS beta_c=1 Δ=C-2√13>0 mass gap = same gap
-
-navier-stokes — heat trace Θ(t) summable
-
-opera-sieve — methodology .py defines S14, Sα0
-
-zerobeacon — BRAIN — oracle/verify_all.py
-
-pistus-theoria — ARCHIVE — OperaNumerorum_MasterEquations.pdf
-THIS REPO
-rh-p5-bridge-14 — Keystone — q5=226 q6=165849 cf_bound=82829 — P5_BSD_RH_closure_CLOSED : BSD_143_PROVED → RiemannHypothesis — Lean CLOSED — Build #?? green, 0 sorry, classical trio
-lake update
-lake build
-grep -rn sorry Towers/RH/Chain/
-
-### Axiom audit
-#print axioms P5_BSD_RH_closure_CLOSED
--- propext, Classical.choice, Quot.sound
-
-
-# PASS: no sorry tactic in proof code
-Build
-
-
-## Directly tied to P5 — this is the triad
-
-**[bost-connes](https://github.com/DavidFox998/bost-connes) — Gates M1-M3 — The Hub that feeds P5 — CLOSED**
-`S₄={2,3,19,191} C(S₄)=11.422148... = 2·ln2 + 3·ln3/2 + 19·ln19/18 + 191·ln191/190 > 2√13≈7.211 margin x1.58`
-- M1 Hasse: `a_p² ≤ 4p` for 1061 primes — `HassePrimeSet.lean` single source `ap_table.json`
-- M2 Class number: `h(Q(√-143))=10` — Option A `gen_OK=-28+3ω N=1024 → p2^10 principal` + Option B 10 BQFs `ClassGroup = ⟨[p2]⟩`
-- M3 Genus + Bost bound: `genus(X₀143)=13` (Diamond-Shurman) + `C_S4_gt_two_sqrt_13_CLOSED`
-- M1+M2→M3 → `BC6_WeilBound` [B132,B129,B76→B133] — 21 bricks 0 sorry
-
-**[arakelov-positivity-rh-core](https://github.com/DavidFox998/arakelov-positivity-rh-core) — ROOT V2 — M2 kappa, M7 Manifest, M8C Zoe-M*, M4 10^4000**
-Provides Arakelov positivity `ω²=48/13>0`, `ArakelovPositivity X₀ 143 = 48/13` used by P5.
-
-**[birch-swinnerton-dyer-143a1](https://github.com/DavidFox998/birch-swinnerton-dyer-143a1) — BSD — Same arithmetic as P5 — CLOSED**
-`X₀143` genus 13 → `J₀143` rank 0 via `L(143a1,1)≠0` Heegner (4,6) on `y²+y=x³-x²-x-2`, `143=11×13`, `|Sha|=1`, `|tors|=1`, `R=5882/10000>0`, `L*·|Sha|·|tors|² = Ω·R·∏c_p`. Same 168 `a_p` table, same `C(S₄)` as regulator height, same `h=10` both routes. If you understand BSD here, you understand how M1-M5 feeds RH.

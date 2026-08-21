@@ -48,14 +48,14 @@ jobs:
     steps:
       - name: Send cold-start webhook verification
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
           REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
 
-          if [ -z "$SLACK_WEBHOOK_URL" ]; then
-            echo "SLACK_WEBHOOK_URL is not configured."
+          if [ -z "$ALERT_WEBHOOK_URL" ]; then
+            echo "ALERT_WEBHOOK_URL is not configured."
             exit 1
           fi
 
@@ -66,10 +66,10 @@ jobs:
           HTTP_STATUS=$(curl --silent --show-error --output /dev/null \
             --write-out "%{http_code}" --max-time 20 \
             -X POST -H "Content-Type: application/json" \
-            -d "$PAYLOAD" "$SLACK_WEBHOOK_URL")
+            -d "$PAYLOAD" "$ALERT_WEBHOOK_URL")
 
-          echo "Cold-start Slack webhook response status: $HTTP_STATUS"
-          if [ "$HTTP_STATUS" != "200" ]; then
-            echo "Cold-start Slack webhook verification failed."
+          echo "Cold-start webhook response status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "204" ]; then
+            echo "Cold-start webhook verification failed."
             exit 1
           fi
