@@ -129,3 +129,37 @@ jobs:
               for name in sorted(in_context):
                   print(f"  {name}")
           EOF
+
+      - name: Build image and verify required files exist inside container
+        run: |
+          docker build -t zerobeacon-verify-test .
+
+          # Every path the app needs at runtime.
+          REQUIRED_PATHS=(
+            "/app/core"
+            "/app/routers"
+            "/app/requirements.txt"
+            "/app/zerobeacon_mf_1000_main.py"
+          )
+
+          MISSING=()
+          for path in "${REQUIRED_PATHS[@]}"; do
+            if ! docker run --rm zerobeacon-verify-test test -e "$path"; then
+              MISSING+=("$path")
+            fi
+          done
+
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "FAIL: the following required paths are absent from the image:"
+            for m in "${MISSING[@]}"; do
+              echo "  $m"
+            done
+            echo ""
+            echo "Check that .dockerignore re-includes every path the Dockerfile COPYs."
+            exit 1
+          else
+            echo "PASS: all required paths are present inside the image:"
+            for path in "${REQUIRED_PATHS[@]}"; do
+              echo "  $path"
+            done
+          fi
