@@ -1118,6 +1118,7 @@ def _filter_spec(block_min: int, block_max: int, title: str, description: str):
     trimmed["paths"] = kept
     trimmed["info"]["title"] = title
     trimmed["info"]["description"] = description
+    trimmed["servers"] = [{"url": "https://zerobeacon.ai", "description": "ZeroBeacon production API"}]
     return trimmed
 
 
