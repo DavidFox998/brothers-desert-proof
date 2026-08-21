@@ -61,6 +61,10 @@ def validate_resend_key(api_key_env: str | None = None) -> tuple[bool, str]:
         headers={
             "Authorization": f"Bearer {api_key_env}",
             "Content-Type": "application/json",
+            # User-Agent is required: Resend's CDN (Cloudflare) returns 403
+            # with error code 1010 for requests that omit a User-Agent header,
+            # which our health probe previously misread as an invalid key.
+            "User-Agent": "ZeroBeacon/1.0",
         },
         method="POST",
     )
@@ -212,6 +216,7 @@ def send_api_key_email(
             headers={
                 "Authorization": f"Bearer {api_key_env}",
                 "Content-Type":  "application/json",
+                "User-Agent":    "ZeroBeacon/1.0",
             },
             method="POST",
         )
