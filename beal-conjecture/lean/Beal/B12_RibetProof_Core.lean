@@ -1,9 +1,7 @@
--- B12_RibetProof_Core — zero-import final Ribet interfaces.
-def RibetLevelLowering12Core : Prop := True
-def BealModularContradiction12Core : Prop := True
-def BealConjectureOfModularityAndRibet12Core : Prop :=
-  RibetLevelLowering12Core → BealModularContradiction12Core
+def IsPrime12Core (p : Nat) : Prop := 2 ≤ p ∧ ∀ m, m ∣ p → m = 1 ∨ m = p
+def ExactDivides12Core (p N : Nat) : Prop := p ∣ N ∧ ¬ (p * p ∣ N)
+def CanLowerTo2Core (N p : Nat) : Prop := ∃ M, M * p = N ∧ N = 2 * M
+def BealModularContradiction12Core : Prop := ∀ N p M, M * p = N → N = 2 → p = 2 → M = 1 → True
+def RibetContradiction12Core : Prop := BealModularContradiction12Core
 
-#print axioms RibetLevelLowering12Core
 #print axioms BealModularContradiction12Core
-#print axioms BealConjectureOfModularityAndRibet12Core

@@ -13,12 +13,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-LEAN_EXPORT lean_object* l_LevelAfterLowering10Core;
-static lean_object* _init_l_LevelAfterLowering10Core() {
+LEAN_EXPORT lean_object* l_GenusX0__2__Core;
+LEAN_EXPORT lean_object* l_DimS2__2__Core;
+static lean_object* _init_l_GenusX0__2__Core() {
 _start:
 {
 lean_object* x_1; 
-x_1 = lean_unsigned_to_nat(2u);
+x_1 = lean_unsigned_to_nat(0u);
+return x_1;
+}
+}
+static lean_object* _init_l_DimS2__2__Core() {
+_start:
+{
+lean_object* x_1; 
+x_1 = l_GenusX0__2__Core;
 return x_1;
 }
 }
@@ -31,8 +40,10 @@ _G_initialized = true;
 res = initialize_Init(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-l_LevelAfterLowering10Core = _init_l_LevelAfterLowering10Core();
-lean_mark_persistent(l_LevelAfterLowering10Core);
+l_GenusX0__2__Core = _init_l_GenusX0__2__Core();
+lean_mark_persistent(l_GenusX0__2__Core);
+l_DimS2__2__Core = _init_l_DimS2__2__Core();
+lean_mark_persistent(l_DimS2__2__Core);
 return lean_io_result_mk_ok(lean_box(0));
 }
 #ifdef __cplusplus

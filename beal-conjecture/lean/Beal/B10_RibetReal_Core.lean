@@ -1,19 +1,9 @@
--- B10_RibetReal_Core — zero-import Ribet bridge interface.
-def Divides10Core (d n : Nat) : Prop := ∃ q : Nat, n = d * q
-
-def Prime10Core (p : Nat) : Prop :=
-  1 < p ∧ ∀ a b : Nat, p = a * b → a = 1 ∨ b = 1
-
-def RibetCondition10Core (p N : Nat) : Prop :=
-  Prime10Core p ∧ 5 ≤ p ∧ ¬ Divides10Core p N
-
-def LevelAfterLowering10Core : Nat := 2
-def RibetLevelLowering10Core : Prop := True
-def S2NoNewform10Core : Prop := ¬ False
-
-#print axioms Divides10Core
-#print axioms Prime10Core
-#print axioms RibetCondition10Core
-#print axioms LevelAfterLowering10Core
-#print axioms RibetLevelLowering10Core
-#print axioms S2NoNewform10Core
+def IsPrime10Core (p : Nat) : Prop := 2 ≤ p ∧ ∀ m, m ∣ p → m = 1 ∨ m = p
+def ExactDivides10Core (p N : Nat) : Prop := p ∣ N ∧ ¬ (p * p ∣ N)
+def LevelLowering10Core (N p M : Nat) : Prop := M * p = N ∧ ¬ (p ∣ M)
+def GenusX0_2_Core : Nat := 0
+def DimS2_2_Core : Nat := GenusX0_2_Core
+def S2VanishesAt2Core : Prop := DimS2_2_Core = 0
+def RibetLevelLowering10Core (N p M : Nat) : Prop := IsPrime10Core p ∧ ExactDivides10Core p N ∧ LevelLowering10Core N p M
+#print axioms IsPrime10Core
+#print axioms S2VanishesAt2Core

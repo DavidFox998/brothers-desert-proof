@@ -3,21 +3,9 @@
    ".> LEAN_PATH=././.lake/packages/batteries/.lake/build/lib:././.lake/packages/Qq/.lake/build/lib:././.lake/packages/aesop/.lake/build/lib:././.lake/packages/proofwidgets/.lake/build/lib:././.lake/packages/Cli/.lake/build/lib:././.lake/packages/importGraph/.lake/build/lib:././.lake/packages/LeanSearchClient/.lake/build/lib:././.lake/packages/mathlib/.lake/build/lib:././.lake/build/lib LD_LIBRARY_PATH= /home/runner/.elan/toolchains/leanprover--lean4---v4.12.0/bin/lean ./././lean/Beal/B10_RibetReal_Core.lean -R ./././lean -o ././.lake/build/lib/Beal/B10_RibetReal_Core.olean -i ././.lake/build/lib/Beal/B10_RibetReal_Core.ilean -c ././.lake/build/ir/Beal/B10_RibetReal_Core.c --json",
    "level": "trace"},
   {"message":
-   "./././lean/Beal/B10_RibetReal_Core.lean:14:0: 'Divides10Core' does not depend on any axioms",
+   "./././lean/Beal/B10_RibetReal_Core.lean:8:0: 'IsPrime10Core' does not depend on any axioms",
    "level": "info"},
   {"message":
-   "./././lean/Beal/B10_RibetReal_Core.lean:15:0: 'Prime10Core' does not depend on any axioms",
-   "level": "info"},
-  {"message":
-   "./././lean/Beal/B10_RibetReal_Core.lean:16:0: 'RibetCondition10Core' does not depend on any axioms",
-   "level": "info"},
-  {"message":
-   "./././lean/Beal/B10_RibetReal_Core.lean:17:0: 'LevelAfterLowering10Core' does not depend on any axioms",
-   "level": "info"},
-  {"message":
-   "./././lean/Beal/B10_RibetReal_Core.lean:18:0: 'RibetLevelLowering10Core' does not depend on any axioms",
-   "level": "info"},
-  {"message":
-   "./././lean/Beal/B10_RibetReal_Core.lean:19:0: 'S2NoNewform10Core' does not depend on any axioms",
+   "./././lean/Beal/B10_RibetReal_Core.lean:9:0: 'S2VanishesAt2Core' does not depend on any axioms",
    "level": "info"}],
- "depHash": "9290047064673727786"}
+ "depHash": "16244732477034860218"}

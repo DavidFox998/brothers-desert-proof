@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Beal.B12_RibetProof
-// Imports: Init Beal.B12_RibetProof_Core Beal.B11_Epsilon
+// Imports: Init Beal.B12_RibetProof_Core Beal.B10_RibetReal_Core
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -15,7 +15,7 @@ extern "C" {
 #endif
 lean_object* initialize_Init(uint8_t builtin, lean_object*);
 lean_object* initialize_Beal_B12__RibetProof__Core(uint8_t builtin, lean_object*);
-lean_object* initialize_Beal_B11__Epsilon(uint8_t builtin, lean_object*);
+lean_object* initialize_Beal_B10__RibetReal__Core(uint8_t builtin, lean_object*);
 static bool _G_initialized = false;
 LEAN_EXPORT lean_object* initialize_Beal_B12__RibetProof(uint8_t builtin, lean_object* w) {
 lean_object * res;
@@ -27,7 +27,7 @@ lean_dec_ref(res);
 res = initialize_Beal_B12__RibetProof__Core(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_Beal_B11__Epsilon(builtin, lean_io_mk_world());
+res = initialize_Beal_B10__RibetReal__Core(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 return lean_io_result_mk_ok(lean_box(0));
