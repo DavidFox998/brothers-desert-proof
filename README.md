@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21926550.svg)](https://doi.org/10.5281/zenodo.21926550) [![CI](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml/badge.svg)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml)
+
 # brothers-desert-proof — Route D — Discrete Self-Symmetry of the 35 Morningstar Brothers — CLOSED via S₄
 
 [![CI](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml/badge.svg?branch=main)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/pytest-brain.yml)
