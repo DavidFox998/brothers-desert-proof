@@ -255,7 +255,7 @@ def test_beat_fires_at_200ms_rate_cold_start(page, record_property):
 # ---------------------------------------------------------------------------
 
 @_skip
-def test_beat_survives_background_tab(page):
+def test_beat_survives_background_tab(page, record_property):
     """Beat loop must not freeze when the tab is backgrounded, and must resume on focus.
 
     Two-phase browser-native scenario that mirrors a real user switching away from
@@ -382,6 +382,18 @@ def test_beat_survives_background_tab(page):
     ticks_while_bg = tick_bg_end - tick_bg_start
     ticks_after_fg = tick_fg_end - tick_fg_start
 
+    # Emit structured measurements so the CI job summary can show exact counts.
+    record_property("bg_ticks_fired", ticks_while_bg)
+    record_property("bg_tick_start", tick_bg_start)
+    record_property("bg_tick_end", tick_bg_end)
+    record_property("bg_observation_window_s", 2)
+    record_property("bg_required_ticks", 5)
+    record_property("fg_ticks_fired", ticks_after_fg)
+    record_property("fg_tick_start", tick_fg_start)
+    record_property("fg_tick_end", tick_fg_end)
+    record_property("fg_observation_window_s", 1)
+    record_property("fg_required_ticks", 3)
+
     # ── Phase 1: ≥5 ticks while backgrounded ─────────────────────────────────
     # Confirms setInterval was not cancelled by a visibilitychange handler.
     # Headless Chromium does not throttle timers, so the full 200 ms rate applies.
@@ -416,7 +428,7 @@ def test_beat_survives_background_tab(page):
 
 
 @_skip
-def test_beat_resumes_after_focus_restore(page):
+def test_beat_resumes_after_focus_restore(page, record_property):
     """Beat loop must resume at the normal rate after visibility is restored.
 
     A second browser tab backgrounds the heartbeat page for one second.  When it
@@ -511,6 +523,14 @@ def test_beat_resumes_after_focus_restore(page):
     )
 
     ticks_after_focus = tick_visible_end - tick_visible_start
+
+    # Emit structured measurements for the CI job summary card.
+    record_property("resume_ticks_fired", ticks_after_focus)
+    record_property("resume_tick_start", tick_visible_start)
+    record_property("resume_tick_end", tick_visible_end)
+    record_property("resume_observation_window_s", 2)
+    record_property("resume_required_ticks", 5)
+
     assert ticks_after_focus >= 5, (
         f"/brain/heartbeat: only {ticks_after_focus} beat(s) fired in 2 s after "
         f"focus was restored (expected ≥5 at 200 ms each). "
