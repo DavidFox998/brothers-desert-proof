@@ -185,8 +185,8 @@ jobs:
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           RUN_URL="https://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}"
           # Build the payload with jq so special characters in repo/run-id
-          # cannot produce invalid JSON (the \${{ }} heredoc approach leaves
-          # literal backslashes that make Slack return 400).
+          # cannot produce invalid JSON (a heredoc with github context
+          # expressions leaves literal backslashes that make Slack return 400).
           PAYLOAD=$(jq -nc \
             --arg ts   "$TIMESTAMP" \
             --arg url  "$RUN_URL" \
