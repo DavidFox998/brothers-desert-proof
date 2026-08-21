@@ -48,6 +48,13 @@ jobs:
       - name: Run unit EKG smoke tests (TestClient)
         run: pytest tests/test_heartbeat_ekg.py -v -k "not live"
 
+      # ── Summary card unit tests (no server needed) ────────────────────────
+      # Exercises both the pass and failure paths of scripts/write_beat_summary.py
+      # with synthetic pytest-json-report fixtures so CI catches a broken card
+      # before it goes live.  Runs even when PLAYWRIGHT_BASE_URL is not set.
+      - name: Run beat-rate summary card unit tests
+        run: pytest tests/test_beat_summary_card.py -v
+
       # ── Browser tests (Playwright — local uvicorn server) ──────────────────
       - name: Start local uvicorn server for Playwright tests
         run: |
@@ -67,93 +74,7 @@ jobs:
 
       - name: Write beat-rate job summary
         if: always()
-        run: |
-          python3 - <<'EOF'
-          import json, os, re, sys
-
-          report_path = "/tmp/beat-report.json"
-          summary_file = os.environ.get("GITHUB_STEP_SUMMARY", "")
-          heartbeat_url = "https://zerobeacon.ai/brain/heartbeat"
-
-          try:
-              with open(report_path) as f:
-                  report = json.load(f)
-          except Exception as e:
-              msg = f"## ⚠️ EKG Beat-Rate — Report Unavailable\n\nCould not read `{report_path}`: {e}\n"
-              print(msg)
-              if summary_file:
-                  open(summary_file, "a").write(msg)
-              sys.exit(0)
-
-          tests = report.get("tests", [])
-          target = next(
-              (t for t in tests if "cold_start" in t.get("nodeid", "")), None
-          )
-
-          if target is None:
-              msg = "## ⚠️ EKG Beat-Rate — Test Not Found\n\nThe `test_beat_fires_at_200ms_rate_cold_start` test was not found in the JSON report.\n"
-              print(msg)
-              if summary_file:
-                  open(summary_file, "a").write(msg)
-              sys.exit(0)
-
-          passed = target.get("outcome") == "passed"
-
-          # Read structured measurements recorded via record_property().
-          # pytest-json-report stores them as [[key, value], ...] in user_properties.
-          props = dict(target.get("user_properties", []))
-          ticks_fired = props.get("ticks_fired")
-          tick_start = props.get("tick_start")
-          tick_end = props.get("tick_end")
-          obs_window = props.get("observation_window_s", 2)
-          required = props.get("required_ticks", 5)
-
-          # Fallback: if the test crashed before record_property ran, parse longrepr.
-          if ticks_fired is None and not passed and "call" in target:
-              longrepr = str(target["call"].get("longrepr", ""))
-              m = re.search(r"only (\d+) beat", longrepr)
-              if m:
-                  ticks_fired = int(m.group(1))
-
-          status_icon = "✅" if passed else "❌"
-          status_text = "PASSED" if passed else "FAILED"
-
-          if ticks_fired is not None:
-              ticks_display = f"{ticks_fired} / {required} required"
-          else:
-              ticks_display = "unknown"
-
-          tick_detail = ""
-          if tick_start is not None and tick_end is not None:
-              tick_detail = f" (tick counter: {tick_start} → {tick_end})"
-
-          lines = [
-              f"## {status_icon} EKG Beat-Rate — {status_text}",
-              "",
-              "| Metric | Value |",
-              "| --- | --- |",
-              f"| Ticks fired | `{ticks_display}`{tick_detail} |",
-              f"| Observation window | `{obs_window} seconds` |",
-              f"| Required rate | `≥{required} ticks at 200 ms intervals` |",
-              f"| Live heartbeat | [{heartbeat_url}]({heartbeat_url}) |",
-              "",
-          ]
-
-          if not passed and ticks_fired is not None:
-              lines.append(
-                  f"> **Shortfall:** only `{ticks_fired}/{required}` required ticks fired "
-                  f"in the {obs_window}-second beat-rate window. "
-                  "The 200 ms `setInterval` beat loop may have regressed or the VM "
-                  "is waking too slowly after `auto_stop`."
-              )
-              lines.append("")
-
-          summary = "\n".join(lines)
-          print(summary)
-          if summary_file:
-              with open(summary_file, "a") as fh:
-                  fh.write(summary)
-          EOF
+        run: python3 scripts/write_beat_summary.py /tmp/beat-report.json --heading "EKG Beat-Rate"
 
       # ── Live tests (against production — best-effort canary) ───────────────
       - name: Run unit EKG smoke tests against https://zerobeacon.ai
@@ -246,93 +167,7 @@ jobs:
 
       - name: Write beat-rate job summary
         if: always()
-        run: |
-          python3 - <<'EOF'
-          import json, os, re, sys
-
-          report_path = "/tmp/beat-report.json"
-          summary_file = os.environ.get("GITHUB_STEP_SUMMARY", "")
-          heartbeat_url = "https://zerobeacon.ai/brain/heartbeat"
-
-          try:
-              with open(report_path) as f:
-                  report = json.load(f)
-          except Exception as e:
-              msg = f"## ⚠️ Cold-Start Beat-Rate — Report Unavailable\n\nCould not read `{report_path}`: {e}\n"
-              print(msg)
-              if summary_file:
-                  open(summary_file, "a").write(msg)
-              sys.exit(0)
-
-          tests = report.get("tests", [])
-          target = next(
-              (t for t in tests if "cold_start" in t.get("nodeid", "")), None
-          )
-
-          if target is None:
-              msg = "## ⚠️ Cold-Start Beat-Rate — Test Not Found\n\nThe `test_beat_fires_at_200ms_rate_cold_start` test was not found in the JSON report.\n"
-              print(msg)
-              if summary_file:
-                  open(summary_file, "a").write(msg)
-              sys.exit(0)
-
-          passed = target.get("outcome") == "passed"
-
-          # Read structured measurements recorded via record_property().
-          # pytest-json-report stores them as [[key, value], ...] in user_properties.
-          props = dict(target.get("user_properties", []))
-          ticks_fired = props.get("ticks_fired")       # exact int, available pass or fail
-          tick_start  = props.get("tick_start")
-          tick_end    = props.get("tick_end")
-          obs_window  = props.get("observation_window_s", 2)
-          required    = props.get("required_ticks", 5)
-
-          # Fallback: if the test crashed before record_property ran, parse longrepr.
-          if ticks_fired is None and not passed and "call" in target:
-              longrepr = str(target["call"].get("longrepr", ""))
-              m = re.search(r"only (\d+) beat", longrepr)
-              if m:
-                  ticks_fired = int(m.group(1))
-
-          status_icon = "✅" if passed else "❌"
-          status_text = "PASSED" if passed else "FAILED"
-
-          if ticks_fired is not None:
-              ticks_display = f"{ticks_fired} / {required} required"
-          else:
-              ticks_display = "unknown"
-
-          tick_detail = ""
-          if tick_start is not None and tick_end is not None:
-              tick_detail = f" (tick counter: {tick_start} → {tick_end})"
-
-          lines = [
-              f"## {status_icon} Cold-Start Beat-Rate — {status_text}",
-              "",
-              "| Metric | Value |",
-              "| --- | --- |",
-              f"| Ticks fired | `{ticks_display}`{tick_detail} |",
-              f"| Observation window | `{obs_window} seconds` |",
-              f"| Required rate | `≥{required} ticks at 200 ms intervals` |",
-              f"| Live heartbeat | [{heartbeat_url}]({heartbeat_url}) |",
-              "",
-          ]
-
-          if not passed and ticks_fired is not None:
-              lines.append(
-                  f"> **Shortfall:** only `{ticks_fired}/{required}` required ticks fired "
-                  f"in the {obs_window}-second cold-start window. "
-                  "The 200 ms `setInterval` beat loop may have regressed or the VM "
-                  "is waking too slowly after `auto_stop`."
-              )
-              lines.append("")
-
-          summary = "\n".join(lines)
-          print(summary)
-          if summary_file:
-              with open(summary_file, "a") as fh:
-                  fh.write(summary)
-          EOF
+        run: python3 scripts/write_beat_summary.py /tmp/beat-report.json
 
       - name: Fire Slack alert on cold-start beat-rate failure
         if: failure()
