@@ -14,6 +14,7 @@ import Beal.B15_LevelTo2_Core
 #print axioms Divides14Core
 #print axioms Prime14Core
 #print axioms RadCertificate
+#print axioms RadPrimePowerCertificate14Core
 #print axioms FreyConductorRealCertificate
 #print axioms ExactDivides15Core
 #print axioms CanLowerLevel15Core

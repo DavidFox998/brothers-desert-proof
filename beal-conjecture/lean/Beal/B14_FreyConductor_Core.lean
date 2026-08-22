@@ -13,6 +13,14 @@ def RadCertificate (n r : Nat) : Prop :=
   Divides14Core r n ∧
     ∀ p : Nat, Prime14Core p → Divides14Core p r → Divides14Core p n
 
+/--
+The import-free result shape supplied by the real radical factorization
+wrapper when a radical is a single prime.  The value `1` is represented by
+the zero exponent.
+-/
+def RadPrimePowerCertificate14Core (A B C p : Nat) : Prop :=
+  ∃ a b c : Nat, A = p ^ a ∧ B = p ^ b ∧ C = p ^ c
+
 def FreyConductorRealCertificate (A B C r : Nat) : Prop :=
   RadCertificate (A * B * C) r
 
@@ -28,6 +36,7 @@ def BealPrimesNotDivideConductor14Core : Prop :=
 #print axioms Divides14Core
 #print axioms Prime14Core
 #print axioms RadCertificate
+#print axioms RadPrimePowerCertificate14Core
 #print axioms FreyConductorRealCertificate
 #print axioms FreyConductorDividesABC14Core
 #print axioms BealPrimesNotDivideConductor14Core
