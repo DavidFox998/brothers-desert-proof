@@ -377,19 +377,240 @@ theorem killshot_level_2_no_ribet
 /-!
 ## Killshot #4: parity modulo 8
 
-The Core layer intentionally has no modular-arithmetic conductor theorem.
-This statement isolates the elementary parity target: after establishing the
-odd/odd/even Beal branch, prove that `4 ∣ C`.
+This is an elementary Core proof, not a conductor theorem.  Lean 4.12's
+convenient modular-arithmetic and power-divisibility lemmas carry `propext`,
+so the parity argument is developed directly from Nat remainder recursion and
+explicit factor witnesses.
 -/
+
+def EvenTwo (n : Nat) : Prop := ∃ q, n = 2 * q
+
+def OddTwo (n : Nat) : Prop := ∃ q, n = 2 * q + 1
+
+theorem sub_add_two_of_two_le {n : Nat} (h : 2 ≤ n) : n - 2 + 2 = n := by
+  cases n with
+  | zero => exact (Nat.not_succ_le_zero 1 h).elim
+  | succ n =>
+    cases n with
+    | zero => exact (Nat.not_succ_le_self 1 h).elim
+    | succ n => rfl
+
+theorem odd_two_of_mod_eq_one {n : Nat} (h : n % 2 = 1) : OddTwo n := by
+  induction n using Nat.strongRecOn with
+  | _ n ih =>
+    cases n with
+    | zero =>
+      change 0 = 1 at h
+      exact Nat.noConfusion h
+    | succ n =>
+      cases n with
+      | zero => exact ⟨0, rfl⟩
+      | succ n =>
+        have hle : 2 ≤ Nat.succ (Nat.succ n) :=
+          Nat.succ_le_succ (Nat.succ_le_succ (Nat.zero_le _))
+        have hsub : (Nat.succ (Nat.succ n) - 2) % 2 = 1 :=
+          (Nat.mod_eq_sub_mod hle).symm.trans h
+        have hlt : Nat.succ (Nat.succ n) - 2 < Nat.succ (Nat.succ n) :=
+          Nat.sub_lt (Nat.zero_lt_succ _) (Nat.zero_lt_succ _)
+        rcases ih (Nat.succ (Nat.succ n) - 2) hlt hsub with ⟨q, hq⟩
+        refine ⟨Nat.succ q, ?_⟩
+        calc
+          Nat.succ (Nat.succ n) = Nat.succ (Nat.succ n) - 2 + 2 :=
+            (sub_add_two_of_two_le hle).symm
+          _ = (2 * q + 1) + 2 := congrArg (fun t => t + 2) hq
+          _ = 2 * Nat.succ q + 1 := by
+            calc
+              (2 * q + 1) + 2 = 2 * q + (1 + 2) := Nat.add_assoc _ _ _
+              _ = (2 * q + 2) + 1 := by rfl
+              _ = 2 * Nat.succ q + 1 :=
+                congrArg (fun t => t + 1) (Nat.mul_succ _ _).symm
+
+theorem even_or_odd_two (n : Nat) : EvenTwo n ∨ OddTwo n := by
+  induction n with
+  | zero =>
+    left
+    exact ⟨0, rfl⟩
+  | succ n ih =>
+    rcases ih with hEven | hOdd
+    · rcases hEven with ⟨q, hq⟩
+      right
+      refine ⟨q, ?_⟩
+      calc
+        Nat.succ n = Nat.succ (2 * q) := congrArg Nat.succ hq
+        _ = 2 * q + 1 := rfl
+    · rcases hOdd with ⟨q, hq⟩
+      left
+      refine ⟨Nat.succ q, ?_⟩
+      calc
+        Nat.succ n = Nat.succ (2 * q + 1) := congrArg Nat.succ hq
+        _ = (2 * q + 1) + 1 := rfl
+        _ = 2 * q + 2 := rfl
+        _ = 2 * Nat.succ q := (Nat.mul_succ _ _).symm
+
+theorem mul_collect_zero (a b c d : Nat) :
+    (a * b) * (c * d) = (a * c) * (b * d) := by
+  calc
+    (a * b) * (c * d) = ((a * b) * c) * d :=
+      (mul_assoc_zero _ _ _).symm
+    _ = (a * (b * c)) * d :=
+      congrArg (fun t => t * d) (mul_assoc_zero _ _ _)
+    _ = (a * (c * b)) * d :=
+      congrArg (fun t => t * d) (congrArg (fun t => a * t) (Nat.mul_comm _ _))
+    _ = ((a * c) * b) * d :=
+      congrArg (fun t => t * d) (mul_assoc_zero _ _ _).symm
+    _ = (a * c) * (b * d) := mul_assoc_zero _ _ _
+
+theorem odd_two_mul {a b : Nat} (ha : OddTwo a) (hb : OddTwo b) :
+    OddTwo (a * b) := by
+  rcases ha with ⟨r, hr⟩
+  rcases hb with ⟨s, hs⟩
+  refine ⟨2 * r * s + s + r, ?_⟩
+  calc
+    a * b = (2 * r + 1) * b := congrArg (fun t => t * b) hr
+    _ = (2 * r + 1) * (2 * s + 1) :=
+      congrArg (fun t => (2 * r + 1) * t) hs
+    _ = (2 * r + 1) * (2 * s) + (2 * r + 1) * 1 := Nat.mul_add _ _ _
+    _ = (2 * r + 1) * (2 * s) + (2 * r + 1) :=
+      congrArg (fun t => (2 * r + 1) * (2 * s) + t) (Nat.mul_one _)
+    _ = (2 * s) * (2 * r + 1) + (2 * r + 1) :=
+      congrArg (fun t => t + (2 * r + 1)) (Nat.mul_comm _ _)
+    _ = ((2 * s) * (2 * r) + (2 * s) * 1) + (2 * r + 1) :=
+      congrArg (fun t => t + (2 * r + 1)) (Nat.mul_add _ _ _)
+    _ = ((2 * s) * (2 * r) + 2 * s) + (2 * r + 1) :=
+      congrArg (fun t => ((2 * s) * (2 * r) + t) + (2 * r + 1)) (Nat.mul_one _)
+    _ = ((2 * 2) * (s * r) + 2 * s) + (2 * r + 1) :=
+      congrArg (fun t => (t + 2 * s) + (2 * r + 1)) (mul_collect_zero _ _ _ _)
+    _ = ((2 * 2) * (r * s) + 2 * s) + (2 * r + 1) :=
+      congrArg (fun t => (t + 2 * s) + (2 * r + 1))
+        (congrArg (fun t => (2 * 2) * t) (Nat.mul_comm _ _))
+    _ = (2 * (2 * (r * s)) + 2 * s) + (2 * r + 1) :=
+      congrArg (fun t => (t + 2 * s) + (2 * r + 1)) (mul_assoc_zero _ _ _)
+    _ = (2 * (2 * r * s) + 2 * s) + (2 * r + 1) :=
+      congrArg (fun t => (t + 2 * s) + (2 * r + 1))
+        (congrArg (fun t => 2 * t) (mul_assoc_zero _ _ _).symm)
+    _ = (2 * (2 * r * s) + (2 * s + (2 * r + 1))) := Nat.add_assoc _ _ _
+    _ = ((2 * (2 * r * s) + 2 * s) + 2 * r) + 1 :=
+      (Nat.add_assoc _ _ _).symm
+    _ = (2 * (2 * r * s) + (2 * s + 2 * r)) + 1 :=
+      congrArg (fun t => t + 1) (Nat.add_assoc _ _ _)
+    _ = (2 * (2 * r * s) + 2 * (s + r)) + 1 :=
+      congrArg (fun t => (2 * (2 * r * s) + t) + 1) (Nat.mul_add _ _ _).symm
+    _ = 2 * (2 * r * s + (s + r)) + 1 :=
+      congrArg (fun t => t + 1) (Nat.mul_add _ _ _).symm
+    _ = 2 * (2 * r * s + s + r) + 1 :=
+      congrArg (fun t => 2 * t + 1) (Nat.add_assoc _ _ _).symm
+
+theorem odd_two_pow {a k : Nat} (ha : OddTwo a) : OddTwo (a ^ k) := by
+  induction k with
+  | zero => exact ⟨0, rfl⟩
+  | succ k ih =>
+    rw [Nat.pow_succ]
+    exact odd_two_mul ih ha
+
+theorem odd_two_add_odd_two_even {a b : Nat}
+    (ha : OddTwo a) (hb : OddTwo b) : EvenTwo (a + b) := by
+  rcases ha with ⟨r, hr⟩
+  rcases hb with ⟨s, hs⟩
+  refine ⟨r + s + 1, ?_⟩
+  calc
+    a + b = (2 * r + 1) + b := congrArg (fun t => t + b) hr
+    _ = (2 * r + 1) + (2 * s + 1) :=
+      congrArg (fun t => (2 * r + 1) + t) hs
+    _ = 2 * r + (1 + (2 * s + 1)) := Nat.add_assoc _ _ _
+    _ = 2 * r + ((1 + 2 * s) + 1) :=
+      congrArg (fun t => 2 * r + t) (Nat.add_assoc _ _ _).symm
+    _ = 2 * r + ((2 * s + 1) + 1) :=
+      congrArg (fun t => 2 * r + (t + 1)) (Nat.add_comm _ _)
+    _ = 2 * r + (2 * s + (1 + 1)) :=
+      congrArg (fun t => 2 * r + t) (Nat.add_assoc _ _ _)
+    _ = (2 * r + 2 * s) + (1 + 1) := (Nat.add_assoc _ _ _).symm
+    _ = 2 * (r + s) + 2 := by
+      rw [Nat.mul_add]
+    _ = 2 * Nat.succ (r + s) := (Nat.mul_succ _ _).symm
+    _ = 2 * (r + s + 1) := rfl
+
+theorem even_two_ne_odd_two {n : Nat} (he : EvenTwo n) (ho : OddTwo n) : False := by
+  rcases he with ⟨a, ha⟩
+  rcases ho with ⟨b, hb⟩
+  apply one_add_mul_ne_mul (Nat.le_refl 2)
+  calc
+    1 + 2 * b = 2 * b + 1 := Nat.add_comm _ _
+    _ = n := hb.symm
+    _ = 2 * a := ha
+
+theorem even_two_of_pow_even {C z : Nat} (h : EvenTwo (C ^ z)) : EvenTwo C := by
+  rcases even_or_odd_two C with hEven | hOdd
+  · exact hEven
+  · exact (even_two_ne_odd_two h (odd_two_pow hOdd)).elim
+
+theorem pow_two_zero (n : Nat) : n ^ 2 = n * n := by
+  calc
+    n ^ 2 = n ^ 1 * n := Nat.pow_succ _ _
+    _ = (n ^ 0 * n) * n := congrArg (fun t => t * n) (Nat.pow_succ _ _)
+    _ = (1 * n) * n := rfl
+    _ = n * n := congrArg (fun t => t * n) (Nat.one_mul _)
+
+theorem eight_dvd_even_cube {C q : Nat} (hC : C = 2 * q) : 8 ∣ C ^ 3 := by
+  refine ⟨q * q * q, ?_⟩
+  calc
+    C ^ 3 = (2 * q) ^ 3 := congrArg (fun t => t ^ 3) hC
+    _ = ((2 * q) * (2 * q)) * (2 * q) := by
+      calc
+        (2 * q) ^ 3 = (2 * q) ^ 2 * (2 * q) := Nat.pow_succ _ _
+        _ = ((2 * q) * (2 * q)) * (2 * q) :=
+          congrArg (fun t => t * (2 * q)) (pow_two_zero _)
+    _ = ((2 * 2) * (q * q)) * (2 * q) :=
+      congrArg (fun t => t * (2 * q)) (mul_collect_zero _ _ _ _)
+    _ = ((2 * 2) * 2) * ((q * q) * q) := mul_collect_zero _ _ _ _
+    _ = 8 * (q * q * q) := rfl
+
+theorem eight_dvd_even_pow_from_three (C q t : Nat) (hC : C = 2 * q) :
+    8 ∣ C ^ (t + 3) := by
+  induction t with
+  | zero => exact eight_dvd_even_cube hC
+  | succ t ih =>
+    rcases ih with ⟨d, hd⟩
+    refine ⟨d * C, ?_⟩
+    calc
+      C ^ (Nat.succ t + 3) = C ^ (t + 3) * C := by
+        change C ^ Nat.succ (t + 3) = C ^ (t + 3) * C
+        exact Nat.pow_succ _ _
+      _ = (8 * d) * C := congrArg (fun u => u * C) hd
+      _ = 8 * (d * C) := mul_assoc_zero _ _ _
+
+theorem eight_dvd_even_pow {C z : Nat} (hC : EvenTwo C) (hz : 3 ≤ z) :
+    8 ∣ C ^ z := by
+  rcases hC with ⟨q, hq⟩
+  cases z with
+  | zero => exact (Nat.not_succ_le_zero 2 hz).elim
+  | succ z =>
+    cases z with
+    | zero =>
+      have htoo : 3 ≤ 2 := Nat.le_trans hz (Nat.le_succ 1)
+      exact (Nat.not_succ_le_self 2 htoo).elim
+    | succ z =>
+      cases z with
+      | zero => exact (Nat.not_succ_le_self 2 hz).elim
+      | succ t => exact eight_dvd_even_pow_from_three C q t hq
 
 theorem killshot_mod8
     {A B C x y z : Nat}
     (hBeal : IsBealSolution05Core A B C x y z)
     (hAOdd : A % 2 = 1)
-    (hBOdd : B % 2 = 1)
-    (hCEven : C % 2 = 0) :
-    4 ∣ C := by
-  sorry
+    (hBOdd : B % 2 = 1) :
+    8 ∣ A ^ x + B ^ y := by
+  rcases hBeal with ⟨_, _, _, _, _, hz, hEq, _⟩
+  have hAOddTwo : OddTwo A := odd_two_of_mod_eq_one hAOdd
+  have hBOddTwo : OddTwo B := odd_two_of_mod_eq_one hBOdd
+  have hLeftEven : EvenTwo (A ^ x + B ^ y) :=
+    odd_two_add_odd_two_even (odd_two_pow hAOddTwo) (odd_two_pow hBOddTwo)
+  have hCPowEven : EvenTwo (C ^ z) := by
+    rcases hLeftEven with ⟨q, hq⟩
+    exact ⟨q, hEq.symm.trans hq⟩
+  have hCEven : EvenTwo C := even_two_of_pow_even hCPowEven
+  have hEightC : 8 ∣ C ^ z :=
+    eight_dvd_even_pow hCEven (Nat.succ_le_of_lt hz)
+  exact hEq.symm ▸ hEightC
 
 /-!
 ## Killshot #5: squarefree minimality contradiction
@@ -426,6 +647,19 @@ theorem killshot_squarefree_contradiction
 #print axioms two_ne_pow_of_two_le
 #print axioms dvd_pow_of_dvd_base
 #print axioms add_pos_ne_one
+#print axioms sub_add_two_of_two_le
+#print axioms odd_two_of_mod_eq_one
+#print axioms even_or_odd_two
+#print axioms mul_collect_zero
+#print axioms odd_two_mul
+#print axioms odd_two_pow
+#print axioms odd_two_add_odd_two_even
+#print axioms even_two_ne_odd_two
+#print axioms even_two_of_pow_even
+#print axioms pow_two_zero
+#print axioms eight_dvd_even_cube
+#print axioms eight_dvd_even_pow_from_three
+#print axioms eight_dvd_even_pow
 #print axioms killshot_no_2p_isogeny
 #print axioms killshot_level_2_no_ribet
 #print axioms killshot_mod8
