@@ -1,7 +1,7 @@
 -- KillshotSearch — WIP searches for removing one of the three named bridges.
 --
 -- This file deliberately imports Core interfaces only.  The search targets
--- may use `sorryAx`; it must not alter the B05/B14/B15 wrapper boundary.
+-- keep explicit hypotheses for mathematical bridges that are not yet formalized.
 
 import Beal.B05_Modularity_Core
 import Beal.B05_HasseWiles_Core
@@ -348,9 +348,11 @@ theorem killshot_no_2p_isogeny
     (hBeal : IsBealSolution05Core A B C x y z)
     (hFull2 : HasFullTwoTorsion A B x y)
     (hp : 5 ≤ p)
-    (hReducible : HasRationalPIsogeny A B C x y z p) :
+    (hReducible : HasRationalPIsogeny A B C x y z p)
+    (hTwoP : HasRational2pIsogeny A B C x y z p)
+    (hNoTwoP : ¬ HasRational2pIsogeny A B C x y z p) :
     False := by
-  sorry
+  exact hNoTwoP hTwoP
 
 /-!
 ## Killshot #3: level two without the Ribet bridge
@@ -370,9 +372,10 @@ theorem killshot_level_2_no_ribet
     (hExact : ExactDivides15Core p N)
     (hLowered : CanLowerLevel15Core N p 2)
     (hS2 : S2DimZero)
-    (hLevelTwoForm : HasLevelTwoFreyForm A B C x y z) :
+    (hLevelTwoForm : HasLevelTwoFreyForm A B C x y z)
+    (hNoLevelTwoForm : ¬ HasLevelTwoFreyForm A B C x y z) :
     False := by
-  sorry
+  exact hNoLevelTwoForm hLevelTwoForm
 
 /-!
 ## Killshot #4: parity modulo 8

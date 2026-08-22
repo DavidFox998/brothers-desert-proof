@@ -12,7 +12,7 @@ def FermatLastTheorem : Prop :=
   ∀ a b c n : Nat,
     2 < n → ¬ IsBealSolution a b c n n n
 
--- Beal => Fermat in ONE line — no sorry, no Classical
+-- Beal => Fermat in ONE line — no placeholders, no Classical
 -- Because IsBealSolution a b c n n n is exactly the Fermat equation + gcd=1 + n>2
 theorem beal_implies_fermat :
   _root_.BealConjecture → FermatLastTheorem :=
