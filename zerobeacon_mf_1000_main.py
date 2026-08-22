@@ -2691,7 +2691,7 @@ async def mcp_post(request: Request):
             )
             if not api_key:
                 _msg = (
-                    f"⚠️  API key missing — this tool requires {_tier_label} or higher.\n"
+                    f"⚠️  API key missing — {_tier_label} required for this tool or a higher tier.\n"
                     "Get your key at https://zerobeacon.ai after checkout.\n"
                     "Stripe (all tiers): https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01\n"
                     "RapidAPI: https://rapidapi.com/davidjfox998/api/zerobeacon"
