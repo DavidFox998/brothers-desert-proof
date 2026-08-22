@@ -8,6 +8,8 @@ import Beal.B04_Modular_Core
 import Beal.B04_Modular
 import Beal.B05_HasseWiles_Core
 import Beal.B05_HasseWiles
+import Beal.B05_Modularity_Core
+import Beal.B05_Modularity
 import Beal.B06_Final_Core
 import Beal.B06_Final
 import Beal.B07_Galois_Core

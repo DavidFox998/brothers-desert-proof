@@ -61,6 +61,9 @@ jobs:
           #print axioms modularity_holds
           #print axioms qexp_implies_hecke
           #print axioms BealHasseWiles.hasse_bound_143a1_all
+          #print axioms BealModularity.s2_dim_zero_from_b10
+          #print axioms BealModularity.modularity_hypothesis_of_bridges
+          #print axioms BealModularity.modularity_hypothesis_with_assumptions
           #print axioms beal_bridge_proved
           #print axioms BealConjecture_trio_bridge
           #print axioms BealGalois.frey_galois_rep_of_pos

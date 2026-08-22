@@ -3,3 +3,4 @@
 - [SiegelZeroFreeElementary status](brothers-desert-proof-step-a.md) — eta_pos proves pair-sum tsum > 0 (0 sorry); connecting to ζ<0 needs eta identity (pending); eta_hasSum sorry was removed by restructuring to pair sums only
 - [Lean 4.15 HasSum API quirks](lean-hassum-api-quirks.md) — HasSum.congr_fun direction, zero_add needs explicit f, tendsto_rpow_neg_atTop, simp on partial defs
 - [EKG alert webhook verification](ekg-alert-webhook-verification.md) — primary and cold-start EKG alerts must be verified independently before relying on them.
+- [Lean B05 Core audit rules](lean-b05-core-axiom-audit-rules.md) — Core types avoid gcd/div; every audited declaration is zero-axiom; conditional hypotheses must not be grouped into a vacuous premise.
