@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Beal.B15_LevelTo2
-// Imports: Init Beal.B03_Conductor_Core Beal.B11_Epsilon_Core Mathlib.Data.Nat.Prime.Basic
+// Imports: Init Beal.B03_Conductor_Core Beal.B03_Conductor Beal.B11_Epsilon_Core Beal.B15_LevelTo2_Core Mathlib.Data.Nat.Prime.Basic
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -15,7 +15,9 @@ extern "C" {
 #endif
 lean_object* initialize_Init(uint8_t builtin, lean_object*);
 lean_object* initialize_Beal_B03__Conductor__Core(uint8_t builtin, lean_object*);
+lean_object* initialize_Beal_B03__Conductor(uint8_t builtin, lean_object*);
 lean_object* initialize_Beal_B11__Epsilon__Core(uint8_t builtin, lean_object*);
+lean_object* initialize_Beal_B15__LevelTo2__Core(uint8_t builtin, lean_object*);
 lean_object* initialize_Mathlib_Data_Nat_Prime_Basic(uint8_t builtin, lean_object*);
 static bool _G_initialized = false;
 LEAN_EXPORT lean_object* initialize_Beal_B15__LevelTo2(uint8_t builtin, lean_object* w) {
@@ -28,7 +30,13 @@ lean_dec_ref(res);
 res = initialize_Beal_B03__Conductor__Core(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
+res = initialize_Beal_B03__Conductor(builtin, lean_io_mk_world());
+if (lean_io_result_is_error(res)) return res;
+lean_dec_ref(res);
 res = initialize_Beal_B11__Epsilon__Core(builtin, lean_io_mk_world());
+if (lean_io_result_is_error(res)) return res;
+lean_dec_ref(res);
+res = initialize_Beal_B15__LevelTo2__Core(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 res = initialize_Mathlib_Data_Nat_Prime_Basic(builtin, lean_io_mk_world());

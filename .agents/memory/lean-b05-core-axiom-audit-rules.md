@@ -28,6 +28,20 @@ and make a purported “prime” level-lowering statement overclaim its content.
 and primitive/common-factor hypotheses; unwrap only the divisibility facts for
 the arithmetic quotient lemma.
 
+## Factorization boundary
+
+Mathlib's natural-number prime-factorization API and its product correctness
+theorems carry `Classical.choice` and `Quot.sound`, not only `propext`.
+
+**Why:** a wrapper using that API cannot remain within the project's
+propext-only arithmetic boundary, even when the associated Core interface is
+zero-axiom.
+
+**How to apply:** keep Core on factorization certificates and exact
+multiplicative witnesses.  A canonical concrete radical requires either a
+separately audited broader wrapper boundary or a new constructive Core
+factorization library.
+
 For conditional mathematical statements, curry actual solution hypotheses
 before the conclusion:
 

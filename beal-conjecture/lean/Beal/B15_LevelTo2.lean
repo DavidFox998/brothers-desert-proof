@@ -1,5 +1,7 @@
 import Beal.B03_Conductor_Core
+import Beal.B03_Conductor
 import Beal.B11_Epsilon_Core
+import Beal.B15_LevelTo2_Core
 import Mathlib.Data.Nat.Prime.Basic
 
 namespace BealLevelTo2
@@ -22,6 +24,24 @@ theorem canLowerLevel_of_exact {N p : Nat} (h : ExactDividesCore p N) : CanLower
     _ = p * (p * j) := by rw [hj]
     _ = p * p * j := by rw [Nat.mul_assoc]
 
+theorem exact_prime_removal_lowered_level :
+    ∀ p N, Nat.Prime p → p ∣ N → ¬ (p * p ∣ N) →
+      N / p ≠ N ∧ (N / p) * p = N := by
+  intro p N hp hDiv hNotSquare
+  obtain ⟨M, hM, hMNotDiv⟩ :=
+    BealConductor.divideOut_of_exact ⟨hDiv, hNotSquare⟩
+  have hQuotient : N / p = M := by
+    apply (Nat.div_eq_iff_eq_mul_right hp.pos hDiv).2
+    calc
+      N = M * p := hM.symm
+      _ = p * M := Nat.mul_comm M p
+  constructor
+  · intro hEqual
+    apply hMNotDiv
+    rw [← hQuotient, hEqual]
+    exact hDiv
+  · exact Nat.div_mul_cancel hDiv
+
 def S2Level2Witness : Prop :=
   ∀ N p M, CanLowerLevelCore N p M → N = 2 → p = 2 → M = 1
 
@@ -35,6 +55,7 @@ theorem ribet_lowers_to_2_trivial : S2Level2Witness := s2_level_2_witness
 
 #print axioms CanLowerLevelCore
 #print axioms canLowerLevel_of_exact
+#print axioms exact_prime_removal_lowered_level
 #print axioms s2_level_2_witness
 
 end BealLevelTo2
