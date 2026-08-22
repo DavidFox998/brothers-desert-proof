@@ -5,4 +5,4 @@
   {"message":
    "./././lean/Beal/B17_MazurIrreducible.lean:18:0: 'Beal17Mazur.mazur_irreducible_trivial' does not depend on any axioms",
    "level": "info"}],
- "depHash": "18370233418330295224"}
+ "depHash": "17079878703409706951"}

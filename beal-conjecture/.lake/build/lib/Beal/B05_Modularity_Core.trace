@@ -1,0 +1,50 @@
+{"log":
+ [{"message":
+   ".> LEAN_PATH=././.lake/packages/batteries/.lake/build/lib:././.lake/packages/Qq/.lake/build/lib:././.lake/packages/aesop/.lake/build/lib:././.lake/packages/proofwidgets/.lake/build/lib:././.lake/packages/Cli/.lake/build/lib:././.lake/packages/importGraph/.lake/build/lib:././.lake/packages/LeanSearchClient/.lake/build/lib:././.lake/packages/mathlib/.lake/build/lib:././.lake/build/lib LD_LIBRARY_PATH= /home/runner/.elan/toolchains/leanprover--lean4---v4.12.0/bin/lean ./././lean/Beal/B05_Modularity_Core.lean -R ./././lean -o ././.lake/build/lib/Beal/B05_Modularity_Core.olean -i ././.lake/build/lib/Beal/B05_Modularity_Core.ilean -c ././.lake/build/ir/Beal/B05_Modularity_Core.c --json",
+   "level": "trace"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:84:0: 'S2DimZero' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:85:0: 's2DimZero_real' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:86:0: 'FreyConductorFunction' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:87:0: 'IsPrime05Core' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:88:0: 'PrimitiveTriple05Core' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:89:0: 'IsBealSolution05Core' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:90:0: 'ExactFreyConductorFactor' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:91:0: 'FreyLevelLowering' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:92:0: 'RibetLevelLoweringHypothesisReal' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:93:0: 'FreyRepresentationIrreducible' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:94:0: 'MazurIrreducibilityHypothesisReal' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:95:0: 'FreyCurveIsModular' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:96:0: 'WilesLiftingHypothesis' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:97:0: 'FreyModularityData' does not depend on any axioms",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B05_Modularity_Core.lean:98:0: 'ModularityHypothesisTyped' does not depend on any axioms",
+   "level": "info"}],
+ "depHash": "5423735670352430694"}

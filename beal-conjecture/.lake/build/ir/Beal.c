@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Beal
-// Imports: Init Beal.B01_Def_Core Beal.B01_Def Beal.B02_Frey_Core Beal.B02_Frey Beal.B03_Conductor_Core Beal.B03_Conductor Beal.B04_Modular_Core Beal.B04_Modular Beal.B05_HasseWiles_Core Beal.B05_HasseWiles Beal.B06_Final_Core Beal.B06_Final Beal.B07_Galois_Core Beal.B07_Galois Beal.B08_LevelLowering_Core Beal.B08_LevelLowering Beal.B09_FinalContradiction_Core Beal.B09_FinalContradiction Beal.B10_RibetReal_Core Beal.B10_RibetReal Beal.B11_Epsilon_Core Beal.B11_Epsilon Beal.B12_RibetProof_Core Beal.B12_RibetProof Beal.B13_RibetRealDefs_Core Beal.B13_RibetRealDefs Beal.B14_FreyConductor_Core Beal.B14_FreyConductor Beal.B15_LevelTo2_Core Beal.B15_LevelTo2 Beal.B16_BealFinal_Core Beal.B16_BealFinal Beal.B17_MazurIrreducible_Core Beal.B17_MazurIrreducible Beal.B18_FreyIsElliptic_Core Beal.B18_FreyIsElliptic Beal.B19_BealFinalAssembly_Core Beal.B19_BealFinalAssembly Beal.B20_BealConjectureDone_Core Beal.B20_BealConjectureDone Beal.B21_FermatCorollary_Core Beal.B21_FermatCorollary
+// Imports: Init Beal.B01_Def_Core Beal.B01_Def Beal.B02_Frey_Core Beal.B02_Frey Beal.B03_Conductor_Core Beal.B03_Conductor Beal.B04_Modular_Core Beal.B04_Modular Beal.B05_HasseWiles_Core Beal.B05_HasseWiles Beal.B05_Modularity_Core Beal.B05_Modularity Beal.B06_Final_Core Beal.B06_Final Beal.B07_Galois_Core Beal.B07_Galois Beal.B08_LevelLowering_Core Beal.B08_LevelLowering Beal.B09_FinalContradiction_Core Beal.B09_FinalContradiction Beal.B10_RibetReal_Core Beal.B10_RibetReal Beal.B11_Epsilon_Core Beal.B11_Epsilon Beal.B12_RibetProof_Core Beal.B12_RibetProof Beal.B13_RibetRealDefs_Core Beal.B13_RibetRealDefs Beal.B14_FreyConductor_Core Beal.B14_FreyConductor Beal.B15_LevelTo2_Core Beal.B15_LevelTo2 Beal.B16_BealFinal_Core Beal.B16_BealFinal Beal.B17_MazurIrreducible_Core Beal.B17_MazurIrreducible Beal.B18_FreyIsElliptic_Core Beal.B18_FreyIsElliptic Beal.B19_BealFinalAssembly_Core Beal.B19_BealFinalAssembly Beal.B20_BealConjectureDone_Core Beal.B20_BealConjectureDone Beal.B21_FermatCorollary_Core Beal.B21_FermatCorollary
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -24,6 +24,8 @@ lean_object* initialize_Beal_B04__Modular__Core(uint8_t builtin, lean_object*);
 lean_object* initialize_Beal_B04__Modular(uint8_t builtin, lean_object*);
 lean_object* initialize_Beal_B05__HasseWiles__Core(uint8_t builtin, lean_object*);
 lean_object* initialize_Beal_B05__HasseWiles(uint8_t builtin, lean_object*);
+lean_object* initialize_Beal_B05__Modularity__Core(uint8_t builtin, lean_object*);
+lean_object* initialize_Beal_B05__Modularity(uint8_t builtin, lean_object*);
 lean_object* initialize_Beal_B06__Final__Core(uint8_t builtin, lean_object*);
 lean_object* initialize_Beal_B06__Final(uint8_t builtin, lean_object*);
 lean_object* initialize_Beal_B07__Galois__Core(uint8_t builtin, lean_object*);
@@ -92,6 +94,12 @@ res = initialize_Beal_B05__HasseWiles__Core(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 res = initialize_Beal_B05__HasseWiles(builtin, lean_io_mk_world());
+if (lean_io_result_is_error(res)) return res;
+lean_dec_ref(res);
+res = initialize_Beal_B05__Modularity__Core(builtin, lean_io_mk_world());
+if (lean_io_result_is_error(res)) return res;
+lean_dec_ref(res);
+res = initialize_Beal_B05__Modularity(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 res = initialize_Beal_B06__Final__Core(builtin, lean_io_mk_world());

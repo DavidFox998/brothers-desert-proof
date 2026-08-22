@@ -38,9 +38,10 @@ propext-only arithmetic boundary, even when the associated Core interface is
 zero-axiom.
 
 **How to apply:** keep Core on factorization certificates and exact
-multiplicative witnesses.  A canonical concrete radical requires either a
-separately audited broader wrapper boundary or a new constructive Core
-factorization library.
+multiplicative witnesses.  The approved B14 wrapper may use this broader
+boundary for the canonical radical, and CI must audit it separately; do not
+spread it to other wrappers.  A later constructive Core factorization library
+could eliminate this exception.
 
 For conditional mathematical statements, curry actual solution hypotheses
 before the conclusion:

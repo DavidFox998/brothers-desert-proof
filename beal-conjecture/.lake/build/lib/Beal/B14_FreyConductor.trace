@@ -3,6 +3,21 @@
    ".> LEAN_PATH=././.lake/packages/batteries/.lake/build/lib:././.lake/packages/Qq/.lake/build/lib:././.lake/packages/aesop/.lake/build/lib:././.lake/packages/proofwidgets/.lake/build/lib:././.lake/packages/Cli/.lake/build/lib:././.lake/packages/importGraph/.lake/build/lib:././.lake/packages/LeanSearchClient/.lake/build/lib:././.lake/packages/mathlib/.lake/build/lib:././.lake/build/lib LD_LIBRARY_PATH= /home/runner/.elan/toolchains/leanprover--lean4---v4.12.0/bin/lean ./././lean/Beal/B14_FreyConductor.lean -R ./././lean -o ././.lake/build/lib/Beal/B14_FreyConductor.olean -i ././.lake/build/lib/Beal/B14_FreyConductor.ilean -c ././.lake/build/ir/Beal/B14_FreyConductor.c --json",
    "level": "trace"},
   {"message":
-   "./././lean/Beal/B14_FreyConductor.lean:31:0: 'BealFreyConductor.beal_primes_not_divide_conductor_trivial' depends on axioms: [propext]",
+   "./././lean/Beal/B14_FreyConductor.lean:62:0: 'BealFreyConductor.beal_primes_not_divide_conductor_trivial' depends on axioms: [propext]",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B14_FreyConductor.lean:63:0: 'BealFreyConductor.Rad' depends on axioms: [propext, Classical.choice, Quot.sound]",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B14_FreyConductor.lean:64:0: 'BealFreyConductor.rad_dvd_self' depends on axioms: [propext, Classical.choice, Quot.sound]",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B14_FreyConductor.lean:65:0: 'BealFreyConductor.prime_factor_of_rad' depends on axioms: [propext, Classical.choice, Quot.sound]",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B14_FreyConductor.lean:66:0: 'BealFreyConductor.FreyConductorReal' depends on axioms: [propext, Classical.choice, Quot.sound]",
+   "level": "info"},
+  {"message":
+   "./././lean/Beal/B14_FreyConductor.lean:67:0: 'BealFreyConductor.FreyConductorComputation' depends on axioms: [propext, Classical.choice, Quot.sound]",
    "level": "info"}],
- "depHash": "2432201582261706934"}
+ "depHash": "2866410763076616178"}

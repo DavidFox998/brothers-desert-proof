@@ -42,20 +42,24 @@ theorem exact_prime_removal_lowered_level :
     exact hDiv
   · exact Nat.div_mul_cancel hDiv
 
-def S2Level2Witness : Prop :=
+/--
+Elementary arithmetic at an already-fixed level.  This is not a Ribet
+level-lowering statement: it has no Beal solution, conductor, or
+representation-theoretic premise.
+-/
+def LevelTwoArithmeticWitness : Prop :=
   ∀ N p M, CanLowerLevelCore N p M → N = 2 → p = 2 → M = 1
 
-theorem s2_level_2_witness : S2Level2Witness := by
+theorem level_two_arithmetic_witness : LevelTwoArithmeticWitness := by
   intro N p M hM hN hp
   rw [hN, hp] at hM
   have h1 : M * 2 = 1 * 2 := by rw [hM, Nat.one_mul]
   exact Nat.mul_right_cancel (by decide : 0 < 2) h1
 
-theorem ribet_lowers_to_2_trivial : S2Level2Witness := s2_level_2_witness
-
 #print axioms CanLowerLevelCore
 #print axioms canLowerLevel_of_exact
 #print axioms exact_prime_removal_lowered_level
-#print axioms s2_level_2_witness
+#print axioms LevelTwoArithmeticWitness
+#print axioms level_two_arithmetic_witness
 
 end BealLevelTo2

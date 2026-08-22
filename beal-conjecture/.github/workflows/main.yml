@@ -63,8 +63,6 @@ jobs:
           #print axioms BealHasseWiles.hasse_bound_143a1_all
           #print axioms BealModularity.s2_dim_zero_from_b10
           #print axioms BealModularity.lower_frey_conductor_of_exact_factor
-          #print axioms BealModularity.modularity_hypothesis_of_bridges
-          #print axioms BealModularity.modularity_hypothesis_with_assumptions
           #print axioms beal_bridge_proved
           #print axioms BealConjecture_trio_bridge
           #print axioms BealGalois.frey_galois_rep_of_pos
@@ -85,7 +83,7 @@ jobs:
           #print axioms BealRibetReal.ribet_realDefs_trivial
           #print axioms BealRibetReal.level_to_2_trivial
           #print axioms BealFreyConductor.beal_primes_not_divide_conductor_trivial
-          #print axioms BealLevelTo2.ribet_lowers_to_2_trivial
+          #print axioms BealLevelTo2.level_two_arithmetic_witness
           #print axioms BealLevelTo2.beal_final_trivial
           #print axioms Beal16Final.beal_if_S2vanishes_and_Ribet_trivial
           #print axioms Beal16Final.beal_follows
@@ -121,6 +119,83 @@ jobs:
             exit 1
           fi
           echo "OK: all cores are import-free and zero-axiom; wrappers use no forbidden axioms"
+
+      - name: Audit B14 factorization and conductor boundary
+        run: |
+          set -euo pipefail
+          cat > /tmp/beal_b14_boundary.lean <<'EOF'
+          import Beal.B05_Modularity
+          #print axioms BealFreyConductor.Rad
+          #print axioms BealFreyConductor.rad_dvd_self
+          #print axioms BealFreyConductor.prime_factor_of_rad
+          #print axioms BealFreyConductor.FreyConductorReal
+          #print axioms BealFreyConductor.FreyConductorComputation
+          #print axioms BealModularity.ribet_level_lowering_of_conductor_computation
+          #print axioms BealModularity.modularity_hypothesis_of_bridges
+          #print axioms BealModularity.modularity_hypothesis_with_assumptions
+          EOF
+          lake env lean /tmp/beal_b14_boundary.lean 2>&1 | tee /tmp/beal_b14_boundary.txt
+          if grep -E 'sorryAx' /tmp/beal_b14_boundary.txt; then
+            echo "FAIL: the B14 factorization boundary must never use sorryAx"
+            exit 1
+          fi
+          for declaration in \
+            BealFreyConductor.Rad \
+            BealFreyConductor.rad_dvd_self \
+            BealFreyConductor.prime_factor_of_rad \
+            BealFreyConductor.FreyConductorReal \
+            BealFreyConductor.FreyConductorComputation \
+            BealModularity.ribet_level_lowering_of_conductor_computation \
+            BealModularity.modularity_hypothesis_of_bridges \
+            BealModularity.modularity_hypothesis_with_assumptions; do
+            if ! grep -Fq "'$declaration' depends on axioms:" /tmp/beal_b14_boundary.txt; then
+              echo "FAIL: missing B14 boundary audit for $declaration"
+              exit 1
+            fi
+          done
+          if ! grep -Fq 'Classical.choice' /tmp/beal_b14_boundary.txt ||
+             ! grep -Fq 'Quot.sound' /tmp/beal_b14_boundary.txt; then
+            echo "FAIL: expected Mathlib finite-factorization boundary was not reported"
+            exit 1
+          fi
+          for assumption in \
+            BealFreyConductor.frey_conductor_computation \
+            BealModularity.mazur_irreducibility_axiom \
+            BealModularity.wiles_lifting_axiom; do
+            if ! grep -Fq "$assumption" /tmp/beal_b14_boundary.txt; then
+              echo "FAIL: missing named modularity assumption $assumption"
+              exit 1
+            fi
+          done
+          awk '
+            /^'\''BealModularity\.modularity_hypothesis_with_assumptions'\'' depends on axioms:/ {
+              printing = 1
+            }
+            printing {
+              print
+            }
+            printing && /\]$/ {
+              exit
+            }
+          ' /tmp/beal_b14_boundary.txt |
+            grep -E '^[[:space:]]+(Beal|Classical|Quot)' > /tmp/beal_b14_final_axioms.txt
+          cat > /tmp/beal_b14_expected_axioms.txt <<'EOF'
+ BealFreyConductor.frey_conductor_computation,
+ BealModularity.mazur_irreducibility_axiom,
+ BealModularity.wiles_lifting_axiom,
+ Classical.choice,
+ Quot.sound]
+ EOF
+          if ! diff -u /tmp/beal_b14_expected_axioms.txt /tmp/beal_b14_final_axioms.txt; then
+            echo "FAIL: the global B05 package must name exactly the conductor, Mazur, and Wiles assumptions"
+            exit 1
+          fi
+          if rg -nP '^\s*(?!-).*?(?:\.primeFactors\b|Mathlib\.Data\.Nat\.Factorization)' lean/Beal \
+              --glob '*.lean' --glob '!B14_FreyConductor.lean'; then
+            echo "FAIL: finite factorization is confined to the approved B14 wrapper"
+            exit 1
+          fi
+          echo "OK: B14 has the approved Mathlib factorization boundary; B05 names its three remaining assumptions"
 
       - name: Audit the trusted real-number transport boundary
         run: |
