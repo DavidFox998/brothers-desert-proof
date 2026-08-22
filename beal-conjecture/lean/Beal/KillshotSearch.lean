@@ -613,26 +613,42 @@ theorem killshot_mod8
   exact hEq.symm ▸ hEightC
 
 /-!
-## Killshot #5: squarefree minimality contradiction
+## Frey discriminant square identity
 
-The missing bridge is minimality of the Frey model: squarefreeness of
-`A * B * C` must force a squared prime in the conductor, contradicting the
-exact-factor condition already represented by `ExactFreyConductorFactor`.
+For the Frey model `Y² = X(X - A^x)(X + B^y)`, the discriminant is
+`16 (A^x B^y C^z)²`, hence a square.  This Core calculation does not need a
+factorization library.
+
+Squarefreeness and the existing exact-conductor predicates do not yet derive
+the radical-prime conclusion needed for a contradiction.  The conditional
+theorem below records precisely the already-closed radical-prime-power branch;
+the missing bridge from conductor data to its certificate remains separate.
 -/
 
 def SquarefreeABC14 (A B C : Nat) : Prop :=
   ∀ q : Nat, q * q ∣ A * B * C → q = 1
 
-theorem killshot_squarefree_contradiction
-    {conductor : FreyConductorFunction}
+def freyDiscriminant (A B C x y z : Nat) : Nat :=
+  16 * (A ^ x * B ^ y * C ^ z) ^ 2
+
+theorem frey_discriminant_is_square {A B C x y z : Nat} :
+    ∃ d, freyDiscriminant A B C x y z = d ^ 2 := by
+  let t := A ^ x * B ^ y * C ^ z
+  refine ⟨4 * t, ?_⟩
+  calc
+    freyDiscriminant A B C x y z = 16 * t ^ 2 := by rfl
+    _ = (4 * 4) * (t * t) := by
+      rw [pow_two_zero]
+    _ = (4 * t) * (4 * t) := (mul_collect_zero _ _ _ _).symm
+    _ = (4 * t) ^ 2 := (pow_two_zero _).symm
+
+theorem killshot_rad_prime_power_contradiction
     {A B C x y z p : Nat}
     (hBeal : IsBealSolution05Core A B C x y z)
-    (hSquarefree : SquarefreeABC14 A B C)
-    (hExact : ExactFreyConductorFactor conductor A B C x y z p)
-    (hConductorDivides :
-      FreyConductorDividesABC14Core A B C (conductor A B C x y z)) :
+    (hRadPrime : RadPrimeCase14 A B C p)
+    (hPowers : RadPrimePowerCertificate14Core A B C p) :
     False := by
-  sorry
+  exact killshot_rad_prime_branch hBeal hRadPrime hPowers
 
 #print axioms killshot_rad_prime_branch
 #print axioms add_right_cancel_zero
@@ -660,7 +676,9 @@ theorem killshot_squarefree_contradiction
 #print axioms eight_dvd_even_cube
 #print axioms eight_dvd_even_pow_from_three
 #print axioms eight_dvd_even_pow
+#print axioms freyDiscriminant
+#print axioms frey_discriminant_is_square
+#print axioms killshot_rad_prime_power_contradiction
 #print axioms killshot_no_2p_isogeny
 #print axioms killshot_level_2_no_ribet
 #print axioms killshot_mod8
-#print axioms killshot_squarefree_contradiction
