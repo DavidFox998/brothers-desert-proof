@@ -62,6 +62,7 @@ jobs:
           #print axioms qexp_implies_hecke
           #print axioms BealHasseWiles.hasse_bound_143a1_all
           #print axioms BealModularity.s2_dim_zero_from_b10
+          #print axioms BealModularity.lower_frey_conductor_of_exact_factor
           #print axioms BealModularity.modularity_hypothesis_of_bridges
           #print axioms BealModularity.modularity_hypothesis_with_assumptions
           #print axioms beal_bridge_proved
@@ -113,6 +114,10 @@ jobs:
 
           if grep -E 'Classical\.choice|Quot\.sound|sorryAx' /tmp/beal_axiom_audit.txt; then
             echo "FAIL: wrapper theorem depends on a forbidden axiom"
+            exit 1
+          fi
+          if ! grep -Fq "'BealModularity.lower_frey_conductor_of_exact_factor' depends on axioms: [propext]" /tmp/beal_axiom_audit.txt; then
+            echo "FAIL: unexpected axiom budget for exact-factor level lowering"
             exit 1
           fi
           echo "OK: all cores are import-free and zero-axiom; wrappers use no forbidden axioms"

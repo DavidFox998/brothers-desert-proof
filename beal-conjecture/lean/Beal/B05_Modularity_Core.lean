@@ -14,23 +14,44 @@ The current arithmetic proxy for the Frey conductor.  Replacing this product
 by the actual conductor is a later mathematical formalization step; keeping
 all six arguments records the intended Frey-curve interface now.
 -/
-def FreyConductor (A B C x y z : Nat) : Nat := A * B * C
+def FreyConductor (A B C _ _ _ : Nat) : Nat := A * B * C
+
+/-- Import-free primality predicate for the arithmetic conductor boundary. -/
+def IsPrime05Core (p : Nat) : Prop :=
+  2 ≤ p ∧ ∀ m : Nat, m ∣ p → m = 1 ∨ m = p
 
 /-- No prime divides all three bases of a primitive Beal triple. -/
 def NoPrimeCommonFactor (A B C : Nat) : Prop :=
-  ∀ p : Nat, 2 ≤ p → p ∣ A → p ∣ B → p ∣ C → False
+  ∀ p : Nat, IsPrime05Core p → p ∣ A → p ∣ B → p ∣ C → False
 
 /--
-The real Ribet boundary: the lowered level is tied to the conductor of the
-given Frey data.  `FreyConductor ... = p * 2` is used instead of `... / p = 2`
-so this import-free Core declaration remains zero-axiom.
+An exact prime factor of the conductor, including the lower bound relevant to
+the Frey--Ribet argument.
+-/
+def ExactFreyConductorFactor (A B C x y z p : Nat) : Prop :=
+  IsPrime05Core p ∧ 5 ≤ p ∧ p ∣ FreyConductor A B C x y z ∧
+    ¬ (p * p ∣ FreyConductor A B C x y z)
+
+/--
+The arithmetic result of lowering a conductor at an exact prime factor.  This
+records the lowered level and the fact that the prime no longer divides it.
+-/
+def FreyLevelLowering (A B C x y z p M : Nat) : Prop :=
+  M * p = FreyConductor A B C x y z ∧ ¬ (p ∣ M)
+
+/--
+The remaining Ribet boundary: for a primitive Beal solution, the Frey
+conductor has an exact prime factor whose lowered level is two.  The
+exact-factor-to-lowered-level arithmetic is proved separately; constructing
+the actual conductor and establishing the level-two conclusion remain the
+arithmetic-geometric content of Ribet's theorem.
 -/
 def RibetLevelLoweringHypothesisReal : Prop :=
   ∀ (A B C x y z : Nat),
     2 < x → 2 < y → 2 < z → A ^ x + B ^ y = C ^ z →
     NoPrimeCommonFactor A B C →
-    ∃ p, 5 ≤ p ∧ p ∣ FreyConductor A B C x y z ∧
-      FreyConductor A B C x y z = p * 2
+    ∃ p M, ExactFreyConductorFactor A B C x y z p ∧
+      FreyLevelLowering A B C x y z p M ∧ M = 2
 
 /--
 An arithmetic-only demonstration of the old free-witness shape.  It is not
@@ -80,7 +101,10 @@ def ModularityHypothesisTyped : Prop := Nonempty FreyModularityData
 #print axioms S2DimZero
 #print axioms s2DimZero_real
 #print axioms FreyConductor
+#print axioms IsPrime05Core
 #print axioms NoPrimeCommonFactor
+#print axioms ExactFreyConductorFactor
+#print axioms FreyLevelLowering
 #print axioms RibetLevelLoweringHypothesisReal
 #print axioms RibetLevelLoweringHypothesisVacuous
 #print axioms ribet_vacuous_arithmetic

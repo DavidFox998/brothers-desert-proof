@@ -11,8 +11,21 @@ theorem s2_dim_zero_from_b10 : S2DimZero := by
   exact BealRibet10.s2_vanishes_at_2
 
 /--
+The proved arithmetic portion of level lowering.  Once an exact prime factor
+of the conductor has been established, the lowered level is obtained without
+any additional mathematical assumption.
+-/
+theorem lower_frey_conductor_of_exact_factor
+    {A B C x y z p : Nat}
+    (hFactor : ExactFreyConductorFactor A B C x y z p) :
+    ∃ M, FreyLevelLowering A B C x y z p M := by
+  rcases hFactor with ⟨_, _, hDivides, hNotSquareDivides⟩
+  exact BealRibet10.level_lowering_of_exact ⟨hDivides, hNotSquareDivides⟩
+
+/--
 The actual level-lowering theorem remains an explicit assumption until the
-Frey-conductor computation and Ribet argument have been formalized.
+Frey-conductor computation and representation-theoretic Ribet argument have
+been formalized.  It now asks explicitly for a lowered level equal to two.
 -/
 axiom ribet_level_lowering_axiom_real : RibetLevelLoweringHypothesisReal
 
@@ -45,6 +58,7 @@ theorem modularity_hypothesis_with_assumptions : ModularityHypothesisTyped :=
     wiles_lifting_axiom
 
 #print axioms s2_dim_zero_from_b10
+#print axioms lower_frey_conductor_of_exact_factor
 #print axioms modularity_hypothesis_of_bridges
 #print axioms modularity_hypothesis_with_assumptions
 
