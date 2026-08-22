@@ -3,8 +3,10 @@ name: B16 level-two certificate boundary
 description: The approved separation between the zero-axiom level-two contradiction and the analytic S₂(2) calculation.
 ---
 
-B16 Core contains only the opaque `LevelTwoNoCuspForm` boundary and its
-elementary contradiction with a level-two Frey cusp-form witness.  The
+B16 Core contains only the opaque no-cusp certificate boundary and its
+elementary contradiction with an explicit negation witness.  A carrier such
+as the level-two modular data `Unit` does not itself imply a contradiction:
+the theorem must also receive the opposing Frey-form assertion.  The
 genus-zero calculation for X₀(2), its cusp count, and the Diamond--Shurman
 weight-two dimension identity remain explicit wrapper certificate inputs.
 

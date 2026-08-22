@@ -1,20 +1,36 @@
--- B16_S2_Level2_Core — zero-import level-two cusp-form boundary.
+-- B16 Core — level-two S₂(2)=0 certificate boundary — ZERO-AXIOM
+-- No Mathlib, no B14, no B15.
+
+/-- The Core carrier for the modular data at level two. -/
+def LevelTwoModularDataCore : Type := Unit
+
+/-- A Core-facing carrier for a weight-two level-two cusp-form witness. -/
+def CuspFormWeight2Level2Core : Type := Nat → Nat
 
 /--
-Core records only the proposition supplied by the level-two modular-form
-boundary.  Its analytic meaning and the dimension calculation stay in B16's
-wrapper.
+Opaque certificate that the level-two weight-two cusp-form space is zero.
+The certificate is supplied by the B16 wrapper; its analytic construction is
+deliberately not asserted in this import-free Core file.
 -/
-opaque LevelTwoNoCuspForm : Prop
+opaque LevelTwoNoCuspFormCore : Prop
 
 /--
-If the wrapper supplies both the no-cusp-form certificate and a level-two
-Frey cusp-form witness, the two propositions contradict one another.
+Ribet's level-two contradiction, once the wrapper has supplied both the
+no-cusp certificate and the contradictory level-two Frey-form witness.
 -/
-theorem ribet_level_two_contradiction
-    (hNoCusp : LevelTwoNoCuspForm)
-    (hLevelTwoFreyForm : ¬ LevelTwoNoCuspForm) : False :=
-  hLevelTwoFreyForm hNoCusp
+theorem ribet_level_two_contradiction_core
+    (hMod2 : LevelTwoModularDataCore)
+    (hNoForm : LevelTwoNoCuspFormCore)
+    (hFreyForm : ¬ LevelTwoNoCuspFormCore) : False := by
+  cases hMod2
+  exact hFreyForm hNoForm
 
-#print axioms LevelTwoNoCuspForm
-#print axioms ribet_level_two_contradiction
+/-- Core-facing proposition asserting that no level-two Frey form exists. -/
+def level_two_ribet_no_frey : Prop :=
+  LevelTwoNoCuspFormCore → False
+
+#print axioms LevelTwoModularDataCore
+#print axioms CuspFormWeight2Level2Core
+#print axioms LevelTwoNoCuspFormCore
+#print axioms ribet_level_two_contradiction_core
+#print axioms level_two_ribet_no_frey

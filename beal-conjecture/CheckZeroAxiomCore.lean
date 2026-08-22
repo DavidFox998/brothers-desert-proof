@@ -28,8 +28,11 @@ import Beal.B16_S2_Level2_Core
 #print axioms SubgroupProduct15Core
 #print axioms full2Torsion_mul_5_isogeny_imp_10_isogeny
 #print axioms X0_10_no_Frey
-#print axioms LevelTwoNoCuspForm
-#print axioms ribet_level_two_contradiction
+#print axioms LevelTwoModularDataCore
+#print axioms CuspFormWeight2Level2Core
+#print axioms LevelTwoNoCuspFormCore
+#print axioms ribet_level_two_contradiction_core
+#print axioms level_two_ribet_no_frey
 
 def main : IO Unit :=
-  IO.println "B05/B14/B15 Core declarations compiled; inspect the axiom report above."
+  IO.println "B05/B14/B15/B16 Core declarations compiled; inspect the axiom report above."

@@ -1,73 +1,85 @@
--- B16_S2_Level2_Wrapper — the real S₂(2)=0 certificate boundary.
+-- B16 wrapper — the S₂(Γ₀(2)) = 0 certificate boundary.
 --
--- This wrapper does not import B14 or B15.  Genus, cusp count, and the
--- Diamond–Shurman identity are explicit certificate inputs rather than axioms.
+-- The analytic/source calculation belongs here.  This wrapper does not
+-- import B14 or B15, and it does not import factorization or radical code.
 
 import Beal.B16_S2_Level2_Core
 
 namespace BealS2Level2
 
-/-- The computed genus of `X₀(2)`. -/
+/-- The genus computation for X₀(2), supplied by the source calculation. -/
 def GenusX0_2 : Nat := 0
 
-/-- The two cusps of `X₀(2)`, represented by their count. -/
+/-- X₀(2) has the two cusps 0 and ∞. -/
 def CuspCountX0_2 : Nat := 2
 
 /--
-The wrapper-facing dimension value.  Its value is not reduced by definition:
-the source calculation enters through `S2Level2DimensionCertificate`.
+The wrapper-facing dimension value.  Its value is intentionally not reduced
+by definition: the Diamond–Shurman dimension identity enters as certificate
+data below.
 -/
 opaque S2DimensionAtLevel2 : Nat
 
 /--
-Certificate data extracted from the genus/cusp calculation and the
-Diamond–Shurman identification
-`dim S₂(Γ₀(N)) = genus(X₀(N))` in weight two.
+Explicit B16 wrapper certificate for the source calculation:
+
+* genus(X₀(2)) = 0;
+* X₀(2) has two cusps;
+* the weight-two Diamond–Shurman dimension identity identifies the
+  dimension with the genus.
+
+This is certificate input, not a Core axiom.
 -/
-structure S2Level2DimensionCertificate : Prop where
+structure S2_Gamma0_2_DimensionCertificate : Prop where
   genus_zero : GenusX0_2 = 0
-  cusp_count : CuspCountX0_2 = 2
+  two_cusps : CuspCountX0_2 = 2
   diamond_shurman : S2DimensionAtLevel2 = GenusX0_2
 
-/-- The explicit wrapper input that connects dimension zero to no cusp form. -/
+/-- The wrapper's explicit source certificate that dimension zero means no cusp form. -/
 def DimensionZeroNoCuspCertificate : Prop :=
-  S2DimensionAtLevel2 = 0 → LevelTwoNoCuspForm
+  S2DimensionAtLevel2 = 0 → LevelTwoNoCuspFormCore
+
+theorem X0_2_genus_zero : GenusX0_2 = 0 :=
+  rfl
+
+theorem num_cusps_X0_2 : CuspCountX0_2 = 2 :=
+  rfl
 
 /--
-The actual dimension conclusion from genus zero, the two-cusp calculation,
-and the Diamond–Shurman weight-two formula.
+Diamond–Shurman's weight-two identity plus the genus-zero certificate gives
+the vanishing dimension.  The two-cusp datum is retained in the same
+certificate because it is part of the cited X₀(2) source calculation.
 -/
-theorem s2_level2_dimension_zero
-    (hDimension : S2Level2DimensionCertificate) :
+theorem S2_Gamma0_2_dimension_zero
+    (hDim : S2_Gamma0_2_DimensionCertificate) :
     S2DimensionAtLevel2 = 0 := by
-  rw [hDimension.diamond_shurman, hDimension.genus_zero]
+  rw [hDim.diamond_shurman, hDim.genus_zero]
 
-/-- Convert the proved wrapper dimension certificate into the Core boundary. -/
-theorem level_two_no_cusp_form_of_dimension_certificate
-    (hDimension : S2Level2DimensionCertificate)
+/-- Convert the wrapper dimension certificate into the opaque Core certificate. -/
+theorem x0_2_no_Frey_of_dimension_zero
+    (hDim : S2_Gamma0_2_DimensionCertificate)
     (hNoCusp : DimensionZeroNoCuspCertificate) :
-    LevelTwoNoCuspForm :=
-  hNoCusp (s2_level2_dimension_zero hDimension)
+    LevelTwoNoCuspFormCore :=
+  hNoCusp (S2_Gamma0_2_dimension_zero hDim)
 
-/--
-The complete wrapper-side contradiction once a level-two Frey cusp-form
-witness is supplied.
--/
+/-- Assemble the wrapper certificate with the Core contradiction boundary. -/
 theorem ribet_level_two_contradiction_of_dimension
-    (hDimension : S2Level2DimensionCertificate)
+    (hDim : S2_Gamma0_2_DimensionCertificate)
     (hNoCusp : DimensionZeroNoCuspCertificate)
-    (hLevelTwoFreyForm : ¬ LevelTwoNoCuspForm) : False :=
-  ribet_level_two_contradiction
-    (level_two_no_cusp_form_of_dimension_certificate hDimension hNoCusp)
-    hLevelTwoFreyForm
+    (hMod2 : LevelTwoModularDataCore)
+    (hFreyForm : ¬ LevelTwoNoCuspFormCore) : False :=
+  ribet_level_two_contradiction_core
+    hMod2
+    (x0_2_no_Frey_of_dimension_zero hDim hNoCusp)
+    hFreyForm
 
-#print axioms GenusX0_2
-#print axioms CuspCountX0_2
+#print axioms X0_2_genus_zero
+#print axioms num_cusps_X0_2
 #print axioms S2DimensionAtLevel2
-#print axioms S2Level2DimensionCertificate
+#print axioms S2_Gamma0_2_DimensionCertificate
 #print axioms DimensionZeroNoCuspCertificate
-#print axioms s2_level2_dimension_zero
-#print axioms level_two_no_cusp_form_of_dimension_certificate
+#print axioms S2_Gamma0_2_dimension_zero
+#print axioms x0_2_no_Frey_of_dimension_zero
 #print axioms ribet_level_two_contradiction_of_dimension
 
 end BealS2Level2
