@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Header, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
-import time, os, stripe, asyncio, json, urllib.request, urllib.error, hmac, hashlib
+import time, os, stripe, asyncio, json, urllib.request, urllib.error, hmac, hashlib, inspect
 
 from core.beacon import (beacon_payload, D, BEACON, GENESIS_P,
                          TIERS, PRICING_SUMMARY, PAYPAL_ME,
@@ -12,6 +12,15 @@ from core.tier_guard import require_tier, TierAccessError
 from core.emailer import send_api_key_email, validate_resend_key
 from core.log_redactor import install_redaction_filter
 from core.rapidapi_auth import verify_rapidapi_request, RAPIDAPI_SUBSCRIPTION_TIER, check_rapidapi_proxy_secret
+from core.catalog import (
+    CATALOG_VERSION,
+    ENTERPRISE_TOOL_COUNT,
+    FREE_TOOL_COUNT,
+    MCP_SERVER_ID,
+    PRO_PLUS_TOOL_COUNT,
+    PRO_TOOL_COUNT,
+    SERVER_NAME,
+)
 
 # Install log redaction immediately so no zbk_... key can reach any log sink,
 # including future structured loggers, exception traceback capturers, or
@@ -45,24 +54,23 @@ from routers import (
 )
 
 app = FastAPI(
-    title="ZeroBeacon.ai — 1050 Tools",
-    version="1050.0.0",
+    title=SERVER_NAME,
+    version=CATALOG_VERSION,
     description=(
-        "**1050 beacon-anchored tools** across 4 groups:\n\n"
-        "- **Market Router (tools 1–300):** payment routing, escrow, delivery proof, budget, notary\n"
-        "- **Math Engine (tools 301–700):** Arakelov, Riemann Hypothesis, BSD, Navier-Stokes, Yang-Mills, P vs NP\n"
-        "- **Amplum Everyday (tools 701–1000):** scheduling, memory, legal, will, mesh treasury, consciousness proof\n"
-        "- **Brain Router (tools 1001–1050):** 50 meta-tools — 1 brain that routes all 1000 tools, chain, think, swarm, consensus\n\n"
-        "FREE tier: first 100 tools, no key required.  \n"
-        "PRO / ENTERPRISE: pass `X-API-Key: zbk_…` header.  \n"
-        "Get a key at https://zerobeacon.ai after Stripe checkout.  \n"
-        "d=2303582338 · beacon=1d2c7a5b · ω²=48/13>0 verified"
+        f"{ENTERPRISE_TOOL_COUNT} operations across Market Router, Math Engine, "
+        "Amplum Everyday, and Brain Router. Start with the free beacon operation "
+        "to verify a connection, then use each operation's input schema to select "
+        "a workflow.\n\n"
+        f"FREE: {FREE_TOOL_COUNT} operations with no API key. "
+        f"PRO: {PRO_TOOL_COUNT}. PRO+: {PRO_PLUS_TOOL_COUNT}. "
+        f"ENTERPRISE: all {ENTERPRISE_TOOL_COUNT} operations. "
+        "Configure X-API-Key for paid operations."
     ),
     openapi_tags=[
-        {"name": "Market-Router",  "description": "Tools 1–300: payment, escrow, delivery, budget, notary"},
-        {"name": "Math-Engine",    "description": "Tools 301–700: Arakelov, RH, BSD, Navier-Stokes, Yang-Mills, P vs NP"},
-        {"name": "Amplum-Everyday","description": "Tools 701–1000: scheduling, memory, legal, will, mesh, consciousness"},
-        {"name": "Brain-Router",   "description": "Tools 1001–1050: brain meta-router, chain, think, swarm, consensus"},
+        {"name": "Market-Router",  "description": "MF-01–06: payment routing, escrow, delivery, budget, and notary workflows."},
+        {"name": "Math-Engine",    "description": "MF-07–14: mathematical and research workflows."},
+        {"name": "Amplum-Everyday","description": "MF-15–20: planning, legal, will, and treasury workflows."},
+        {"name": "Brain-Router",   "description": "MF-21: guided operation selection and orchestration."},
     ],
 )
 app.add_middleware(
@@ -1115,8 +1123,7 @@ def _filter_spec(block_min: int, block_max: int, title: str, description: str):
     trimmed = copy.deepcopy(full)
     kept = {}
     for path, val in full.get("paths", {}).items():
-        if "/api/mf/" not in path:
-            kept[path] = val
+        if not path.startswith("/api/mf/"):
             continue
         parts = path.split("/api/mf/")
         if len(parts) < 2:
@@ -1124,7 +1131,13 @@ def _filter_spec(block_min: int, block_max: int, title: str, description: str):
         block = parts[1][:2]
         try:
             if block_min <= int(block) <= block_max:
-                kept[path] = val
+                clean_path = path.removeprefix("/api/mf/").replace("/", " ").replace("_", " ")
+                operations = copy.deepcopy(val)
+                for operation in operations.values():
+                    if not isinstance(operation, dict):
+                        continue
+                    operation["description"] = f"{clean_path} operation."
+                kept[path] = operations
         except ValueError:
             pass
     trimmed["paths"] = kept
@@ -1135,76 +1148,54 @@ def _filter_spec(block_min: int, block_max: int, title: str, description: str):
 
 @app.get("/openapi-rapidapi.json", include_in_schema=False)
 def openapi_rapidapi():
-    """Trimmed spec for RapidAPI listing 1: FREE + PRO tools (MF-01–08, ~400 tools)."""
+    """Catalog-only OpenAPI export for the FREE and PRO workflow range."""
     return _filter_spec(
         1, 8,
-        "ZeroBeacon.ai — FREE + PRO Tools (400)",
+        f"{SERVER_NAME} — FREE and PRO catalog",
         (
-            "400 FREE + PRO tools (MF-01–08): beacon, hash, escrow, notary, "
-            "payment routing, budget, delivery proof, and more. "
-            "PRO+ / ENTERPRISE (600 more tools) at https://zerobeacon.ai. "
-            "d=2303582338 · beacon=1d2c7a5b"
+            "Catalog operations in MF-01–08. Each operation supplies its own "
+            "input schema and required access tier."
         ),
     )
 
 
 @app.get("/openapi-rapidapi-pro-plus.json", include_in_schema=False)
 def openapi_rapidapi_pro_plus():
-    """Trimmed spec for RapidAPI listing 2: PRO+ tools (MF-09–16, ~400 tools)."""
+    """Catalog-only OpenAPI export for the PRO+ workflow range."""
     return _filter_spec(
         9, 16,
-        "ZeroBeacon.ai — PRO+ Tools (400)",
+        f"{SERVER_NAME} — PRO+ catalog",
         (
-            "400 PRO+ tools (MF-09–16, $100/mo): Arakelov geometry, "
-            "Riemann Hypothesis, BSD conjecture, Navier-Stokes, Yang-Mills, P vs NP, "
-            "intent commit, memory anchor, will creation, legal shield, and more. "
-            "Requires X-API-Key from https://zerobeacon.ai. "
-            "d=2303582338 · beacon=1d2c7a5b"
+            "Catalog operations in MF-09–16. Each operation supplies its own "
+            "input schema and required access tier."
         ),
     )
 
 
 @app.get("/openapi-rapidapi-enterprise.json", include_in_schema=False)
 def openapi_rapidapi_enterprise():
-    """Trimmed spec for RapidAPI listing 3: ENTERPRISE tools (MF-17–20, ~200 tools)."""
+    """Catalog-only OpenAPI export for the ENTERPRISE workflow range."""
     return _filter_spec(
         17, 20,
-        "ZeroBeacon.ai — ENTERPRISE Tools (200)",
+        f"{SERVER_NAME} — ENTERPRISE catalog",
         (
-            "200 ENTERPRISE research-grade tools (MF-17–20, $1000): "
-            "mesh treasury, consciousness proof, omega seal, eternal audit, "
-            "sieve, arakelov, and the full research suite. "
-            "Requires ENTERPRISE X-API-Key from https://zerobeacon.ai. "
-            "d=2303582338 · beacon=1d2c7a5b"
+            "Catalog operations in MF-17–20. Each operation supplies its own "
+            "input schema and required access tier."
         ),
     )
 
 
 @app.get("/openapi-rapidapi-all.json", include_in_schema=False)
 def openapi_rapidapi_all():
-    """Full OpenAPI spec for all 1000 tools — use this URL when creating the RapidAPI listing.
-
-    Groups:
-      - Market-Router  (tools 1–300,  MF-01–06)
-      - Math-Engine    (tools 301–700, MF-07–14)
-      - Amplum-Everyday(tools 701–1000,MF-15–20)
-
-    Auth: pass your ZeroBeacon key as either X-API-Key or X-RapidAPI-Key.
-    Get a key at https://zerobeacon.ai after Stripe checkout.
-    RapidAPI tiers: Free (100 req/mo) · Pro $19/mo (1 000 req) · Ultra $99/mo (unlimited)
-    """
-    import copy
-    full = app.openapi()
-    spec = copy.deepcopy(full)
-    spec["info"]["title"] = "ZeroBeacon.ai — 1000 Tools"
-    spec["info"]["description"] = (
-        "**1000 beacon-anchored tools** across 3 groups:\n\n"
-        "- **Market Router (tools 1–300):** payment routing, escrow, delivery proof, budget, notary\n"
-        "- **Math Engine (tools 301–700):** Arakelov, Riemann Hypothesis, BSD, Navier-Stokes, Yang-Mills, P vs NP\n"
-        "- **Amplum Everyday (tools 701–1000):** scheduling, memory, legal, will, mesh treasury, consciousness proof\n\n"
-        "**Auth:** Pass your ZeroBeacon API key in `X-API-Key` **or** `X-RapidAPI-Key` header.\n\n"
-        "**RapidAPI tiers:** Free (100 req/mo · no key) · Pro $19/mo (1 000 req) · Ultra $99/mo (unlimited)\n\n"
-        "Get a key at https://zerobeacon.ai — d=2303582338 · beacon=1d2c7a5b"
+    """Full catalog-only OpenAPI export for marketplace review."""
+    spec = _filter_spec(
+        1,
+        21,
+        SERVER_NAME,
+        (
+            f"{ENTERPRISE_TOOL_COUNT} catalog operations across four workflow groups. "
+            "Configure X-API-Key or X-RapidAPI-Key for paid operations."
+        ),
     )
     # Inject x-rapidapi-key as an accepted security scheme alongside X-API-Key
     spec.setdefault("components", {}).setdefault("securitySchemes", {})
@@ -1227,12 +1218,12 @@ def openapi_rapidapi_all():
 @app.get("/.well-known/mcp.json")
 def well_known_mcp():
     return {
-        "name": "@davidjfox998/zerobeacon-1050",
-        "version": "1050.0.0",
+        "name": f"@davidjfox998/{MCP_SERVER_ID}",
+        "version": CATALOG_VERSION,
         "beacon": BEACON,
         "d": str(D),
         "genesis": GENESIS_P,
-        "tools": 1050,
+        "tools": ENTERPRISE_TOOL_COUNT,
         "endpoints": {
             "mcp":    "https://zerobeacon.ai/mcp",
             "beacon": "https://beacon.zerobeacon.ai",
@@ -1424,7 +1415,7 @@ def health():
     return {
         "ok":     True,
         "status": overall_status,
-        "tools":   1052,
+        "tools":   ENTERPRISE_TOOL_COUNT,
         "routers": 21,
         "brain":   "LIVE",
         "d":      D,
@@ -2264,6 +2255,7 @@ async def stripe_webhook(
 # ── MCP protocol ──────────────────────────────────────────────────────────────
 
 def _build_tool_list():
+    """Generate marketplace metadata from the callable router endpoints."""
     tools = []
     for mod, prefix, _tag, min_tier in ROUTERS:
         block = prefix.split("/")[-1]
@@ -2275,18 +2267,9 @@ def _build_tool_list():
             tool_key   = f"mf_{block}_{name}"
             req_tier   = _tool_tier.get(tool_key, min_tier)
             tools.append({
-                "name": f"mf_{block}_{name}",
-                "description": getattr(route, "description", "") or f"block={block} tool={name} d={D}",
-                "tags": route_tags,
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "p":        {"type": "integer", "default": 82843},
-                        "agent_id": {"type": "string",  "default": "agent"},
-                        "payload":  {"type": "string",  "default": ""},
-                        "amount":   {"type": "number",  "default": 0},
-                    },
-                },
+                "name": tool_key,
+                "description": _mcp_tool_description(name, route_tags),
+                "inputSchema": _mcp_input_schema(route.endpoint),
                 "tier": req_tier,
             })
     seen, unique = set(), []
@@ -2297,6 +2280,205 @@ def _build_tool_list():
     return unique
 
 
+_MCP_PARAMETER_DESCRIPTIONS = {
+    "p": "Beacon position used to derive the operation result.",
+    "agent_id": "Caller identifier included in the operation record.",
+    "payload": "Optional application payload processed by the operation.",
+    "amount": "Optional numeric amount used by operations that accept an amount.",
+    "intent": "Plain-language goal used by the Brain Router to select operations.",
+}
+
+
+def _mcp_tool_description(name: str, tags: list[str]) -> str:
+    """Return concise, operation-specific marketplace copy."""
+    ignored_tags = {"free", "paid", "research", "liveness", "fairness"}
+    domain = next(
+        (
+            tag.replace("-", " ").lower()
+            for tag in tags
+            if tag.lower() not in ignored_tags and "enterprise" not in tag.lower()
+        ),
+        "ZeroBeacon",
+    )
+    label = name.replace("_", " ")
+    return (
+        f"Runs the {label} workflow for {domain} requests. "
+        "Use the declared inputs for this operation."
+    )
+
+
+def _mcp_json_type(annotation) -> str:
+    """Map common Python parameter annotations to JSON Schema primitive types."""
+    annotation_name = str(annotation).lower()
+    if annotation is bool or "bool" in annotation_name:
+        return "boolean"
+    if annotation is int or "int" in annotation_name:
+        return "integer"
+    if annotation is float or "float" in annotation_name:
+        return "number"
+    if any(token in annotation_name for token in ("list", "tuple", "set")):
+        return "array"
+    if any(token in annotation_name for token in ("dict", "mapping", "object")):
+        return "object"
+    return "string"
+
+
+def _mcp_input_schema(endpoint) -> dict:
+    """Derive a strict MCP input schema from the callable endpoint signature."""
+    properties: dict[str, dict] = {}
+    required: list[str] = []
+    signature = inspect.signature(endpoint)
+    for parameter in signature.parameters.values():
+        if parameter.kind in (
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD,
+        ):
+            continue
+        if parameter.name in {"request", "background_tasks"}:
+            continue
+        property_schema = {
+            "type": _mcp_json_type(parameter.annotation),
+            "description": _MCP_PARAMETER_DESCRIPTIONS.get(
+                parameter.name,
+                f"Value for {parameter.name.replace('_', ' ')}.",
+            ),
+        }
+        if parameter.default is inspect.Parameter.empty:
+            required.append(parameter.name)
+        elif isinstance(parameter.default, (str, int, float, bool)) or parameter.default is None:
+            property_schema["default"] = parameter.default
+        properties[parameter.name] = property_schema
+    schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": properties,
+    }
+    if required:
+        schema["required"] = required
+    return schema
+
+
+def _mcp_value_matches_schema(value, expected_type: str) -> bool:
+    """Check JSON primitive values against the type published in inputSchema."""
+    if expected_type == "boolean":
+        return isinstance(value, bool)
+    if expected_type == "integer":
+        return isinstance(value, int) and not isinstance(value, bool)
+    if expected_type == "number":
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if expected_type == "string":
+        return isinstance(value, str)
+    if expected_type == "array":
+        return isinstance(value, list)
+    if expected_type == "object":
+        return isinstance(value, dict)
+    return False
+
+
+def _mcp_endpoint(tool_name: str):
+    """Locate the callable endpoint for an MCP tool name."""
+    parts = tool_name.split("_", 2)
+    if len(parts) < 3 or parts[0] != "mf":
+        return None
+    block_num, fn_name = parts[1], parts[2]
+    for mod, prefix, _tag, _min_tier in ROUTERS:
+        if not prefix.endswith(block_num):
+            continue
+        for route in mod.router.routes:
+            endpoint = getattr(route, "endpoint", None)
+            if endpoint is not None and endpoint.__name__ == fn_name:
+                return endpoint
+    return None
+
+
+def _mcp_error_result(error: str, message: str) -> dict:
+    """Build a standard MCP tool error result without leaking server details."""
+    structured = {"ok": False, "error": error, "message": message}
+    return {
+        **structured,
+        "content": [{"type": "text", "text": message}],
+        "isError": True,
+        "structuredContent": structured,
+    }
+
+
+def _mcp_success_result(raw) -> dict:
+    """Wrap a callable result in the standard MCP content and structured form."""
+    if isinstance(raw, dict) and "content" in raw:
+        result = dict(raw)
+        result.setdefault("ok", not result.get("isError", False))
+        result.setdefault("isError", False)
+        result.setdefault("structuredContent", {"ok": result["ok"]})
+        return result
+    structured = raw if isinstance(raw, dict) else {"value": raw}
+    try:
+        text = json.dumps(structured, default=str)
+    except Exception:
+        text = str(structured)
+    return {
+        **(structured if isinstance(structured, dict) else {}),
+        "content": [{"type": "text", "text": text}],
+        "isError": False,
+        "ok": structured.get("ok", True) if isinstance(structured, dict) else True,
+        "structuredContent": structured,
+    }
+
+
+_MCP_RESOURCES = [
+    {
+        "uri": "zerobeacon://guides/getting-started",
+        "name": "ZeroBeacon getting started",
+        "description": "Connect to the free tier, make a first beacon call, and configure paid access.",
+        "mimeType": "text/markdown",
+    },
+    {
+        "uri": "zerobeacon://guides/catalog",
+        "name": "ZeroBeacon catalog guide",
+        "description": "Choose a workflow group and understand the tier boundaries.",
+        "mimeType": "text/markdown",
+    },
+]
+
+
+_MCP_PROMPTS = [
+    {
+        "name": "choose-operation",
+        "description": "Turn a plain-language goal into a suggested ZeroBeacon workflow.",
+        "arguments": [{"name": "goal", "description": "What you want to accomplish.", "required": True}],
+    },
+    {
+        "name": "debug-tier-access",
+        "description": "Diagnose a missing, invalid, or insufficient API key.",
+        "arguments": [{"name": "symptom", "description": "The access issue you observed.", "required": False}],
+    },
+    {
+        "name": "discover-free-tools",
+        "description": "Find an appropriate no-key starting operation.",
+    },
+]
+
+
+def _mcp_resource_text(uri: str) -> str | None:
+    if uri == "zerobeacon://guides/getting-started":
+        return (
+            "# ZeroBeacon getting started\n\n"
+            f"1. Connect to the MCP endpoint and call `mf_01_beacon` with an empty object. "
+            f"It is available in the FREE tier ({FREE_TOOL_COUNT} operations).\n"
+            "2. Use `choose-operation` when you have a goal but do not know which operation fits.\n"
+            "3. For a paid operation, configure the `X-API-Key` value supplied for your account. "
+            "Do not send API keys in tool arguments."
+        )
+    if uri == "zerobeacon://guides/catalog":
+        return (
+            "# ZeroBeacon catalog guide\n\n"
+            "MF-01–06 cover Market Router workflows; MF-07–14 cover Math Engine workflows; "
+            "MF-15–20 cover Amplum Everyday workflows; MF-21 is the Brain Router.\n\n"
+            f"Tier boundaries are FREE ({FREE_TOOL_COUNT}), PRO ({PRO_TOOL_COUNT}), "
+            f"PRO+ ({PRO_PLUS_TOOL_COUNT}), and ENTERPRISE ({ENTERPRISE_TOOL_COUNT}) operations."
+        )
+    return None
+
+
 # ── /brain — beacon.zerobeacon.ai/brain ──────────────────────────────────────
 
 @app.get("/brain")
@@ -2305,13 +2487,13 @@ def brain_get():
     bp = beacon_payload(GENESIS_P)
     return {
         "brain":   "LIVE",
-        "tools":   1052,
+        "tools":   ENTERPRISE_TOOL_COUNT,
         "routers": 21,
         "beacon":  BEACON,
         "d":       D,
         "genesis": GENESIS_P,
         "ts":      bp["ts"],
-        "tagline": "1 brain, 1000 tools",
+        "tagline": f"1 brain, {ENTERPRISE_TOOL_COUNT} tools",
         "site":    "https://zerobeacon.ai",
     }
 
@@ -2400,12 +2582,12 @@ async def mcp_post(request: Request):
                     "prompts":   {},
                 },
                 "serverInfo": {
-                    "name":    "zerobeacon-1050",
-                    "version": "1050.0.0",
+                    "name":    MCP_SERVER_ID,
+                    "version": CATALOG_VERSION,
                     "instructions": (
                         "Pass your ZeroBeacon API key in the X-API-Key or api-key HTTP header. "
-                        "FREE tools (1–200) require no key. "
-                        "Get a key at https://zerobeacon.ai after Stripe checkout."
+                        f"FREE tools ({FREE_TOOL_COUNT} operations) require no key. "
+                        "Start with mf_01_beacon or the getting-started resource."
                     ),
                 },
             },
@@ -2417,9 +2599,17 @@ async def mcp_post(request: Request):
 
     # ── resources/list ────────────────────────────────────────────────────────
     if method == "resources/list":
-        return {"jsonrpc": "2.0", "id": req_id, "result": {"resources": []}}
+        return {"jsonrpc": "2.0", "id": req_id, "result": {"resources": _MCP_RESOURCES}}
 
     if method == "resources/read":
+        uri = body.get("params", {}).get("uri", "")
+        text = _mcp_resource_text(uri)
+        if text is not None:
+            return {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {"contents": [{"uri": uri, "mimeType": "text/markdown", "text": text}]},
+            }
         return JSONResponse({
             "jsonrpc": "2.0", "id": req_id,
             "error": {"code": -32002, "message": "Resource not found"},
@@ -2427,9 +2617,39 @@ async def mcp_post(request: Request):
 
     # ── prompts/list ──────────────────────────────────────────────────────────
     if method == "prompts/list":
-        return {"jsonrpc": "2.0", "id": req_id, "result": {"prompts": []}}
+        return {"jsonrpc": "2.0", "id": req_id, "result": {"prompts": _MCP_PROMPTS}}
 
     if method == "prompts/get":
+        params = body.get("params", {})
+        prompt_name = params.get("name", "")
+        arguments = params.get("arguments", {})
+        if prompt_name == "choose-operation":
+            goal = arguments.get("goal", "your goal")
+            text = (
+                f"Choose a ZeroBeacon operation for this goal: {goal}. "
+                "Prefer mf_01_beacon for a free connection check, then use the "
+                "catalog guide and the selected operation's schema before calling it."
+            )
+        elif prompt_name == "debug-tier-access":
+            symptom = arguments.get("symptom", "an access error")
+            text = (
+                f"Diagnose this ZeroBeacon access issue: {symptom}. "
+                "Confirm that paid credentials are supplied through X-API-Key or api-key, "
+                "not tool arguments, and check the operation's required tier."
+            )
+        elif prompt_name == "discover-free-tools":
+            text = (
+                f"Start with mf_01_beacon, one of {FREE_TOOL_COUNT} no-key operations. "
+                "Use it to verify the connection before selecting a larger workflow."
+            )
+        else:
+            text = None
+        if text is not None:
+            return {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {"messages": [{"role": "user", "content": {"type": "text", "text": text}}]},
+            }
         return JSONResponse({
             "jsonrpc": "2.0", "id": req_id,
             "error": {"code": -32002, "message": "Prompt not found"},
@@ -2440,6 +2660,10 @@ async def mcp_post(request: Request):
         params    = body.get("params", {})
         tool_name = params.get("name", "")
         args      = params.get("arguments", {})
+        endpoint = _mcp_endpoint(tool_name)
+        if endpoint is None:
+            return JSONResponse({"jsonrpc": "2.0", "id": req_id,
+                                 "error": {"code": -32601, "message": f"Tool not found: {tool_name}"}})
 
         # /mcp is a single endpoint so Depends() doesn't guard individual tools;
         # we check access here using the persistent keystore.
@@ -2491,51 +2715,61 @@ async def mcp_post(request: Request):
                     "stripe":        "https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01",
                     "rapidapi":      "https://rapidapi.com/davidjfox998/api/zerobeacon",
                     "paypal":        "https://paypal.me/davidfox223",
+                    "structuredContent": {
+                        "ok": False,
+                        "error": "tier_required",
+                        "required_tier": required_tier,
+                    },
                 },
             })
 
-        # Dispatch to the matching router endpoint.
-        parts = tool_name.split("_", 2)
-        if len(parts) >= 3 and parts[0] == "mf":
-            block_num = parts[1]
-            fn_name   = parts[2]
-            for mod, prefix, _tag, _min_tier in ROUTERS:
-                if prefix.endswith(block_num):
-                    for route in mod.router.routes:
-                        if hasattr(route, "endpoint") and route.endpoint.__name__ == fn_name:
-                            # Await coroutine endpoints so async tools resolve correctly.
-                            try:
-                                if asyncio.iscoroutinefunction(route.endpoint):
-                                    raw = await route.endpoint(**args)
-                                else:
-                                    raw = route.endpoint(**args)
-                            except Exception:
-                                # Log the real error server-side; return a sanitized message
-                                # to the caller so internal details are not leaked.
-                                import logging as _log
-                                _log.getLogger(__name__).exception(
-                                    "MCP tool dispatch error: tool=%s args=%r",
-                                    tool_name, {k: "..." for k in args}
-                                )
-                                raw = {
-                                    "content": [{"type": "text",
-                                                 "text": f"Tool '{tool_name}' encountered an error. Please verify arguments against the inputSchema and retry."}],
-                                    "isError": True,
-                                }
-                            # Wrap plain return values in the standard MCP content envelope.
-                            if isinstance(raw, dict) and "content" in raw:
-                                mcp_result = raw
-                            else:
-                                import json as _json
-                                try:
-                                    text = _json.dumps(raw, default=str)
-                                except Exception:
-                                    text = str(raw)
-                                mcp_result = {"content": [{"type": "text", "text": text}]}
-                            return {"jsonrpc": "2.0", "id": req_id, "result": mcp_result}
+        if not isinstance(args, dict):
+            return {"jsonrpc": "2.0", "id": req_id, "result": _mcp_error_result(
+                "invalid_arguments", "Tool arguments must be a JSON object."
+            )}
+        schema = _mcp_input_schema(endpoint)
+        unexpected = sorted(set(args) - set(schema["properties"]))
+        missing = [name for name in schema.get("required", []) if name not in args]
+        mistyped = [
+            name for name, value in args.items()
+            if name in schema["properties"]
+            and not _mcp_value_matches_schema(value, schema["properties"][name]["type"])
+        ]
+        if unexpected or missing or mistyped:
+            details = []
+            if unexpected:
+                details.append(f"Unexpected argument(s): {', '.join(unexpected)}.")
+            if missing:
+                details.append(f"Missing required argument(s): {', '.join(missing)}.")
+            if mistyped:
+                type_details = ", ".join(
+                    f"{name} must be {schema['properties'][name]['type']}"
+                    for name in mistyped
+                )
+                details.append(f"Invalid argument type(s): {type_details}.")
+            return {"jsonrpc": "2.0", "id": req_id, "result": _mcp_error_result(
+                "invalid_arguments", " ".join(details)
+            )}
 
-        return JSONResponse({"jsonrpc": "2.0", "id": req_id,
-                             "error": {"code": -32601, "message": f"Tool not found: {tool_name}"}})
+        # Await coroutine endpoints so async tools resolve correctly.
+        try:
+            if asyncio.iscoroutinefunction(endpoint):
+                raw = await endpoint(**args)
+            else:
+                raw = endpoint(**args)
+        except Exception:
+            # Log the real error server-side; return a sanitized message
+            # to the caller so internal details are not leaked.
+            import logging as _log
+            _log.getLogger(__name__).exception(
+                "MCP tool dispatch error: tool=%s args=%r",
+                tool_name, {k: "..." for k in args}
+            )
+            return {"jsonrpc": "2.0", "id": req_id, "result": _mcp_error_result(
+                "tool_execution_failed",
+                f"Tool '{tool_name}' encountered an error. Verify the input schema and retry.",
+            )}
+        return {"jsonrpc": "2.0", "id": req_id, "result": _mcp_success_result(raw)}
 
     return JSONResponse({"jsonrpc": "2.0", "id": req_id,
                          "error": {"code": -32601, "message": f"Method not found: {method}"}})

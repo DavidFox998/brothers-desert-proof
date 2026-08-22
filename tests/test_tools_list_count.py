@@ -269,6 +269,25 @@ def test_mcp_tool_calls_match_the_advertised_schema_and_result_shape():
     assert invalid["structuredContent"]["error"] == "invalid_arguments"
     assert "not_in_schema" in invalid["structuredContent"]["message"]
 
+    for bad_arguments, expected_name in (
+        ({"p": "not-an-integer"}, "p"),
+        ({"agent_id": 42}, "agent_id"),
+        ({"payload": ["not", "a", "string"]}, "payload"),
+        ({"amount": "not-a-number"}, "amount"),
+    ):
+        invalid_type = client.post(
+            "/mcp",
+            json={
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "tools/call",
+                "params": {"name": "mf_01_beacon", "arguments": bad_arguments},
+            },
+        ).json()["result"]
+        assert invalid_type["isError"] is True
+        assert invalid_type["structuredContent"]["error"] == "invalid_arguments"
+        assert expected_name in invalid_type["structuredContent"]["message"]
+
 
 def test_rapidapi_exports_only_catalog_paths_with_clean_operation_copy():
     """Marketplace imports must not advertise MCP, admin, webhook, or debug paths."""

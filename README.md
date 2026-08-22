@@ -233,7 +233,7 @@ grep -r "sorry" Siegel/ Lindelof/ SelfSymmetry/ Protocol/ --include="*.lean" \
 
 **[navier-stokes](https://github.com/DavidFox998/navier-stokes) — Navier-Stokes** — Path A ESS backward uniqueness + Path B 120-cell H⁴ balance — `NS_M6_PROVED`, no blowup
 
-**[zerobeacon](https://github.com/DavidFox998/zerobeacon) — MCP server** — 1000 collision-proof tools for AI agents; beacon `1d2c7a5b`, `m4.out = Complete: True`
+**[zerobeacon](https://github.com/DavidFox998/zerobeacon) — MCP server** — 1,052 MCP operations for agent workflows; start with the free beacon connection check
 
 ---
 
