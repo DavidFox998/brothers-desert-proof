@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21926550.svg)](https://doi.org/10.5281/zenodo.21926550) [![CI](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml/badge.svg)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21926550.svg)](https://doi.org/10.5281/zenodo.21926550) [![CI](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml/badge.svg)](https://github.com/DavidFox998/brothers-desert-proof/actions/workflows/lean.yml) [![Smithery](https://smithery.ai/badge/davidjfox998/zerobeacon-1050)](https://smithery.ai/servers/davidjfox998/zerobeacon-1050)
 
 # brothers-desert-proof — Route D — Discrete Self-Symmetry of the 35 Morningstar Brothers — Lean formalization, conditional
 

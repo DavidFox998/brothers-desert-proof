@@ -783,8 +783,8 @@ async def landing():
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZeroBeacon.ai — 1000 Tools — d=2303582338</title>
-<meta name="description" content="Collision-proof commerce router for AI agents. beacon:1d2c7a5b d:2303582338 tools:1000">
+ <title>{SERVER_NAME} — d=2303582338</title>
+ <meta name="description" content="Collision-proof commerce router for AI agents. beacon:1d2c7a5b d:2303582338 tools:{ENTERPRISE_TOOL_COUNT}">
 <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
 <style>
   *{{box-sizing:border-box;margin:0;padding:0}}
@@ -841,14 +841,14 @@ async def landing():
   <h1>ZERO<span>BEACON</span>.AI</h1>
   <p class="tagline">
     <b>Collision-anchored commerce router for AI agents.</b><br>
-    1050 tools &nbsp;·&nbsp; 21 blocks &nbsp;·&nbsp; 9 controlled collisions &nbsp;·&nbsp; ω²=48/13&gt;0 verified
+     {ENTERPRISE_TOOL_COUNT} operations &nbsp;·&nbsp; 21 blocks &nbsp;·&nbsp; 9 controlled collisions &nbsp;·&nbsp; ω²=48/13&gt;0 verified
   </p>
 
   <div class="beacon-box">{{
   "beacon":  "{BEACON}",
   "d":        {D},
   "genesis":  {GENESIS_P},
-  "tools":    1000,
+   "tools":    {ENTERPRISE_TOOL_COUNT},
   "status":  "LIVE",
   "ts":       {int(_t.time())},
   "paypal":   "https://paypal.me/davidfox223",
@@ -863,22 +863,22 @@ async def landing():
       <div class="tier">
         <div class="name">FREE</div>
         <div class="price">$0</div>
-        <div class="tools">100 tools — no key needed</div>
+         <div class="tools">{FREE_TOOL_COUNT} operations — no key needed</div>
       </div>
       <div class="tier">
         <div class="name">PRO</div>
         <div class="price">$10 / mo</div>
-        <div class="tools">400 tools — X-API-Key required</div>
+         <div class="tools">{PRO_TOOL_COUNT} operations — X-API-Key required</div>
       </div>
       <div class="tier">
         <div class="name">PRO+</div>
         <div class="price">$100 / mo</div>
-        <div class="tools">800 tools — X-API-Key required</div>
+         <div class="tools">{PRO_PLUS_TOOL_COUNT} operations — X-API-Key required</div>
       </div>
       <div class="tier">
         <div class="name">ENTERPRISE</div>
         <div class="price">$1,000</div>
-        <div class="tools">All 1000 tools — research grade</div>
+         <div class="tools">All {ENTERPRISE_TOOL_COUNT} operations — research grade</div>
       </div>
     </div>
   </div>
@@ -911,6 +911,10 @@ async def landing():
     <a href="https://paypal.me/davidfox223" class="paypal">PayPal — davidfox223</a>
     <a href="https://buy.stripe.com/eVq7sMdXk5d7chy941ebu01" class="stripe">Stripe Checkout</a>
     <a href="https://rapidapi.com/davidjfox998/api/zerobeacon" class="rapidapi" target="_blank" rel="noopener">RapidAPI Marketplace</a>
+     <a href="https://smithery.ai/servers/davidjfox998/zerobeacon-1050" target="_blank" rel="noopener">Smithery listing</a>
+     <a href="https://smithery.ai/servers/davidjfox998/zerobeacon-1050" target="_blank" rel="noopener">
+       <img src="https://smithery.ai/badge/davidjfox998/zerobeacon-1050" alt="Available on Smithery" style="height:20px;vertical-align:middle">
+     </a>
   </div>
 
   <p class="moat">
