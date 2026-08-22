@@ -4,8 +4,6 @@ def Divides14Core (d n : Nat) : Prop := ∃ q : Nat, n = d * q
 def Prime14Core (p : Nat) : Prop :=
   1 < p ∧ ∀ a b : Nat, p = a * b → a = 1 ∨ b = 1
 
-def FreyConductorSchematic (A B C _ _ _ : Nat) : Nat := A * B * C
-
 /--
 The Core layer does not depend on a factorization implementation.  A
 certificate records the two properties needed from a radical: it divides its
@@ -29,7 +27,6 @@ def BealPrimesNotDivideConductor14Core : Prop :=
 
 #print axioms Divides14Core
 #print axioms Prime14Core
-#print axioms FreyConductorSchematic
 #print axioms RadCertificate
 #print axioms FreyConductorRealCertificate
 #print axioms FreyConductorDividesABC14Core
