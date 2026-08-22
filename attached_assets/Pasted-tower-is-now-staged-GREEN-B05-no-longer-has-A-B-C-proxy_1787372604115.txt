@@ -1,0 +1,34 @@
+tower is now staged GREEN: B05 no longer has A*B*C proxy, B14 is sole approved 3-axiom wrapper (propext + choice + Quot.sound), B15 Core is constructive witness. Final assumptions are exactly:
+1. frey_conductor_computation 2. mazur_irreducibility 3. wiles_lifting 
+That means any killshot that removes one of those is a paper.
+
+Top 6 killshots to hunt tonight, in order of feasibility:
+
+KILLSHOT #1 — Rad = p case is elementary
+If Rad(ABC)=p (prime), then A*B*C = p^k. If gcd(A,B,C)=1 (Beal), then at most one of A,B,C >1. So 1 + p^a = p^c or p^a + 1 = p^c. For x,y,z >2 this is impossible mod 4 / Catalan. This would remove need for conductor computation for that branch. Check B14_FreyConductor_Core.lean — prove prime_dvd_of_Rad_eq_prime -> forces one term =1.
+
+KILLSHOT #2 — Full 2-torsion kills Mazur
+Your Frey curve has full rational 2-torsion. If ρ_{E,p} reducible, you get rational 2p`-isogeny. Kenku classified `X₀(4) and X₀(8). For p=5, X₀(10) and X₀(20) genus 0 — you can prove no non-cuspidal rational point by elementary parametrization, without full Mazur. That would replace mazur_irreducibility_axiom with a proved no_2p_isogeny for your specific curve.
+
+KILLSHOT #3 — Level 2 is empty without Ribet
+You already have S₂(2)=0 proved in B10 as real arithmetic dim=0 genus=0. If you can prove level lowering from N=2p to 2 using only Tate curve + 2-adic argument (not full Ribet), you close Ribet. Hunt in B15_LevelTo2_Core.lean — your level_two_arithmetic_witness is already renamed from ribet_lowers_to_2_trivial. Try to prove p² ∤ N implies lowered level M=2 using only your div_mul_cancel_core.
+
+KILLSHOT #4 — Parity / mod 8
+Frey curve Y² = X(X-A^x)(X+B^y). If A,B odd, C even (Beal), discriminant Δ = (A^x B^y C^z)² / 2⁸. For x,y,z>2, Δ mod 8 forces C divisible by 4. Combine with Rad(ABC) to force 2 ∣ Rad — but your conductor is 2*p. That forces p even → contradiction.
+
+KILLSHOT #5 — Coprime product is not squarefree
+Beal requires gcd(A,B,C)=1 but your Frey discriminant is a perfect square up to factor 64. If A*B*C is squarefree, then Δ is not minimal. Minimality forces a prime squared dividing conductor — contradicts p² ∤ N you already prove in B05.
+
+Task: Killshot search
+
+1. Create lean/Beal/KillshotSearch.lean with 5 theorems, all sorryAx allowed for search:
+   - killshot_rad_prime_branch: Rad(ABC)=p -> ABC=p^k -> Beal impossible for >2
+   - killshot_no_2p_isogeny: full 2-torsion + reducible mod p -> rational point on X0(2p) -> contradiction for p>=5 using X0(10) param
+   - killshot_level_2_no_ribet: N=2p and p²∤N and S2(2)=0 -> contradiction without Ribet axiom
+   - killshot_mod8: Beal parity forces 4|C
+   - killshot_squarefree_contradiction
+
+2. Run: lake build KillshotSearch
+3. For each that fails, keep the sorry but log which lemmas missing in Core
+4. Do NOT touch B14 wrapper boundary — keep it sole approved factorization boundary
+5. Keep pushing: git commit -m "killshot search WIP"
