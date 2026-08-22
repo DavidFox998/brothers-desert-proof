@@ -2,6 +2,7 @@ import Beal.B05_Modularity_Core
 import Beal.B14_FreyConductor_Core
 import Beal.B15_LevelTo2_Core
 import Beal.B15_X0_10_Core
+import Beal.B16_S2_Level2_Core
 
 #print axioms FreyConductorFunction
 #print axioms IsPrime05Core
@@ -27,6 +28,8 @@ import Beal.B15_X0_10_Core
 #print axioms SubgroupProduct15Core
 #print axioms full2Torsion_mul_5_isogeny_imp_10_isogeny
 #print axioms X0_10_no_Frey
+#print axioms LevelTwoNoCuspForm
+#print axioms ribet_level_two_contradiction
 
 def main : IO Unit :=
   IO.println "B05/B14/B15 Core declarations compiled; inspect the axiom report above."

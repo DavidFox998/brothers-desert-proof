@@ -81,6 +81,35 @@ theorem radical_prime_imp_prime_power {A B C p : Nat}
 def FreyConductorReal (A B C _ _ _ : Nat) : Nat :=
   2 * Rad (A * B * C)
 
+/-!
+The concrete semistable conductor output has the shape `2 * p`.  Since the
+concrete conductor is `2 * Rad (A * B * C)`, cancellation exposes the prime
+radical and lets the approved `primeFactors` bridge above produce the Core
+prime-power certificate.
+-/
+theorem frey_conductor_to_rad_prime_power
+    {A B C x y z : Nat}
+    (hA : 0 < A) (hB : 0 < B) (hC : 0 < C)
+    (hSemistable :
+      ∃ p, 5 ≤ p ∧ IsPrime10Core p ∧
+        FreyConductorReal A B C x y z = 2 * p) :
+    ∃ p, 5 ≤ p ∧ IsPrime10Core p ∧
+      RadPrimePowerCertificate14Core A B C p := by
+  rcases hSemistable with ⟨p, hpFive, hpCore, hConductor⟩
+  have hp : Nat.Prime p := by
+    apply Nat.prime_def_lt.mpr
+    refine ⟨hpCore.1, ?_⟩
+    intro m hm hDiv
+    rcases hpCore.2 m hDiv with hOne | hSelf
+    · exact hOne
+    · exact (Nat.ne_of_lt hm hSelf).elim
+  have hRad : Rad (A * B * C) = p := by
+    unfold FreyConductorReal at hConductor
+    apply Nat.mul_left_cancel (by decide : 0 < 2)
+    exact hConductor
+  refine ⟨p, hpFive, hpCore, ?_⟩
+  exact radical_prime_imp_prime_power hp hA hB hC hRad
+
 def FreyConductorComputation : Prop :=
   ∀ A B C x y z,
     IsBealSolution A B C x y z →
@@ -123,6 +152,7 @@ theorem beal_primes_not_divide_conductor_trivial : BealPrimesNotDivideConductor 
 #print axioms rad_dvd_self
 #print axioms prime_factor_of_rad
 #print axioms radical_prime_imp_prime_power
+#print axioms frey_conductor_to_rad_prime_power
 #print axioms FreyConductorReal
 #print axioms FreyConductorComputation
 

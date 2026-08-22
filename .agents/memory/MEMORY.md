@@ -8,3 +8,4 @@
 - [Lean zero-axiom Nat proofs](lean-zero-axiom-nat-proofs.md) — standard Nat lemmas and omega can add audited axioms; use direct induction for strict Core proofs.
 - [Lean zero-axiom parity](lean-zero-axiom-parity.md) — Lean 4.12 modular helpers carry axioms; use remainder recursion and explicit witnesses in Core.
 - [B15 X0(10) certificate boundary](b15-x0-10-certificate-boundary.md) — keep R4(10) formulas and valuation tables in B15; export only the no-Frey certificate to Core.
+- [B16 level-two certificate boundary](b16-level-two-certificate-boundary.md) — keep the S₂(2) genus/cusp/dimension calculation in B16 wrapper; Core exposes only no-cusp and contradiction.
