@@ -13,3 +13,11 @@ lean_lib Beal where
 
 lean_lib lean where
   srcDir := "lean"
+
+lean_exe audit_b14_b05_boundary where
+  root := `AuditB14B05Boundary
+  supportInterpreter := true
+
+lean_exe check_zero_axiom_core where
+  root := `CheckZeroAxiomCore
+  supportInterpreter := true
