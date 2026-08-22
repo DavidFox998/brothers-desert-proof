@@ -6,3 +6,4 @@
 - [Lean B05 Core audit rules](lean-b05-core-axiom-audit-rules.md) — Core types avoid gcd/div; every audited declaration is zero-axiom; conditional hypotheses must not be grouped into a vacuous premise.
 - [Lean native cache interruptions](lean-native-cache-interruptions.md) — interrupted native builds can retain zero-byte objects as current; inspect and rebuild the exact facet.
 - [Lean zero-axiom Nat proofs](lean-zero-axiom-nat-proofs.md) — standard Nat lemmas and omega can add audited axioms; use direct induction for strict Core proofs.
+- [Lean zero-axiom parity](lean-zero-axiom-parity.md) — Lean 4.12 modular helpers carry axioms; use remainder recursion and explicit witnesses in Core.
