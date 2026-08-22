@@ -7,3 +7,4 @@
 - [Lean native cache interruptions](lean-native-cache-interruptions.md) — interrupted native builds can retain zero-byte objects as current; inspect and rebuild the exact facet.
 - [Lean zero-axiom Nat proofs](lean-zero-axiom-nat-proofs.md) — standard Nat lemmas and omega can add audited axioms; use direct induction for strict Core proofs.
 - [Lean zero-axiom parity](lean-zero-axiom-parity.md) — Lean 4.12 modular helpers carry axioms; use remainder recursion and explicit witnesses in Core.
+- [B15 X0(10) certificate boundary](b15-x0-10-certificate-boundary.md) — keep R4(10) formulas and valuation tables in B15; export only the no-Frey certificate to Core.
