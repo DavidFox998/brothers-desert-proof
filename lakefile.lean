@@ -21,7 +21,6 @@ lean_lib BrothersDesertProof where
     .one `Eutheos.Object,
     .one `Eutheos.Theta,
     .one `Eutheos.RationalTheta,
-    .one `RouteC.GrowthRepulsionBridge,
     .one `Lindelof.LindelofBridge,
     .one `Lindelof.GrowthBoundReal,
     .one `Eutheos.Bridge,

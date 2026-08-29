@@ -37,8 +37,8 @@ jobs:
         run: lake build Eutheos.RationalTheta
 
       # -- Bridge + Assembly -----------------------------------------------------
-      - name: "RouteC -- GrowthRepulsionBridge (GrowthBound, ZeroRepulsion, riemannHypothesis_of_growth_and_repulsion 0-sorry)"
-        run: lake build RouteC.GrowthRepulsionBridge
+      - name: "ContradictionRoute -- GrowthRepulsionBridge (GrowthBound, ZeroRepulsion, riemannHypothesis_of_growth_and_repulsion 0-sorry)"
+        run: lake build ContradictionRoute.GrowthRepulsionBridge
 
       - name: "Eutheos -- Bridge (ThetaRH_implies_RH honest-conditional 0-sorry, bridge_iff)"
         run: lake build Eutheos.Bridge
