@@ -9,24 +9,42 @@ on:
 
 jobs:
   build:
-    name: "Clean lake build — Siegel.SiegelZeroFreeElementary (Lean v4.15.0 / Mathlib v4.15.0)"
+    # This job is the only required status check on main. The ensemble-link
+    # and bridge-notification workflows remain advisory and must not become
+    # merge blockers.
+    name: "Clean lake build — Siegel.SiegelZeroFreeElementary"
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+
+      - name: Verify GitHub Actions workflow allowlist
+        # API workflows belong in the separate ZeroBeacon repository.
+        run: bash scripts/check_workflow_allowlist.sh
+
+      - name: Test workflow boundary guard
+        run: bash scripts/test_workflow_allowlist.sh
+
+      - name: Validate main branch protection contract
+        run: python3 scripts/check_main_branch_protection_contract.py
+
+      - name: Verify Lean and Mathlib toolchain pins
+        # Fail before elan or Mathlib cache work if the repository metadata drifts.
+        run: bash scripts/check-lean-toolchain.sh lean-toolchain lake-manifest.json lakefile.lean
 
       - name: Install elan
         run: |
+          TOOLCHAIN="$(tr -d '[:space:]' < lean-toolchain)"
           curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
-            -sSf | sh -s -- -y --default-toolchain leanprover/lean4:v4.15.0
+            -sSf | sh -s -- -y --default-toolchain "$TOOLCHAIN"
           echo "$HOME/.elan/bin" >> $GITHUB_PATH
 
       - name: Cache Lean toolchain
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.elan
-          key: elan-${{ runner.os }}-v4.15.0-${{ hashFiles('lean-toolchain') }}
-          restore-keys: elan-${{ runner.os }}-v4.15.0-
+          key: elan-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}
+          restore-keys: elan-${{ runner.os }}-
 
       - name: Get Mathlib olean cache
         # Use prebuilt Mathlib oleans (required — building Mathlib from scratch takes hours).
